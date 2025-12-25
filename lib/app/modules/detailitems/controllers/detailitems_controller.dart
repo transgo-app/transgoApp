@@ -1,0 +1,416 @@
+import 'dart:async';
+import 'package:geocoding/geocoding.dart';
+import '../../../data/data.dart';
+
+class DetailitemsController extends GetxController {
+  late bool isKendaraan;
+
+  @override
+  void onInit() {
+    super.onInit();
+    isKendaraan = Get.arguments['isKendaraan'] ?? true;
+
+    final dateStr = dataClient['date'];
+    final durationStr = dataClient['duration'];
+
+    DateTime startDate = DateTime.tryParse(dateStr ?? '') ?? DateTime.now();
+    int duration = int.tryParse(durationStr?.toString() ?? '1') ?? 1;
+
+    dataClient['startDate'] = startDate.toIso8601String();
+    dataClient['endDate'] =
+        startDate.add(Duration(days: duration)).toIso8601String();
+    selectedDurasi.value = duration;
+    if (isLoggedIn) {
+      getMyVouchers();
+    }
+
+    getDetailAPI(true).then((_) {
+      getAddons();
+    });
+    getDataInsurance();
+
+    ever(detailData, (_) {
+      updateTotalHarga();
+    });
+
+    ever(selectedPengambilan, (value) {
+      if (!isPengembalianManual.value) {
+        selectedPengembalian.value = value;
+        detailLokasiPengembalian.value = detailLokasiPengambilan.value;
+        lokasiPengembalianC.text = lokasiPengambilanC.text;
+        pengembalianSendiri.value = pengambilanSendiri.value;
+      }
+    });
+  }
+
+  Timer? _apiDebounce;
+  RxString selectedPemakaian = 'Dalam Kota'.obs;
+  RxBool pemakaianLuarKota = false.obs;
+  RxList outOfTownRates = [].obs;
+  RxMap selectedRegion = {}.obs;
+  RxInt selectedRegionId = 0.obs;
+  RxString selectedRegionName = "".obs;
+  RxBool isWithDriver = false.obs;
+  bool get isLoggedIn {
+    return GlobalVariables.token.value.isNotEmpty;
+  }
+
+  RxString selectedPengambilan = ''.obs;
+  RxString googleMapEmbed = ''.obs;
+  RxString selectedPengembalian = ''.obs;
+  RxString selectedAsuransi = '0'.obs;
+  RxString selectedHargaAsuransi = '-'.obs;
+  RxString titikJalanGeolocator = ''.obs;
+  RxString estimasiPembayaranTotal = ''.obs;
+  RxInt selectedRegionQuantity = 1.obs;
+
+  RxString detailLokasiPengambilan = ''.obs;
+  RxString detailLokasiPengembalian = ''.obs;
+  RxString detailSelectedAsuransi = 'Pilih Asuransi'.obs;
+
+  TextEditingController lokasiPengambilanC = TextEditingController();
+  TextEditingController lokasiPengembalianC = TextEditingController();
+  TextEditingController deskripsiPermintaanKhusus = TextEditingController();
+
+  RxList dataAsuransi = [].obs;
+  RxMap detailData = {}.obs;
+  RxList dataAddons = <Map<String, dynamic>>[].obs;
+  RxList selectedAddons = <Map<String, dynamic>>[].obs;
+  RxList addonsList = <Map<String, dynamic>>[].obs;
+  RxList vouchers = [].obs;
+  RxMap selectedVoucher = {}.obs;
+  RxBool isLoadingVoucher = false.obs;
+
+  RxBool pengambilanSendiri = true.obs;
+  RxBool pengembalianSendiri = true.obs;
+  RxBool isLoadinggetdetailkendaraan = false.obs;
+  RxBool isLoading = false.obs;
+  RxBool isLoadingRincian = false.obs;
+
+  RxBool isPengembalianManual = false.obs;
+
+  Timer? _debounce;
+
+  FocusNode focusNode1 = FocusNode();
+  FocusNode focusNode2 = FocusNode();
+  FocusNode focusNode3 = FocusNode();
+
+  Future<void> getAddressFromCoordinates(
+      double latitude, double longitude) async {
+    isLoading.value = true;
+    try {
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(latitude, longitude);
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        titikJalanGeolocator.value =
+            '${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}';
+      }
+    } catch (e) {
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void onPositionChanged(dynamic camera, bool hasGesture) {
+    isLoading.value = true;
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(seconds: 1), () {
+      getAddressFromCoordinates(
+        camera.center.latitude,
+        camera.center.longitude,
+      );
+    });
+  }
+
+  @override
+  void onClose() {
+    focusNode1.dispose();
+    focusNode2.dispose();
+    focusNode3.dispose();
+    Get.delete<DetailitemsController>();
+    super.onClose();
+  }
+
+  var dataClient = Get.arguments['dataClient'];
+  var dataServer = Get.arguments['dataServer'];
+  late Map<String, dynamic> paramPost;
+  var selectedDurasi = 1.obs;
+
+  void updateTotalHarga() {
+    final harga = isKendaraan
+        ? (detailData['rent_price'] ?? 0) -
+            ((detailData['rent_price'] ?? 0) *
+                    (detailData['discount_percentage'] ?? 0) /
+                    100)
+                .toInt()
+        : (detailData['product']?['price_after_discount'] ??
+            detailData['product']?['price'] ??
+            0);
+    totalHarga.value = harga * selectedDurasi.value;
+  }
+
+  var totalHarga = 0.obs;
+
+  Map<String, dynamic> normalizeItem(Map<String, dynamic> response) {
+    final raw = isKendaraan ? response['fleet'] : response['product'];
+
+    String mappedType(String? t) {
+      switch (t) {
+        case 'car':
+          return 'Mobil';
+        case 'motorcycle':
+          return 'Motor';
+        default:
+          return t ?? '-';
+      }
+    }
+
+    final normalized = {
+      "id": raw?['id'],
+      "name": raw?['name'],
+      "price": raw?['price'],
+      "type": mappedType(raw?['type']),
+      "type_code": raw?['type'],
+      "price_after_discount": raw?['price_after_discount'],
+      "category": raw?['category'],
+      "model": raw?['model'] ?? "",
+      "location": raw?['location']?['location'] ?? "",
+      "map_url": raw?['location']?['map_url'] ?? "",
+      "redirect_url": raw?['location']?['redirect_url'] ?? "",
+      "full_location": raw?['location'] ?? {},
+      "raw": raw,
+      "color": raw?['color'] ?? raw?['specifications']?['color'] ?? "",
+    };
+
+    return normalized;
+  }
+
+  String getLocationPengambilanText(String value) {
+    if (value.isEmpty) return "Pilih Lokasi Pengambilan";
+
+    final defaultLocation = detailData['item']?['location'] ?? "-";
+
+    return pengambilanSendiri.value ? defaultLocation : lokasiPengambilanC.text;
+  }
+
+  String getLocationPengembalianText(String value) {
+    if (value.isEmpty) return "Pilih Lokasi Pengembalian";
+
+    final defaultLocation = detailData['item']?['location'] ?? "-";
+
+    return pengembalianSendiri.value
+        ? defaultLocation
+        : lokasiPengembalianC.text;
+  }
+
+  RxBool menyetujuiSnK = false.obs;
+
+  Future getDetailAPI([bool needLoading = false, bool? isOrder = false]) async {
+    _apiDebounce?.cancel();
+    if (needLoading) {
+      isLoadinggetdetailkendaraan.value = true;
+    } else {
+      isLoadingRincian.value = true;
+    }
+
+    paramPost = {
+      isKendaraan ? "fleet_id" : "product_id": dataServer['id'],
+      "description": deskripsiPermintaanKhusus.text,
+      "is_out_of_town": isKendaraan ? pemakaianLuarKota.value : false,
+      if (pemakaianLuarKota.value) ...{
+        "region_id": selectedRegionId.value,
+        "region_name": selectedRegionName.value,
+      },
+      "is_with_driver": isKendaraan ? isWithDriver.value : false,
+      "out_of_town_days": selectedRegionQuantity.value,
+      if (int.tryParse(selectedAsuransi.value) != null &&
+          int.parse(selectedAsuransi.value) > 0)
+        "insurance_id": int.parse(selectedAsuransi.value),
+      "start_request": {
+        "is_self_pickup": pengambilanSendiri.value,
+        if (!pengambilanSendiri.value) "address": lokasiPengambilanC.text,
+      },
+      "end_request": {
+        "is_self_pickup": pengembalianSendiri.value,
+        if (!pengembalianSendiri.value) "address": lokasiPengembalianC.text,
+      },
+      "date": dataClient['date'],
+      "duration": int.parse(dataClient['duration']),
+      if (selectedVoucher.isNotEmpty) "voucher_code": selectedVoucher['code'],
+      if (selectedAddons.isNotEmpty)
+        "addons": selectedAddons
+            .map((addon) => {
+                  "addon_id": addon['id'],
+                  "name": addon['name'],
+                  "price": (addon['price'] is RxInt)
+                      ? (addon['price'] as RxInt).value
+                      : addon['price'],
+                  "quantity": (addon['quantity'] is RxInt)
+                      ? (addon['quantity'] as RxInt).value
+                      : addon['quantity'],
+                })
+            .toList(),
+    };
+    Map<String, dynamic>? response;
+
+    try {
+      response = await APIService().post(
+        isOrder == true
+            ? '/orders/customer'
+            : '/orders/calculate-price/customer',
+        paramPost,
+      );
+
+      if (response != null && isOrder != true) {
+        final item = normalizeItem(response);
+
+        detailData.value = {
+          ...response,
+          "item": item,
+          "location": item["location"],
+          "map_url": item["map_url"],
+        };
+
+        estimasiPembayaranTotal.value = response['grand_total'].toString();
+        print("📌 DETAIL ITEMS RESPONSE:");
+        print(detailData);
+
+        if (googleMapEmbed.value.isEmpty)
+          googleMapEmbed.value = item["map_url"];
+
+        if (needLoading) {
+          selectedPengambilan.value = item["location"];
+          selectedPengembalian.value = item["location"];
+        }
+      }
+
+      if (response != null && isOrder == true) {
+        NotificationService().showNotification(
+          title: "Pesanan Anda Sedang Diproses",
+          body: "Tunggu konfirmasi selanjutnya",
+        );
+        return 200;
+      }
+    } catch (e) {
+      print("Error getDetailAPI: $e");
+    } finally {
+      isLoading.value = false;
+      isLoadinggetdetailkendaraan.value = false;
+      isLoadingRincian.value = false;
+    }
+  }
+
+  Future<void> getDataInsurance() async {
+    try {
+      var data = await APIService().get('/insurances');
+      dataAsuransi.value = data['items'];
+    } catch (e) {
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> getAddons({int page = 1, int limit = 10}) async {
+    final startDate =
+        dataClient['startDate'] ?? DateTime.now().toIso8601String();
+    final endDate = dataClient['endDate'] ??
+        DateTime.now().add(Duration(days: 1)).toIso8601String();
+    final category =
+        detailData['item']?['category'] ?? detailData['item']?['type_code'];
+
+    final apiUrl = '/addons?'
+        'page=$page'
+        '&limit=$limit'
+        '&q='
+        '&category=$category'
+        '&start_date=${startDate.split('T').first}'
+        '&end_date=${endDate.split('T').first}';
+
+    try {
+      var response = await APIService().get(apiUrl);
+      addonsList.value = (response['items'] as List)
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
+    } catch (e) {
+      print('Error getAddons: $e');
+    }
+  }
+
+  void toggleVoucher(Map<String, dynamic> voucher) {
+    if (selectedVoucher.isNotEmpty &&
+        selectedVoucher['code'] == voucher['code']) {
+      selectedVoucher.value = {};
+      getDetailAPI();
+    } else {
+      selectedVoucher.value = voucher;
+      getDetailAPI();
+    }
+  }
+
+  Future<void> getOutOfTownRates() async {
+    try {
+      var res = await APIService().get("/out-of-town-rates");
+
+      outOfTownRates.value = (res['items'] as List).map((item) {
+        return {
+          "id": item["id"],
+          "region_name": item["region_name"],
+          "description": item["description"] ?? "",
+          "daily_rate":
+              int.tryParse(item["daily_rate"].toString().split(".")[0]) ?? 0,
+          "motorcycle_daily_rate": int.tryParse(
+                  item["motorcycle_daily_rate"].toString().split(".")[0]) ??
+              0,
+        };
+      }).toList();
+    } catch (e) {
+      print("Error getOutOfTownRates: $e");
+    }
+  }
+
+  Future<void> getMyVouchers() async {
+    if (!isLoggedIn) return;
+    isLoadingVoucher.value = true;
+    try {
+      final res = await APIService().get('/discount/vouchers/me');
+
+      final now = DateTime.now();
+
+      vouchers.value = (res as List).where((v) {
+        final isUsed = v['is_used'] == true;
+        final expiredAt = DateTime.tryParse(v['expires_at'] ?? '');
+        final minSubtotal = v['min_subtotal_amount'] ?? 0;
+
+        if (isUsed) return false;
+        if (expiredAt == null || expiredAt.isBefore(now)) return false;
+        if (totalHarga.value < minSubtotal) return false;
+
+        return true;
+      }).toList();
+    } catch (e) {
+      print('Error getMyVouchers: $e');
+    } finally {
+      isLoadingVoucher.value = false;
+    }
+  }
+
+  void selectVoucher(Map<String, dynamic> voucher) {
+    selectedVoucher.value = voucher;
+    getDetailAPI();
+  }
+
+  void chooseRegion(Map<String, dynamic> region) {
+    selectedRegion.value = region;
+    selectedRegionId.value = region['id'];
+    selectedRegionName.value = region['region_name'];
+    final isCar = detailData['item']?['type_code'] == 'car';
+
+    final hargaLuarKota =
+        isCar ? region['daily_rate'] : region['motorcycle_daily_rate'];
+
+    print("➡ Harga luar kota terpilih: $hargaLuarKota");
+    getDetailAPI();
+  }
+}

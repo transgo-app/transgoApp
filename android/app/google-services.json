@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1022276810838",
+    "project_id": "transgo-app",
+    "storage_bucket": "transgo-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1022276810838:android:13e9e87a3cc417575763f7",
+        "android_client_info": {
+          "package_name": "com.transgo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPZWOTBBZpDDExpo4Z4ew3oOtK6a9To7s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1022276810838:android:2d81c59d1a4930e45763f7",
+        "android_client_info": {
+          "package_name": "com.transgoapp.transgomobileapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPZWOTBBZpDDExpo4Z4ew3oOtK6a9To7s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
