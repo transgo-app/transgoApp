@@ -1,7 +1,6 @@
 import 'package:flutter_popup/flutter_popup.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
-import 'package:transgomobileapp/app/modules/riwayatpemesanan/controllers/riwayatpemesanan_controller.dart';
 import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import 'package:transgomobileapp/app/widget/Card/InfoCard.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBatalkanSewa.dart';
@@ -23,7 +22,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
           onPressed: () {
             Get.back();
           },
-          icon: Icon(IconsaxPlusBold.arrow_left_1, size: 33),
+          icon: const Icon(IconsaxPlusBold.arrow_left_1, size: 33),
         ),
         surfaceTintColor: Colors.white,
         backgroundColor: Colors.white,
@@ -50,15 +49,15 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                   color: Colors.white,
                   onRefresh: () => controller.getDataById(),
                   child: SingleChildScrollView(
-                    physics: AlwaysScrollableScrollPhysics(),
+                    physics: const AlwaysScrollableScrollPhysics(),
                     child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            constraints: BoxConstraints(minHeight: 200),
+                            constraints: const BoxConstraints(minHeight: 200),
                             width: MediaQuery.of(context).size.width,
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
@@ -73,7 +72,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 15),
+                          const SizedBox(height: 15),
                           Wrap(
                             crossAxisAlignment: WrapCrossAlignment.center,
                             spacing: 8.0,
@@ -95,9 +94,9 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Padding(
-                            padding: EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             child: gabaritoText(
                               text: fleet?['name'] ?? product?['name'] ?? '',
                               fontSize: 15,
@@ -123,8 +122,8 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                               fleet?['color'] ??
                                   product?['specifications']?['color'] ??
                                   ''),
-                          SizedBox(height: 15),
-                          gabaritoText(text: "Estimasi Total Pembayaran"),
+                          const SizedBox(height: 15),
+                          const gabaritoText(text: "Estimasi Total Pembayaran"),
                           Text(
                             "Rp ${formatRupiah(controller.detailKendaraan['grand_total'])}",
                             style: gabaritoTextStyle.copyWith(
@@ -142,17 +141,17 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Container(
-                                      padding: EdgeInsets.symmetric(
+                                      padding: const EdgeInsets.symmetric(
                                           horizontal: 10, vertical: 10),
-                                      child: Icon(IconsaxPlusBold.info_circle,
-                                          color: HexColor('#03AEC4')),
                                       decoration: BoxDecoration(
                                           color: HexColor('#F2FDFF'),
                                           borderRadius:
                                               BorderRadius.circular(10)),
+                                      child: Icon(IconsaxPlusBold.info_circle,
+                                          color: HexColor('#03AEC4')),
                                     ),
-                                    SizedBox(width: 10),
-                                    Expanded(
+                                    const SizedBox(width: 10),
+                                    const Expanded(
                                         child: gabaritoText(
                                       text:
                                           'Karena sewa kamu jatuh di hari Sabtu atau Minggu, akan ada tambahan biaya weekend: Rp50.000/hari untuk mobil dan Rp30.000/hari untuk motor, dihitung per 24 jam dari total durasi sewa.',
@@ -170,7 +169,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
-                                    child: Container(
+                                    child: SizedBox(
                                       height: 150,
                                       width: double.infinity,
                                       child: GestureDetector(
@@ -183,7 +182,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                       ),
                                     ),
                                   ),
-                                  SizedBox(height: 10),
+                                  const SizedBox(height: 10),
                                   Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
@@ -194,7 +193,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                                       ?['location'] ??
                                                   '',
                                               fontSize: 13)),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Row(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.center,
@@ -203,7 +202,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                               text: "Lihat Maps",
                                               fontSize: 14,
                                               textColor: solidPrimary),
-                                          SizedBox(width: 5),
+                                          const SizedBox(width: 5),
                                           Icon(IconsaxPlusBold.send_sqaure_2,
                                               color: solidPrimary, size: 16)
                                         ],
@@ -288,11 +287,11 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                       text:
                                           "+Rp. ${formatRupiah("${insurance['price'] ?? 0}")}",
                                       textColor: Colors.red),
-                                  Padding(
+                                  const Padding(
                                       padding:
                                           EdgeInsets.symmetric(vertical: 5),
                                       child: Divider()),
-                                  InfoCard(
+                                  const InfoCard(
                                       icon: IconsaxPlusBold.info_circle,
                                       hexIconColor: "#03AEC4",
                                       hexBorder: '#03AEC4',
@@ -312,14 +311,14 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      gabaritoText(text: "Permintaan Khusus"),
+                                      const gabaritoText(text: "Permintaan Khusus"),
                                       gabaritoText(
                                         text:
                                             "Tulis kebutuhan sewa kamu di sini.",
                                         textColor: textPrimary,
                                         fontSize: 13,
                                       ),
-                                      SizedBox(height: 10),
+                                      const SizedBox(height: 10),
                                       reusableTextField(
                                         title:
                                             'Tuliskan permintaan khususmu disini',
@@ -331,21 +330,21 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                   )),
                             ),
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           ReusableButton(
                             ontap: () {
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
-                                builder: (context) => ModalPenanggungJawab(),
+                                builder: (context) => const ModalPenanggungJawab(),
                               );
                             },
                             bgColor: Colors.green,
                             widget: Row(
                               children: [
                                 Image.asset('assets/wa_white.png', scale: 15),
-                                SizedBox(width: 10),
-                                Expanded(
+                                const SizedBox(width: 10),
+                                const Expanded(
                                     child: gabaritoText(
                                   text:
                                       "Klik untuk lihat detail penanggung jawab antar & ambil kendaraan rental kamu",
@@ -355,7 +354,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                               ],
                             ),
                           ),
-                          SizedBox(height: 50),
+                          const SizedBox(height: 50),
                         ],
                       ),
                     ),
@@ -363,13 +362,13 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                 ),
               ),
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                     border: Border(top: BorderSide(color: Colors.grey))),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   child: Column(
                     children: [
-                      InfoCard(
+                      const InfoCard(
                           icon: IconsaxPlusBold.info_circle,
                           hexIconColor: "#03AEC4",
                           hexBorder: '#03AEC4',
@@ -377,12 +376,12 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                           hexBG: "#F2FDFF",
                           title:
                               "Ada kendala atau mau perpanjang sewa? Hubungi Admin."),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           CustomPopup(
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 10),
                             content: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -411,7 +410,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                       context: context,
                                       isScrollControlled: true,
                                       builder: (context) =>
-                                          ModalPenanggungJawab(),
+                                         const ModalPenanggungJawab(),
                                     );
                                   },
                                   textColor: textHeadline,
@@ -423,7 +422,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                       showModalBottomSheet(
                                         context: context,
                                         isScrollControlled: true,
-                                        builder: (context) => Wrap(
+                                        builder: (context) => const Wrap(
                                             children: [ModalBatalkanSewa()]),
                                       );
                                     },
@@ -431,14 +430,14 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                   )
                               ],
                             ),
-                            child: BackgroundCard(
+                            child: const BackgroundCard(
                               width: 50,
                               height: 50,
                               stringHexBorder: "#686D76",
                               body: Icon(Icons.more_vert_outlined),
                             ),
                           ),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           if (controller.detaiItemsID['payment_status'] ==
                                   'pending' &&
                               controller.dataArguments['payment_pdf_url'] !=
@@ -475,7 +474,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                   ),
                 ),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           );
         } else {
@@ -487,12 +486,12 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
 
   Widget iconWithDetailSewa(IconData icon, String title) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(icon, size: 18, color: solidPrimary),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: gabaritoText(
               text: title,
@@ -510,20 +509,20 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               gabaritoText(text: title),
-              SizedBox(height: 5),
+              const SizedBox(height: 5),
               gabaritoText(
                   text: subtitle, fontSize: 13, textColor: textPrimary),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               BackgroundCard(height: 20, body: content),
             ],
           ),
         ),
-        Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider()),
+        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider()),
       ],
     );
   }

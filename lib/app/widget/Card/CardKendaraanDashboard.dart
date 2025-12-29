@@ -1,8 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
-import 'package:transgomobileapp/app/modules/riwayatpemesanan/controllers/riwayatpemesanan_controller.dart';
-import 'package:transgomobileapp/app/widget/General/text.dart';
 import '../../data/data.dart';
 import '../widgets.dart';
 
@@ -18,8 +14,8 @@ class CustomGestureCard extends StatelessWidget {
   final String price;
   final String? pricelineThrough;
   final String? paymentStatus;
-  final String? order_status;
-  final String? order_status_text;
+  final String? orderStatus;
+  final String? orderStatusText;
   final String? durasiSewa;
   final bool showOrderStatus;
 
@@ -36,16 +32,14 @@ class CustomGestureCard extends StatelessWidget {
     required this.vehicleName,
     required this.vehicleLocation,
     this.paymentStatus,
-    this.order_status,
-    this.order_status_text,
+    this.orderStatus,
+    this.orderStatusText,
     this.durasiSewa,
     required this.showOrderStatus,
   });
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<RiwayatpemesananController>();
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -86,7 +80,7 @@ class CustomGestureCard extends StatelessWidget {
                   children: [
                     Flexible(
                       child: StatusRiwayatStyle(
-                        orderStatus: order_status ?? '',
+                        orderStatus: orderStatus ?? '',
                         paymentStatus: paymentStatus ?? '',
                       ),
                     ),
@@ -94,7 +88,7 @@ class CustomGestureCard extends StatelessWidget {
                     if (paymentStatus != null)
                       Flexible(
                         child: StatusRiwayatStyle(
-                          orderStatus: order_status ?? '',
+                          orderStatus: orderStatus ?? '',
                           paymentStatus: paymentStatus ?? '',
                         ),
                       ),
@@ -143,7 +137,7 @@ class CustomGestureCard extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  if (order_status == null)
+                  if (orderStatus == null)
                     TextSpan(
                       text: '/ Hari',
                       style: poppinsTextStyle.copyWith(fontSize: 12),

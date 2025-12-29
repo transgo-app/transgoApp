@@ -68,7 +68,7 @@ class DetailitemsWarningSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Expanded(
+                const Expanded(
                   child: gabaritoText(
                     text: 'Semua pembayaran dilakukan saat serah terima unit!',
                   ),

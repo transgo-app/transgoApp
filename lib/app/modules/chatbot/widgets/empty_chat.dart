@@ -4,7 +4,9 @@ import 'package:iconsax_plus/iconsax_plus.dart';
 import '../controllers/chatbot_controller.dart';
 
 class ChatbotEmptyView extends GetView<ChatbotController> {
-  const ChatbotEmptyView({super.key});
+  final CmsController cmsController = Get.put(CmsController());
+
+  ChatbotEmptyView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +21,7 @@ class ChatbotEmptyView extends GetView<ChatbotController> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
+              fontFamily: 'Gabarito',
             ),
           ),
           const SizedBox(height: 12),
@@ -31,7 +34,10 @@ class ChatbotEmptyView extends GetView<ChatbotController> {
             child: const Text(
               'Saya siap membantu Anda dengan informasi rental mobil dan motor TransGo',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14),
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'Gabarito',
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -96,7 +102,10 @@ class ChatbotEmptyView extends GetView<ChatbotController> {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12),
+            style: const TextStyle(
+              fontSize: 12,
+              fontFamily: 'Gabarito',
+            ),
           ),
         ],
       ),
@@ -104,45 +113,70 @@ class ChatbotEmptyView extends GetView<ChatbotController> {
   }
 
   Widget _dailyCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.withOpacity(0.15)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            'TransGo Daily',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
+    return Obx(() {
+      if (cmsController.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (cmsController.cmsList.isEmpty) {
+        return const SizedBox();
+      }
+
+      final List<Map<String, dynamic>> randomCms =
+          List.from(cmsController.cmsList)..shuffle();
+
+      final List<Map<String, dynamic>> displayedCms =
+          randomCms.take(2).toList();
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.blue.withOpacity(0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'TransGo Daily',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Gabarito',
+              ),
             ),
-          ),
-          SizedBox(height: 12),
-          _DailyItem(
-            title: 'Menguak Rahasia Kecepatan Maksimal...',
-            subtitle: 'Siapa yang tidak terpesona dengan mobil...',
-          ),
-          SizedBox(height: 12),
-          _DailyItem(
-            title: 'Menguak Rahasia Perjalanan Tanpa...',
-            subtitle: 'Temukan bagaimana Transgo...',
-          ),
-        ],
-      ),
-    );
+            const SizedBox(height: 12),
+            ...displayedCms.map((item) {
+              return GestureDetector(
+                onTap: () {
+                  cmsController.openCms(item['slug'] ?? '');
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _DailyItem(
+                    title: item['title'] ?? '-',
+                    subtitle: item['description'] ?? '-',
+                    thumbnail: item['thumbnail'],
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      );
+    });
   }
 }
 
 class _DailyItem extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String? thumbnail;
 
   const _DailyItem({
     required this.title,
     required this.subtitle,
+    this.thumbnail,
   });
 
   @override
@@ -153,9 +187,20 @@ class _DailyItem extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: Colors.grey.shade300,
+            border: Border.all(color: Colors.grey.shade400),
             borderRadius: BorderRadius.circular(10),
           ),
+          child: thumbnail != null && thumbnail!.isNotEmpty
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    thumbnail!,
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              : null,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -166,14 +211,21 @@ class _DailyItem extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Gabarito',
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontFamily: 'Gabarito',
+                ),
               ),
             ],
           ),

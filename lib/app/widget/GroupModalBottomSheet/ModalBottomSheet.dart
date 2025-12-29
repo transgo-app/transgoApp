@@ -79,12 +79,20 @@ class RincianOrderModal extends StatelessWidget {
                             ),
                           ],
                         ),
-
                       detailRincianHarga(
                           "Diskon (${controller.detailData['discount_percentage']}%)",
                           '-Rp ${formatRupiah(controller.detailData['discount'])}'),
+                      (controller.detailData['applied_voucher_code'] != null &&
+                              (controller.detailData['applied_voucher_code']
+                                  .toString()
+                                  .trim()
+                                  .isNotEmpty))
+                          ? detailRincianHarga(
+                              "Voucher (${controller.detailData['applied_voucher_code']})",
+                              '-Rp ${formatRupiah((controller.detailData['voucher_discount'] ?? 0).abs())}',
+                            )
+                          : const SizedBox.shrink(),
 
-                      // --- Addons untuk produk ---
                       if (controller.selectedAddons.isNotEmpty)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

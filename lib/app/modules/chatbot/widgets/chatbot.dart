@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:intl/intl.dart';
 import 'package:transgomobileapp/app/data/data.dart';
 import '../controllers/chatbot_controller.dart';
@@ -78,14 +77,23 @@ class _ChatListState extends State<_ChatList> {
                       bottomRight: Radius.circular(isUser ? 2 : 14),
                     ),
                   ),
-                  child: Text(
-                    text,
-                    style: TextStyle(
+                  child: Html(
+                  data: text,
+                  style: {
+                    "*": Style(
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
                       color: isUser
                           ? Colors.white
                           : Theme.of(context).colorScheme.onSurface,
+                      fontSize: FontSize(14),
                     ),
-                  ),
+                    "b": Style(fontWeight: FontWeight.w600),
+                    "strong": Style(fontWeight: FontWeight.w600),
+                    "i": Style(fontStyle: FontStyle.italic),
+                  },
+                ),
+
                 ),
               ),
               Padding(

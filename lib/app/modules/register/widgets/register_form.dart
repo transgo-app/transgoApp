@@ -34,12 +34,12 @@ final bool isDefaultMode = !isItemAvailable;
 final Map<String, dynamic>? itemData =
     isFleetItem ? fleetData : productData;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.initRoleByItem(
-        isFleetItem: isFleetItem,
-        isProductItem: isProductItem,
-      );
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   controller.initRoleByItem(
+    //     isFleetItem: isFleetItem,
+    //     isProductItem: isProductItem,
+    //   );
+    // });
 
     String getPhotoUrl() {
       if (!isItemAvailable) return '';
@@ -47,8 +47,8 @@ final Map<String, dynamic>? itemData =
       if (isFleetItem) {
         // Logic for fleet photos
         return itemData!['photo']?['photo'] ??
-            (itemData!['photos'] != null && itemData['photos'].isNotEmpty
-                ? itemData!['photos'][0]['photo']
+            (itemData['photos'] != null && itemData['photos'].isNotEmpty
+                ? itemData['photos'][0]['photo']
                 : '');
       } else {
         // Logic for product photos
@@ -239,7 +239,6 @@ final Map<String, dynamic>? itemData =
               items: controller.jenisKelamin,
               selectedValue: controller.selectedJenisKelamin.value,
               onChanged: (value) {
-                print(value);
                 controller.selectedJenisKelamin.value = value ?? '';
               },
               dropdownColor: Colors.white,

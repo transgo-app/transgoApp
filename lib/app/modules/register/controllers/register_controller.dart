@@ -199,6 +199,20 @@ class RegisterController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    final productData = dataArgumentsDetailKendaraan?['product'];
+    final fleetData = dataArgumentsDetailKendaraan?['fleet'];
+
+    final bool isProductItem =
+        productData != null && productData is Map && productData.isNotEmpty;
+
+    final bool isFleetItem =
+        fleetData != null && fleetData is Map && fleetData.isNotEmpty;
+
+    initRoleByItem(
+      isFleetItem: isFleetItem,
+      isProductItem: isProductItem,
+    );
     passwordC.addListener(
       () {
         validateInput();
@@ -389,12 +403,12 @@ class RegisterController extends GetxController {
     required bool isFleetItem,
     required bool isProductItem,
   }) {
+    if (selectedRole.value.isNotEmpty) return;
+
     if (isFleetItem) {
       selectedRole.value = 'customer';
     } else if (isProductItem) {
       selectedRole.value = 'product_customer';
-    } else {
-      selectedRole.value = '';
     }
   }
 }

@@ -18,17 +18,17 @@ class SectionAsuransi extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
+        const Padding(
           padding: EdgeInsets.symmetric(vertical: 10),
           child: Divider(
             color: Colors.grey,
             thickness: 1,
           ),
         ),
-        gabaritoText(text: "Asuransi"),
+        const gabaritoText(text: "Asuransi"),
         gabaritoText(
           text:
-              "Pilih perlindungan yang paling pas biar perjalanan makin aman dan tenang, ya!",
+              "Pilih perlindungan yang paling pas biar perjalanan makin aman dan tenang, ya! Tidak semua kendaraan memiliki asuransi, Periksa kembali invoice setelah pesanan terkonfirmasi, jika kendaraan yang kamu pilih tidak memiliki asuransi maka layanan asuransi akan otomatis terhapus dari sistem dan invoice.",
           fontSize: 13,
           textColor: textPrimary,
         ),

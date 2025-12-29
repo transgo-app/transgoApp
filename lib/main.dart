@@ -23,7 +23,7 @@ void main() async {
 
   if (kIsWeb) {
     Firebase.initializeApp(
-        options: FirebaseOptions(
+        options: const FirebaseOptions(
             apiKey: 'AIzaSyDPZWOTBBZpDDExpo4Z4ew3oOtK6a9To7s',
             appId: '1:1022276810838:android:13e9e87a3cc417575763f7',
             messagingSenderId: '1022276810838',

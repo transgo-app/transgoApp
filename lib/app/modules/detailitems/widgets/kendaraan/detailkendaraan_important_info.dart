@@ -193,14 +193,14 @@ Apabila terjadi kerusakan yang disebabkan oleh penyewa yang menyebabkan barang r
     );
   }
 
-  Widget _card(Widget child) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: child,
-    );
-  }
+  // Widget _card(Widget child) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(10),
+  //     decoration: BoxDecoration(
+  //       border: Border.all(color: Colors.grey),
+  //       borderRadius: BorderRadius.circular(10),
+  //     ),
+  //     child: child,
+  //   );
+  // }
 }

@@ -1,4 +1,3 @@
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import '../controllers/detailitems_controller.dart';
 import '../../../widget/widgets.dart';
@@ -26,7 +25,7 @@ class DetailFormSewa extends GetView<DetailitemsController> {
         centerTitle: false,
         leading: IconButton(
           onPressed: () => Get.back(),
-          icon: Icon(IconsaxPlusBold.arrow_left_1, size: 33),
+          icon: const Icon(IconsaxPlusBold.arrow_left_1, size: 33),
         ),
         surfaceTintColor: Colors.white,
         backgroundColor: Colors.white,
@@ -138,7 +137,7 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                             child: Divider(),
                           ),
                           if (isKendaraan) ...[
-                            gabaritoText(text: "Pemakaian"),
+                            const gabaritoText(text: "Pemakaian"),
                             gabaritoText(
                               text:
                                   "Kalau kamu pakai kendaraannya ke luar kota, ada biaya tambahan harian.",

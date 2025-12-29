@@ -42,7 +42,7 @@ class ChatbotPage extends GetView<ChatbotController> {
           Expanded(
             child: Obx(() {
               return controller.messages.isEmpty
-                  ? const ChatbotEmptyView()
+                  ? ChatbotEmptyView()
                   : const ChatbotChatView();
             }),
           ),

@@ -1,4 +1,3 @@
-
 import 'package:hexcolor/hexcolor.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transgomobileapp/app/data/data.dart';
@@ -8,8 +7,9 @@ import 'package:transgomobileapp/app/modules/profile/controllers/profile_control
 import 'package:transgomobileapp/app/modules/profile/views/profile_view.dart';
 import 'package:transgomobileapp/app/modules/riwayatpemesanan/controllers/riwayatpemesanan_controller.dart';
 import 'package:transgomobileapp/app/modules/riwayatpemesanan/views/riwayatpemesanan_view.dart';
-
-
+import 'package:transgomobileapp/app/modules/transgoreward/controllers/transgoreward_controller.dart';
+import 'package:transgomobileapp/app/modules/transgoreward/views/transgoreward_view.dart';
+import 'package:transgomobileapp/app/data/theme.dart';
 
 class NavigationPage extends StatefulWidget {
   final int selectedIndex;
@@ -22,7 +22,15 @@ class NavigationPage extends StatefulWidget {
 
 class _NavigationPageState extends State<NavigationPage> {
   late BottomNavigationController bottomNavigationController;
-  final screens = [DashboardView(), RiwayatpemesananView(), ProfileView()];
+
+  // Screens: Home, Riwayat, Reward, Profil
+  final screens = [
+    DashboardView(),
+    RiwayatpemesananView(),
+    TransGoRewardView(),
+    ProfileView(),
+  ];
+
   bool isRefreshing = false;
 
   @override
@@ -37,9 +45,10 @@ class _NavigationPageState extends State<NavigationPage> {
   }
 
   void initControllers() async {
-    Get.put(DashboardController(),);
-    Get.put(RiwayatpemesananController(),);
-    Get.put(ProfileController(),);
+    Get.put(DashboardController());
+    Get.put(RiwayatpemesananController());
+    Get.put(TransGoRewardController()); // Controller tambahan
+    Get.put(ProfileController());
   }
 
   Future<void> refreshPage(int index) async {
@@ -52,17 +61,18 @@ class _NavigationPageState extends State<NavigationPage> {
         GlobalVariables.initializeData();
         Get.find<DashboardController>().getList();
         if (Get.isRegistered<ProfileController>()) {
-        final profileController = Get.find<ProfileController>();
-        await profileController.getDetailUser();
-        await profileController.getCheckAdditional();
-      } else {
-        print('ProfileController belum terdaftar');
-      }
+          final profileController = Get.find<ProfileController>();
+          await profileController.getDetailUser();
+          await profileController.getCheckAdditional();
+        }
         break;
       case 1:
         Get.find<RiwayatpemesananController>().onInit();
         break;
       case 2:
+        Get.find<TransGoRewardController>().onInit(); // Refresh reward
+        break;
+      case 3:
         Get.find<ProfileController>().onInit();
         break;
     }
@@ -89,7 +99,7 @@ class _NavigationPageState extends State<NavigationPage> {
         () => BottomNavigationBar(
           backgroundColor: Colors.white,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: HexColor("#264875"),
+          selectedItemColor: primaryColor,
           unselectedItemColor: HexColor("#79747E"),
           showSelectedLabels: true,
           showUnselectedLabels: true,
@@ -100,7 +110,7 @@ class _NavigationPageState extends State<NavigationPage> {
           unselectedLabelStyle: gabaritoTextStyle.copyWith(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Colors.grey
+            color: Colors.grey,
           ),
           selectedFontSize: 12,
           unselectedFontSize: 12,
@@ -116,45 +126,36 @@ class _NavigationPageState extends State<NavigationPage> {
           currentIndex: bottomNavigationController.selectedIndex.value,
           items: [
             BottomNavigationBarItem(
-              icon: isRefreshing && bottomNavigationController.selectedIndex.value == 0
-                  ? SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(
-                      color: HexColor("#264875"),
-                    ),
-                  )
-                  : Icon(IconsaxPlusBold.home_2),
+              icon: _buildIcon(IconsaxPlusBold.home_2, 0),
               label: "Home",
             ),
             BottomNavigationBarItem(
-              icon: isRefreshing && bottomNavigationController.selectedIndex.value == 1
-                  ?  SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(
-                      color: HexColor("#264875"),
-                    ),
-                  )
-                  : Icon(IconsaxPlusBold.note_1),
+              icon: _buildIcon(IconsaxPlusBold.note_1, 1),
               label: "Riwayat",
             ),
             BottomNavigationBarItem(
-              icon: isRefreshing && bottomNavigationController.selectedIndex.value == 2
-                  ?  SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(
-                      color: HexColor("#264875"),
-                    ),
-                  )
-                  : Icon(IconsaxPlusBold.user),
+              icon: _buildIcon(IconsaxPlusBold.gift, 2), // Icon reward
+              label: "Reward",
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon(IconsaxPlusBold.user, 3),
               label: "Profil",
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildIcon(IconData icon, int index) {
+    if (isRefreshing && bottomNavigationController.selectedIndex.value == index) {
+      return SizedBox(
+        height: 18,
+        width: 18,
+        child: CircularProgressIndicator(color: HexColor("#264875")),
+      );
+    }
+    return Icon(icon);
   }
 }
 
