@@ -20,6 +20,8 @@ import '../modules/riwayatpemesanan/bindings/riwayatpemesanan_binding.dart';
 import '../modules/riwayatpemesanan/views/riwayatpemesanan_view.dart';
 import '../modules/chatbot/bindings/chatbot_binding.dart';
 import '../modules/chatbot/views/chatbot_view.dart';
+import '../modules/panduantransgo/bindings/panduan_binding.dart';
+import '../modules/panduantransgo/views/panduan_view.dart';
 
 part 'app_routes.dart';
 
@@ -90,6 +92,11 @@ class AppPages {
       name: Routes.CHATBOT,
       page: () => const ChatbotPage(),
       binding: ChatbotBinding(),
+    ),
+    GetPage(
+      name: Routes.PANDUAN,
+      page: () => const PanduanView(),
+      binding: PanduanBinding(),
     ),
   ];
 }

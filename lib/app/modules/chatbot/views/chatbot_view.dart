@@ -17,7 +17,7 @@ class ChatbotPage extends GetView<ChatbotController> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         elevation: 0,
@@ -40,11 +40,14 @@ class ChatbotPage extends GetView<ChatbotController> {
       body: Column(
         children: [
           Expanded(
-            child: Obx(() {
-              return controller.messages.isEmpty
-                  ? ChatbotEmptyView()
-                  : const ChatbotChatView();
-            }),
+            child: Container(
+              color: Colors.white,
+              child: Obx(() {
+                return controller.messages.isEmpty
+                    ? ChatbotEmptyView()
+                    : const ChatbotChatView();
+              }),
+            ),
           ),
           _InputBar(
             controller: controller,
@@ -72,7 +75,7 @@ class _InputBar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: Colors.white,
           border: Border(
             top: BorderSide(
               color: Colors.grey.withOpacity(0.15),

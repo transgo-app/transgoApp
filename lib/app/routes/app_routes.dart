@@ -14,6 +14,7 @@ abstract class Routes {
   static const ADDITIONALDATA = _Paths.ADDITIONALDATA;
   static const DETAILUSER = _Paths.DETAILUSER;
   static const CHATBOT = _Paths.CHATBOT;
+  static const PANDUAN = _Paths.PANDUAN;
 }
 
 abstract class _Paths {
@@ -29,4 +30,5 @@ abstract class _Paths {
   static const ADDITIONALDATA = '/additionaldata';
   static const DETAILUSER = '/detailuser';
   static const CHATBOT = '/chatbot';
+  static const PANDUAN = '/panduantransgo';
 }
