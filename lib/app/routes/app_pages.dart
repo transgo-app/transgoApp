@@ -22,6 +22,9 @@ import '../modules/chatbot/bindings/chatbot_binding.dart';
 import '../modules/chatbot/views/chatbot_view.dart';
 import '../modules/panduantransgo/bindings/panduan_binding.dart';
 import '../modules/panduantransgo/views/panduan_view.dart';
+import '../modules/syaratdanketentuan/bindings/syaratdanketentuan_binding.dart';
+import '../modules/syaratdanketentuan/views/syaratdanketentuan_view.dart';
+
 
 part 'app_routes.dart';
 
@@ -97,6 +100,11 @@ class AppPages {
       name: Routes.PANDUAN,
       page: () => const PanduanView(),
       binding: PanduanBinding(),
+    ),
+    GetPage(
+      name: Routes.SYARATKETENTUAN,
+      page: () => const SyaratKetentuanView(),
+      binding: SyaratKetentuanBinding(),
     ),
   ];
 }
