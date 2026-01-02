@@ -10,9 +10,10 @@ import '../widgets/formsewa/section_asuransi.dart';
 import '../widgets/formsewa/bottom_estimation.dart';
 import '../widgets/formsewa/harga_widget.dart';
 import '../../../widget/Card/BackgroundCard.dart';
-import '../widgets/formsewa/addons_produk.dart';
+import '../widgets/formsewa/addons.dart';
 import '../widgets/formsewa/section_voucher.dart';
 import '../widgets/formsewa/section_supir.dart';
+import '../widgets/formsewa/transgovers.dart';
 
 class DetailFormSewa extends GetView<DetailitemsController> {
   const DetailFormSewa({super.key});
@@ -151,6 +152,16 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                             ),
                           ],
                         ],
+                      ),
+                      LapentorSection(
+                        title: 'Transgo Verse 3D',
+                        description:
+                            'Coba lihat kendaraan secara 360° dengan virtual tour interaktif untuk melihat detail interior dan eksterior kendaraan sebelum memutuskan untuk menyewa.',
+                        url: controller.lapentorUrl.value,
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: Divider(),
                       ),
                       SectionLokasi(controller: controller),
                       SectionVoucher(controller: controller),

@@ -4,6 +4,7 @@ import '../../../../widget/Card/BackgroundCard.dart';
 import '../../../../widget/widgets.dart';
 import '../../controllers/detailitems_controller.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
+import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart.';
 
 class SectionPemakaian extends StatelessWidget {
   final DetailitemsController controller;
@@ -141,7 +142,7 @@ class SectionPemakaian extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 gabaritoText(
-                                  text: "Rp$selectedRate / hari",
+                                  text: 'Rp ${formatRupiah(selectedRate)} / hari',
                                   textColor: solidPrimary,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -212,7 +213,7 @@ class SectionPemakaian extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(top: 12),
               child: gabaritoText(
-                text: "Tarif Luar Kota Dipilih: Rp$selectedRate / hari",
+                text: 'Tarif Luar Kota Dipilih: Rp ${formatRupiah(selectedRate)} / hari',
                 textColor: solidPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

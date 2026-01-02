@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart.';
 import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
 import '../../../../widget/widgets.dart';
@@ -73,7 +73,7 @@ class SectionVoucher extends StatelessWidget {
                             ? "Gratis"
                             : isPercent
                                 ? "Diskon $amount%"
-                                : "Potongan Rp $amount",
+                                : "Potongan Rp ${formatRupiah(amount)}",
                         textColor: solidPrimary,
                         Maxlines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -211,7 +211,7 @@ class _VoucherBottomSheet extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          gabaritoText(
+          const gabaritoText(
             text: "Voucher Tersedia",
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -224,7 +224,7 @@ class _VoucherBottomSheet extends StatelessWidget {
               }
 
               if (controller.vouchers.isEmpty) {
-                return Center(
+                return const Center(
                   child: gabaritoText(
                     text: "Tidak ada voucher yang tersedia",
                     textColor: Colors.grey,
@@ -305,7 +305,7 @@ class _VoucherBottomSheet extends StatelessWidget {
                                           ? "Gratis"
                                           : isPercent
                                               ? "Diskon $amount% (Max Rp $maxAmount)"
-                                              : "Rp $amount",
+                                              : "Rp ${formatRupiah(amount)}",
                                       fontSize: 28,
                                       fontWeight: FontWeight.w800,
                                       textColor: solidPrimary,

@@ -31,32 +31,62 @@ class SyaratKetentuanView extends GetView<SyaratKetentuanController> {
         ),
         centerTitle: false,
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-        child: ListView.separated(
-          itemCount: controller.syaratList.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 16),
-          itemBuilder: (context, index) {
-            return Row(
+        children: [
+          gabaritoText(
+            text: controller.mainTitle,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          gabaritoText(
+            text: controller.description,
+            fontSize: 14,
+            textColor: textSecondary,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ...controller.sections.map(
+            (section) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 gabaritoText(
-                  text: '${index + 1}.',
-                  fontSize: 14,
+                  text: section.title,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: gabaritoText(
-                    text: controller.syaratList[index],
-                    fontSize: 14,
-                    textColor: textSecondary,
+                const SizedBox(height: 12),
+                ...List.generate(
+                  section.items.length,
+                  (index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        gabaritoText(
+                          text: '${index + 1}.',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: gabaritoText(
+                            text: section.items[index],
+                            fontSize: 14,
+                            textColor: textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+                const SizedBox(height: 20),
               ],
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
