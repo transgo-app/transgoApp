@@ -1,238 +1,333 @@
 import 'package:hexcolor/hexcolor.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
-import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
-import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalHapusAkun.dart';
-import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalLogout.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../controllers/profile_controller.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
-
+import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalHapusAkun.dart';
+import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalLogout.dart';
 
 class ProfileView extends GetView<ProfileController> {
   const ProfileView({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: HexColor("#F6F6F6"),
-      body: Obx(() => SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 50, horizontal: 20),
+      backgroundColor: HexColor("#F6F7F9"),
+      body: Obx(
+        () => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      maxRadius: 40,
-                      backgroundColor: Colors.white,
-                      child: Icon(IconsaxPlusBold.user, color: primaryColor,),
-                    ),
-                    const SizedBox(width: 10,),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          gabaritoText(text: "${GlobalVariables.namaUser.value}", fontSize: 16,),
-                          gabaritoText(text: "${GlobalVariables.emailUser.value}", fontSize: 14, textColor: textSecondary,),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                BackgroundCard(
-                  paddingHorizontal: 18,
-                  paddingVertical: 18,
-                  marginVertical: 20,
-                  body: Column(
-                    children: [
-                      profileSection(IconsaxPlusBold.security_user, "Data Pribadi", 'Lihat info akun kamu di sini.',() {
-                        Get.toNamed("/detailuser", arguments: true, );
-                      },),
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10),
-                        child: Divider()),
-                      profileSection(IconsaxPlusBold.document_1, "Dokumen Pribadi", 'Cek dokumen penting kamu yang udah tersimpan', () {
-                        Get.toNamed("/detailuser", arguments: false);
-                      },),
-                    ],
-                  )),
-                  BackgroundCard(
-                  paddingHorizontal: 18,
-                  paddingVertical: 18,
-                  body: Column(
-                    children: [
-                      profileSection(IconsaxPlusBold.call_calling, "Hubungi Admin Sekarang", 'Klik di sini buat langsung terhubung sama tim kami.', () {
-                        launchUrl(Uri.parse('https://wa.me/$whatsAppNumberAdmin?text=Halo Admin Transgo'));
-                      },),
-                    ],
-                  )),
-                  const SizedBox(height: 10,),
-                if(GlobalVariables.isShowStatusAccount.value)
-                  BackgroundCard(
-                    ontap: () {
-                      Get.toNamed('/additionaldata');
-                    },
-                  stringHexBG: "#FB4141",
-                  stringHexBorder: "#FB4141",
-                  paddingHorizontal: 18,
-                  paddingVertical: 18,
-                  body: Column(
-                    children: [
-                      GestureDetector(
-                      onTap: () {
-                        if(GlobalVariables.isNeedAdditionalData.value)
-                        Get.toNamed('/additionaldata');
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                        child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(IconsaxPlusBold.profile_circle, color: Colors.white, size: 30,),
-                              const SizedBox(width: 12,),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    gabaritoText(text: "${GlobalVariables.statusAccount.value}", textColor: Colors.white,),
-                                    if(GlobalVariables.isNeedAdditionalData.value)
-                                    gabaritoText(text: "Klik disini untuk upload data tambahan kamu", textColor: Colors.white, fontSize: 13,),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10,),
-                              if(GlobalVariables.isNeedAdditionalData.value)
-                              Icon(Icons.chevron_right_sharp, size: 30, color: Colors.white,),
-                            ],
-                          ),
-                      ),
-                    )
-                    ],
-                  )),
-                const SizedBox(height: 20,),
-                ReusableButton(
-                  bgColor: HexColor('#F6F6F6') ,
-                  ontap: () {
-                    showModalBottomSheet(context: context, builder: (context) {
-                      return ModalLogout();
-                    },);
-                  },
-                  borderSideColor: Colors.grey[500],
-                  widget: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(IconsaxPlusBold.logout, color: Colors.red,),
-                      const SizedBox(width: 10,),
-                      gabaritoText(text: "Keluar", fontWeight: FontWeight.w600, textColor: Colors.red,)
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20,),
-                CustomTextButton(
-                  textColor: Colors.red,
-                  title: "Hapus Akun", ontap: () {
-                  showModalBottomSheet(context: context, builder: (context) {
-                      return ModalHapusAkun();
-                    },);
-                },)
+                _profileHeader(),
+                const SizedBox(height: 24),
+                _accountSection(),
+                const SizedBox(height: 16),
+                _helpSection(),
+                const SizedBox(height: 16),
+                _supportSection(),
+                const SizedBox(height: 16),
+                if (GlobalVariables.isShowStatusAccount.value)
+                  _statusAccountSection(),
+                const SizedBox(height: 30),
+                _logoutButton(context),
+                const SizedBox(height: 16),
+                _deleteAccountButton(context),
               ],
             ),
-          )
-        ),
-      ),)
-    );
-  }
-  Widget profileSection (IconData icon, String title, String subtitle, VoidCallback action) {
-    return GestureDetector(
-      onTap: action,
-      child: Container(
-        color: Colors.transparent,
-        child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(icon, color: solidDefaultSecondary, size: 30,),
-              const SizedBox(width: 12,),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    gabaritoText(text: title, textColor: textPrimary,),
-                    gabaritoText(text: subtitle, textColor: textSecondary, fontSize: 13,),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10,),
-              Icon(Icons.chevron_right_sharp, size: 30,),
-            ],
           ),
+        ),
       ),
     );
   }
-}
 
-class ShimmerGlow extends StatefulWidget {
-  final Widget child;
-  final Duration duration;
-  final Color glowColor;
-
-  const ShimmerGlow({
-    super.key,
-    required this.child,
-    this.duration = const Duration(seconds: 5),
-    this.glowColor = Colors.white,
-  });
-
-  @override
-  State<ShimmerGlow> createState() => _ShimmerGlowState();
-}
-
-class _ShimmerGlowState extends State<ShimmerGlow>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller =
-        AnimationController(vsync: this, duration: widget.duration)
-          ..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return ShaderMask(
-          blendMode: BlendMode.srcATop,
-          shaderCallback: (Rect bounds) {
-            final animationValue = _controller.value;
-
-            final gradient = LinearGradient(
-              colors: [
-                widget.glowColor.withOpacity(0.1),
-                widget.glowColor.withOpacity(0.6),
-                widget.glowColor.withOpacity(0.3),
+  Widget _profileHeader() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: 64,
+            width: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: solidPrimary.withOpacity(0.1),
+            ),
+            child: Icon(
+              IconsaxPlusBold.user,
+              color: solidPrimary,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                gabaritoText(
+                  text: GlobalVariables.namaUser.value,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                const SizedBox(height: 4),
+                gabaritoText(
+                  text: GlobalVariables.emailUser.value,
+                  fontSize: 13,
+                  textColor: textSecondary,
+                ),
               ],
-              stops: const [0.1, 0.5, 0.9],
-              begin: Alignment(-1.0 + 2.0 * animationValue, 0),
-              end: Alignment(-0.2 + 2.0 * animationValue, 0),
-            );
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            return gradient.createShader(bounds);
+  Widget _accountSection() {
+    return _sectionCard(
+      children: [
+        _menuItem(
+          icon: IconsaxPlusBold.security_user,
+          title: "Data Pribadi",
+          subtitle: "Lihat dan kelola informasi akun kamu",
+          onTap: () => Get.toNamed("/detailuser", arguments: true),
+        ),
+        _divider(),
+        _menuItem(
+          icon: IconsaxPlusBold.document_1,
+          title: "Dokumen Pribadi",
+          subtitle: "Cek dokumen penting yang tersimpan",
+          onTap: () => Get.toNamed("/detailuser", arguments: false),
+        ),
+      ],
+    );
+  }
+
+  Widget _helpSection() {
+    return _sectionCard(
+      children: [
+        _menuItem(
+          icon: IconsaxPlusBold.book_1,
+          title: "Panduan Transgo",
+          subtitle: "Pelajari cara menggunakan Transgo",
+          onTap: () {
+            Get.toNamed('/panduantransgo');
           },
-          child: widget.child,
+        ),
+        _divider(),
+        _menuItem(
+          icon: IconsaxPlusBold.magic_star,
+          title: "Gogo AI",
+          subtitle: "Asisten pintar untuk bantu kebutuhanmu",
+          onTap: () {
+            Get.toNamed('/chatbot');
+          },
+        ),
+        _divider(),
+        _menuItem(
+          icon: IconsaxPlusBold.document_text,
+          title: "Syarat dan Ketentuan",
+          subtitle: "Ketentuan penggunaan layanan Transgo",
+          onTap: () {
+            Get.toNamed('/syaratdanketentuan');
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _supportSection() {
+    return _sectionCard(
+      children: [
+        _menuItem(
+          icon: IconsaxPlusBold.call_calling,
+          title: "Hubungi Admin",
+          subtitle: "Terhubung langsung dengan tim Transgo",
+          onTap: () {
+            launchUrl(
+              Uri.parse(
+                'https://wa.me/$whatsAppNumberAdmin?text=Halo Admin Transgo',
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _statusAccountSection() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: HexColor("#FB4141"),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: GestureDetector(
+        onTap: () {
+          if (GlobalVariables.isNeedAdditionalData.value) {
+            Get.toNamed('/additionaldata');
+          }
+        },
+        child: Row(
+          children: [
+            Icon(
+              IconsaxPlusBold.profile_circle,
+              color: Colors.white,
+              size: 30,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  gabaritoText(
+                    text: GlobalVariables.statusAccount.value,
+                    textColor: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  if (GlobalVariables.isNeedAdditionalData.value)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: gabaritoText(
+                        text:
+                            "Klik untuk melengkapi data tambahan akun kamu",
+                        textColor: Colors.white,
+                        fontSize: 13,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (GlobalVariables.isNeedAdditionalData.value)
+              const Icon(
+                Icons.chevron_right,
+                color: Colors.white,
+                size: 28,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _logoutButton(BuildContext context) {
+    return ReusableButton(
+      bgColor: Colors.white,
+      borderSideColor: HexColor("#E0E0E0"),
+      ontap: () {
+        showModalBottomSheet(
+          context: context,
+          builder: (_) => const ModalLogout(),
         );
       },
+      widget: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(IconsaxPlusBold.logout, color: Colors.red),
+          const SizedBox(width: 10),
+          gabaritoText(
+            text: "Keluar",
+            fontWeight: FontWeight.w600,
+            textColor: Colors.red,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _deleteAccountButton(BuildContext context) {
+    return Center(
+      child: CustomTextButton(
+        title: "Hapus Akun",
+        textColor: Colors.red,
+        ontap: () {
+          showModalBottomSheet(
+            context: context,
+            builder: (_) => const ModalHapusAkun(),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _sectionCard({required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _menuItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: solidDefaultSecondary, size: 28),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  gabaritoText(
+                    text: title,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  const SizedBox(height: 2),
+                  gabaritoText(
+                    text: subtitle,
+                    fontSize: 13,
+                    textColor: textSecondary,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              size: 26,
+              color: Colors.grey,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Divider(color: HexColor("#EEEEEE")),
     );
   }
 }

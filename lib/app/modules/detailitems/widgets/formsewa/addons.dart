@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/detailitems_controller.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
+import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart.';
 
 class AddonsListView extends StatelessWidget {
   final DetailitemsController controller;
@@ -54,11 +55,12 @@ class AddonsListView extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "Rp.${addon['price'] ?? 0}",
+                          "Rp ${formatRupiah(addon['price'])}",
                           style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(

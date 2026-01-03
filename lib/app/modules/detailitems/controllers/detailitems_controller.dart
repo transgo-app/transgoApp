@@ -45,6 +45,7 @@ class DetailitemsController extends GetxController {
 
   Timer? _apiDebounce;
   RxString selectedPemakaian = 'Dalam Kota'.obs;
+  RxString lapentorUrl = ''.obs;
   RxBool pemakaianLuarKota = false.obs;
   RxList outOfTownRates = [].obs;
   RxMap selectedRegion = {}.obs;
@@ -179,6 +180,7 @@ class DetailitemsController extends GetxController {
       "location": raw?['location']?['location'] ?? "",
       "map_url": raw?['location']?['map_url'] ?? "",
       "redirect_url": raw?['location']?['redirect_url'] ?? "",
+      "lapentor_url": raw?['lapentor_url'] ?? "",
       "full_location": raw?['location'] ?? {},
       "raw": raw,
       "color": raw?['color'] ?? raw?['specifications']?['color'] ?? "",
@@ -271,6 +273,7 @@ class DetailitemsController extends GetxController {
           "item": item,
           "location": item["location"],
           "map_url": item["map_url"],
+          "lapentor_url": item["lapentor_url"],
         };
 
         estimasiPembayaranTotal.value = response['grand_total'].toString();

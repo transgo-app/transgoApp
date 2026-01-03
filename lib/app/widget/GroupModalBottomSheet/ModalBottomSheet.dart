@@ -3,6 +3,9 @@ import 'package:transgomobileapp/app/modules/detailitems/controllers/detailitems
 import 'package:transgomobileapp/app/widget/Dialog/DialogBerhailSewa.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalDaftarAccount.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
+import 'package:flutter/gestures.dart';
+import '../../data/theme.dart';
+
 
 class RincianOrderModal extends StatelessWidget {
   final bool? isWithButton;
@@ -176,9 +179,38 @@ class RincianOrderModal extends StatelessWidget {
                                           },
                                         ),
                                         Expanded(
-                                          child: gabaritoText(
-                                            text:
-                                                'Saya telah menyetujui S&K dari Transgo dan data yang saya input telah benar sepenuhnya.',
+                                          child: RichText(
+                                            text: TextSpan(
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.black,
+                                              ),
+                                              children: [
+                                                const TextSpan(
+                                                  text:
+                                                      'Saya telah menyetujui ',
+                                                ),
+                                                TextSpan(
+                                                  text: 'S&K dari TransGo',
+                                                  style: TextStyle(
+                                                    color: primaryColor,
+                                                    fontWeight: FontWeight.w600,
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                  ),
+                                                  recognizer:
+                                                      TapGestureRecognizer()
+                                                        ..onTap = () {
+                                                          Get.toNamed(
+                                                              '/syaratdanketentuan');
+                                                        },
+                                                ),
+                                                const TextSpan(
+                                                  text:
+                                                      ' dan data yang saya input telah benar sepenuhnya.',
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ],

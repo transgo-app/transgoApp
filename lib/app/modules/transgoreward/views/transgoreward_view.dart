@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../controllers/transgoreward_controller.dart';
 import '../widgets/benefit.dart';
 import '../widgets/referral.dart';
 import 'package:transgomobileapp/app/widget/General/text.dart';
-import 'package:transgomobileapp/app/data/theme.dart';
+import '../../../data/data.dart';
+import '../../../widget/widgets.dart';
 
 class TransGoRewardView extends GetView<TransGoRewardController> {
   const TransGoRewardView({super.key});
@@ -134,8 +133,7 @@ class TransGoRewardView extends GetView<TransGoRewardController> {
                     ? controller.memberTier.value.toUpperCase()
                     : "Dapatkan reward eksklusif setiap kali Anda melakukan transaksi!",
                 fontSize: 16,
-                fontWeight:
-                    hasTier ? FontWeight.bold : FontWeight.normal,
+                fontWeight: hasTier ? FontWeight.bold : FontWeight.normal,
                 textColor: primaryColor,
                 textAlign: TextAlign.center,
               );
@@ -153,11 +151,13 @@ class TransGoRewardView extends GetView<TransGoRewardController> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       gabaritoText(
-                        text: "Rp ${controller.totalRentalAmount.value}",
+                        text:
+                            "Rp ${formatRupiah(controller.totalRentalAmount.value)}",
                         fontSize: 14,
                       ),
                       gabaritoText(
-                        text: "Rp ${controller.nextThreshold.value}",
+                        text:
+                            "Rp ${formatRupiah(controller.nextThreshold.value)}",
                         fontSize: 14,
                       ),
                     ],

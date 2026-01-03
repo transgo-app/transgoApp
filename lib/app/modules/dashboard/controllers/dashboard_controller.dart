@@ -8,6 +8,8 @@ class DashboardController extends GetxController
   RxString teksLokasi = 'Harap Tunggu....'.obs;
   RxString teksCari = 'Harap Tunggu....'.obs;
   late TabController tabController;
+  RxBool showWhatsApp = true.obs;
+  double _lastScrollOffset = 0;
 
   RxMap jumlahData = {}.obs;
 
@@ -46,13 +48,24 @@ class DashboardController extends GetxController
     }
   }
 
+  void _handleScrollVisibility() {
+    final currentOffset = scrollController.offset;
+    final delta = currentOffset - _lastScrollOffset;
+    if (delta > 5 && currentOffset > 0) {
+      if (showWhatsApp.value) showWhatsApp.value = false;
+    } else if (delta < -5) {
+      if (!showWhatsApp.value) showWhatsApp.value = true;
+    }
+
+    _lastScrollOffset = currentOffset;
+  }
+
   @override
   void onInit() {
     super.onInit();
-    GlobalVariables.initializeData();
-    loadRole();
-    getKotaKendaraan();
     scrollController.addListener(() {
+      _handleScrollVisibility();
+
       if (scrollController.position.pixels ==
               scrollController.position.maxScrollExtent &&
           hasMore.value &&
@@ -60,6 +73,10 @@ class DashboardController extends GetxController
         getList(true);
       }
     });
+    GlobalVariables.initializeData();
+    loadRole();
+    getKotaKendaraan();
+
     _setDefaultDate();
     setDefaultTime();
     _startAutoScroll();
@@ -202,11 +219,7 @@ class DashboardController extends GetxController
       ];
       selectedKategori.value = kategori.first['id']!;
     }
-
-    // Buat TabController berdasarkan kategori saat ini
     tabController = TabController(length: kategori.length, vsync: this);
-
-    // Set index TabController setelah frame selesai
     WidgetsBinding.instance.addPostFrameCallback((_) {
       int index = kategori.indexWhere((k) => k['id'] == selectedKategori.value);
       if (index != -1) tabController.index = index;
