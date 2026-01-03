@@ -219,11 +219,7 @@ class DashboardController extends GetxController
       ];
       selectedKategori.value = kategori.first['id']!;
     }
-
-    // Buat TabController berdasarkan kategori saat ini
     tabController = TabController(length: kategori.length, vsync: this);
-
-    // Set index TabController setelah frame selesai
     WidgetsBinding.instance.addPostFrameCallback((_) {
       int index = kategori.indexWhere((k) => k['id'] == selectedKategori.value);
       if (index != -1) tabController.index = index;
