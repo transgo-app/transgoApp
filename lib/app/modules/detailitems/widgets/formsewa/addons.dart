@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/detailitems_controller.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
-import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart.';
+import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart';
 
 class AddonsListView extends StatelessWidget {
   final DetailitemsController controller;
