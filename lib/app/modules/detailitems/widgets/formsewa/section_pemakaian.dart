@@ -4,7 +4,7 @@ import '../../../../widget/Card/BackgroundCard.dart';
 import '../../../../widget/widgets.dart';
 import '../../controllers/detailitems_controller.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
-import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart.';
+import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart';
 
 class SectionPemakaian extends StatelessWidget {
   final DetailitemsController controller;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart.';
+import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart';
 import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
 import '../../../../widget/widgets.dart';
