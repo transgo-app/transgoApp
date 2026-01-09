@@ -121,6 +121,10 @@ class DashboardController extends GetxController
   RxList listKendaraan = [].obs;
   RxList listProduk = [].obs;
 
+  // Charge settings
+  RxMap chargeSettings = {}.obs;
+  Rxn<Map<String, dynamic>> currentChargeAlert = Rxn<Map<String, dynamic>>();
+
   RxList<Map<String, String>> kategori = [
     {'id': 'car', 'name': 'Mobil'},
     {'id': 'motorcycle', 'name': 'Motor'},
@@ -294,6 +298,8 @@ class DashboardController extends GetxController
       isFetchingMore = false;
       isLoading.value = false;
       showDataMobil.value = true;
+      // Check charge settings after search
+      await checkChargeSettings();
     }
   }
 
@@ -586,5 +592,171 @@ class DashboardController extends GetxController
       duration: Duration(milliseconds: 400),
       curve: Curves.easeInOut,
     );
+  }
+
+  // Charge settings methods
+  Future<void> fetchChargeSettings() async {
+    try {
+      var data = await APIService().get('/order-calculation-settings');
+      chargeSettings.value = data ?? {};
+    } catch (e) {
+      print("Error fetching charge settings: $e");
+      chargeSettings.value = {};
+    }
+  }
+
+  String formatFleetNames(List<dynamic> fleets) {
+    if (fleets.isEmpty) return '';
+    
+    final fleetMap = {
+      'car': 'Mobil',
+      'motorcycle': 'Motor',
+    };
+    
+    final names = fleets
+        .map((f) => fleetMap[f.toString()] ?? f.toString())
+        .where((name) => name.isNotEmpty)
+        .toList();
+    
+    if (names.isEmpty) return '';
+    if (names.length == 1) return names.first;
+    if (names.length == 2) return '${names[0]} dan ${names[1]}';
+    return names.join(', ');
+  }
+
+  Future<void> checkChargeSettings() async {
+    if (pickedDate.value.isEmpty || selectedKategori.value.isEmpty) {
+      currentChargeAlert.value = null;
+      return;
+    }
+
+    // Only check for car and motorcycle
+    if (selectedKategori.value != 'car' && selectedKategori.value != 'motorcycle') {
+      currentChargeAlert.value = null;
+      return;
+    }
+
+    // Fetch settings if not already fetched
+    if (chargeSettings.isEmpty) {
+      await fetchChargeSettings();
+    }
+
+    final calendarRanges = chargeSettings['calendar_dates_ranges'] as List?;
+    if (calendarRanges == null || calendarRanges.isEmpty) {
+      currentChargeAlert.value = null;
+      return;
+    }
+
+    try {
+      final selectedDate = DateTime.parse(pickedDate.value);
+      final selectedTimeStr = pickedTime.value;
+      int selectedHour = 12; // default
+      
+      if (selectedTimeStr.isNotEmpty) {
+        final timeParts = selectedTimeStr.split(':');
+        if (timeParts.length == 2) {
+          selectedHour = int.tryParse(timeParts[0]) ?? 12;
+        }
+      }
+
+      Map<String, dynamic>? mostRelevantAlert;
+      DateTime? mostRelevantDate;
+
+      for (var range in calendarRanges) {
+        final fleets = range['fleets'] as List?;
+        if (fleets == null || fleets.isEmpty) continue;
+
+        // Check if selected category matches fleets
+        if (!fleets.contains(selectedKategori.value)) continue;
+
+        final startDateStr = range['start_date'] as String?;
+        final endDateStr = range['end_date'] as String?;
+        if (startDateStr == null || endDateStr == null) continue;
+
+        // Parse dates - extract date part from ISO string to avoid timezone issues
+        // startDateStr format: "2026-01-12T00:00:00+07:00"
+        final startDateMatch = RegExp(r'(\d{4})-(\d{2})-(\d{2})').firstMatch(startDateStr);
+        final endDateMatch = RegExp(r'(\d{4})-(\d{2})-(\d{2})').firstMatch(endDateStr);
+        
+        if (startDateMatch == null || endDateMatch == null) continue;
+        
+        final startYear = int.parse(startDateMatch.group(1)!);
+        final startMonth = int.parse(startDateMatch.group(2)!);
+        final startDay = int.parse(startDateMatch.group(3)!);
+        
+        final endYear = int.parse(endDateMatch.group(1)!);
+        final endMonth = int.parse(endDateMatch.group(2)!);
+        final endDay = int.parse(endDateMatch.group(3)!);
+        
+        // Normalize to date only (remove time)
+        final startDateOnly = DateTime(startYear, startMonth, startDay);
+        final endDateOnly = DateTime(endYear, endMonth, endDay);
+        final selectedDateOnly = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+
+        // Convert dates to comparable integer format (YYYYMMDD)
+        final selectedDays = selectedDateOnly.year * 10000 + selectedDateOnly.month * 100 + selectedDateOnly.day;
+        final startDays = startYear * 10000 + startMonth * 100 + startDay;
+        final endDays = endYear * 10000 + endMonth * 100 + endDay;
+        final d1Days = startDays - 1; // One day before start date
+        
+        // Check D-1 (one day before start date)
+        // Only show D-1 alert if booking time is 12:00 WIB or later
+        final isD1 = selectedDays == d1Days && selectedHour >= 12;
+        
+        if (isD1) {
+          // D-1 alert
+          final fleetNames = formatFleetNames(fleets);
+          final chargePercent = selectedHour > 18 ? 50 : 30;
+          final timeRange = selectedHour > 18 
+              ? 'setelah pukul 18.00 WIB' 
+              : 'pukul 12.00-18.00 WIB';
+          
+          final alert = {
+            'type': 'd1',
+            'name': range['name'] ?? '',
+            'fleets': fleetNames,
+            'chargePercent': chargePercent,
+            'timeRange': timeRange,
+            'range': range,
+          };
+
+          // Keep the most relevant (earliest start date)
+          if (mostRelevantAlert == null || 
+              (mostRelevantDate == null || startDateOnly.isBefore(mostRelevantDate))) {
+            mostRelevantAlert = alert;
+            mostRelevantDate = startDateOnly;
+          }
+        }
+
+        // Check D-DAY (within the period, inclusive) - only if not D-1
+        if (!isD1) {
+          // Check if selected date is within the period (inclusive)
+          if (selectedDays >= startDays && selectedDays <= endDays) {
+            final fleetNames = formatFleetNames(fleets);
+            
+            final alert = {
+              'type': 'dday',
+              'name': range['name'] ?? '',
+              'formatted_start_date': range['formatted_start_date'] ?? '',
+              'formatted_end_date': range['formatted_end_date'] ?? '',
+              'fleets': fleetNames,
+              'range': range,
+            };
+
+            // Keep the most relevant (earliest start date)
+            if (mostRelevantAlert == null || 
+                (mostRelevantDate == null || startDateOnly.isBefore(mostRelevantDate))) {
+              mostRelevantAlert = alert;
+              mostRelevantDate = startDateOnly;
+            }
+          }
+        }
+      }
+
+      currentChargeAlert.value = mostRelevantAlert;
+    } catch (e) {
+      print("Error checking charge settings: $e");
+      currentChargeAlert.value = null;
+    }
   }
 }

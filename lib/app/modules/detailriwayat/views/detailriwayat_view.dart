@@ -331,29 +331,32 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          ReusableButton(
-                            ontap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                builder: (context) => const ModalPenanggungJawab(),
-                              );
-                            },
-                            bgColor: Colors.green,
-                            widget: Row(
-                              children: [
-                                Image.asset('assets/wa_white.png', scale: 15),
-                                const SizedBox(width: 10),
-                                const Expanded(
-                                    child: gabaritoText(
-                                  text:
-                                      "Klik untuk lihat detail penanggung jawab antar & ambil kendaraan rental kamu",
-                                  textColor: Colors.white,
-                                  textAlign: TextAlign.center,
-                                ))
-                              ],
+                          // Only show button when order_status is "confirmed" or "done"
+                          if (controller.detaiItemsID['order_status'] == 'confirmed' ||
+                              controller.detaiItemsID['order_status'] == 'done')
+                            ReusableButton(
+                              ontap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (context) => const ModalPenanggungJawab(),
+                                );
+                              },
+                              bgColor: Colors.green,
+                              widget: Row(
+                                children: [
+                                  Image.asset('assets/wa_white.png', scale: 15),
+                                  const SizedBox(width: 10),
+                                  const Expanded(
+                                      child: gabaritoText(
+                                    text:
+                                        "Klik untuk lihat detail penanggung jawab antar & ambil kendaraan rental kamu",
+                                    textColor: Colors.white,
+                                    textAlign: TextAlign.center,
+                                  ))
+                                ],
+                              ),
                             ),
-                          ),
                           const SizedBox(height: 50),
                         ],
                       ),

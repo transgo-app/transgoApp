@@ -6,6 +6,7 @@ import '../controllers/dashboard_controller.dart';
 import '../widgets/header_widget.dart';
 import '../widgets/search_card.dart';
 import '../widgets/results_list.dart';
+import '../widgets/charge_widget.dart';
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({super.key});
@@ -42,6 +43,7 @@ class DashboardView extends GetView<DashboardController> {
                   children: [
                     HeaderWidget(controller: controller),
                     SearchCard(controller: controller),
+                    ChargeWidget(controller: controller),
                     ResultsArea(controller: controller),
                   ],
                 ),

@@ -95,6 +95,22 @@ class RincianOrderModal extends StatelessWidget {
                               '-Rp ${formatRupiah((controller.detailData['voucher_discount'] ?? 0).abs())}',
                             )
                           : const SizedBox.shrink(),
+                      
+                      // High Season Charge (D-1 only)
+                      Obx(() {
+                        final alert = controller.currentChargeAlert.value;
+                        if (alert != null && alert['type'] == 'd1') {
+                          final chargeAmount = controller.getHighSeasonChargeAmount();
+                          if (chargeAmount > 0) {
+                            final chargePercent = alert['chargePercent'] ?? 0;
+                            return detailRincianHarga(
+                              "High Season Charge ($chargePercent%)",
+                              "Rp ${formatRupiah(chargeAmount)}",
+                            );
+                          }
+                        }
+                        return const SizedBox.shrink();
+                      }),
 
                       if (controller.selectedAddons.isNotEmpty)
                         Column(

@@ -14,6 +14,7 @@ import '../widgets/formsewa/addons.dart';
 import '../widgets/formsewa/section_voucher.dart';
 import '../widgets/formsewa/section_supir.dart';
 import '../widgets/formsewa/transgovers.dart';
+import '../widgets/charge_widget.dart';
 
 class DetailFormSewa extends GetView<DetailitemsController> {
   const DetailFormSewa({super.key});
@@ -118,6 +119,7 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                           ),
                         ],
                       ),
+                      DetailChargeWidget(controller: controller),
                       const SizedBox(height: 20),
                       HargaWidget(controller: controller),
                       AddonsListView(controller: controller),
