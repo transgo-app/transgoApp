@@ -11,6 +11,7 @@ import 'package:transgomobileapp/app/data/theme.dart';
 import 'produk/fasilitas_produk.dart';
 import 'produk/biaya_cod_produk.dart';
 import 'charge_widget.dart';
+import 'ratings/ratings_section.dart';
 
 
 class DetailitemsContent extends StatelessWidget {
@@ -39,6 +40,7 @@ class DetailitemsContent extends StatelessWidget {
               FasilitasWidget(controller),
               DetailKendaraanImportantInfo(controller: controller),
               DetailitemsWarningSection(controller: controller),
+              RatingsSection(controller: controller),
               DetailKendaraanPickupTerms(controller: controller),
               DetailKendaraanReturnTerms(controller: controller),
               CodStationCost(controller: controller),

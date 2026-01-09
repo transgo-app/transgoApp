@@ -5,6 +5,7 @@ import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import 'package:transgomobileapp/app/widget/Card/InfoCard.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBatalkanSewa.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalPenganggungJawab.dart';
+import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalReviewRating.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../controllers/detailriwayat_controller.dart';
 import '../../../data/data.dart';
@@ -47,7 +48,9 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                 child: RefreshIndicator(
                   backgroundColor: primaryColor,
                   color: Colors.white,
-                  onRefresh: () => controller.getDataById(),
+                  onRefresh: () async {
+                    await controller.getDataById();
+                  },
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Padding(
@@ -122,6 +125,11 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                               fleet?['color'] ??
                                   product?['specifications']?['color'] ??
                                   ''),
+                          // Beri Ulasan button (only for done orders)
+                          if (controller.detaiItemsID['order_status'] == 'done') ...[
+                            const SizedBox(height: 15),
+                            _buildReviewButton(controller),
+                          ],
                           const SizedBox(height: 15),
                           const gabaritoText(text: "Estimasi Total Pembayaran"),
                           Text(
@@ -527,6 +535,66 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
         ),
         const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider()),
       ],
+    );
+  }
+
+  Widget _buildReviewButton(DetailriwayatController controller) {
+    final orderId = controller.detaiItemsID['id'];
+    final isReviewed = controller.hasRating.value ||
+                       (controller.detaiItemsID['has_rating'] ?? false) ||
+                       (controller.detaiItemsID['rating'] != null);
+    final fleet = controller.detaiItemsID['fleet'];
+    final product = controller.detaiItemsID['product'];
+    final itemName = fleet?['name'] ?? product?['name'] ?? 'Item';
+    
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: isReviewed
+            ? null
+            : () {
+                Get.bottomSheet(
+                  ModalReviewRating(
+                    itemName: itemName,
+                    orderId: orderId,
+                    fleetId: fleet?['id'],
+                    productId: product?['id'],
+                    onSuccess: () {
+                      // Refresh the detail page asynchronously without blocking
+                      Future.delayed(const Duration(milliseconds: 500), () {
+                        controller.getDataById();
+                      });
+                    },
+                  ),
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                );
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isReviewed ? Colors.grey.shade300 : Colors.amber.shade600,
+          disabledBackgroundColor: Colors.grey.shade300,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: isReviewed ? 0 : 2,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isReviewed) ...[
+              const Icon(Icons.star, size: 16, color: Colors.grey),
+              const SizedBox(width: 6),
+            ],
+            poppinsText(
+              text: isReviewed ? "Sudah dirating" : "Beri Ulasan",
+              fontSize: 14,
+              textColor: isReviewed ? Colors.grey.shade700 : Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

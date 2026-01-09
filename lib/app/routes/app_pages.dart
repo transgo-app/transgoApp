@@ -24,6 +24,8 @@ import '../modules/panduantransgo/bindings/panduan_binding.dart';
 import '../modules/panduantransgo/views/panduan_view.dart';
 import '../modules/syaratdanketentuan/bindings/syaratdanketentuan_binding.dart';
 import '../modules/syaratdanketentuan/views/syaratdanketentuan_view.dart';
+import '../modules/reviews/bindings/reviews_binding.dart';
+import '../modules/reviews/views/reviews_view.dart';
 
 
 part 'app_routes.dart';
@@ -105,6 +107,11 @@ class AppPages {
       name: Routes.SYARATKETENTUAN,
       page: () => const SyaratKetentuanView(),
       binding: SyaratKetentuanBinding(),
+    ),
+    GetPage(
+      name: Routes.REVIEWS,
+      page: () => const ReviewsView(),
+      binding: ReviewsBinding(),
     ),
   ];
 }

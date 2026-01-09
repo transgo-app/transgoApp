@@ -5,6 +5,7 @@ import 'package:transgomobileapp/app/widget/General/text.dart';
 import '../controllers/riwayatpemesanan_controller.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
+import '../../../widget/GroupModalBottomSheet/ModalReviewRating.dart';
 
 class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
   const RiwayatpemesananView({super.key});
@@ -58,6 +59,7 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
         body: RefreshIndicator(
           backgroundColor: primaryColor,
           color: Colors.white,
+          // Enable pull-to-refresh for the whole history list
           onRefresh: () => controller.getListKendaraan(),
           child: Obx(() {
             if (controller.isLoading.value) {
@@ -84,6 +86,7 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
 
             return SingleChildScrollView(
               controller: controller.scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Column(
                 children: [
@@ -237,6 +240,11 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                           ),
                         ],
                       ),
+                      // Beri Ulasan button (only for done orders)
+                      if (data['order_status'] == 'done') ...[
+                        const SizedBox(height: 8),
+                        Obx(() => _buildReviewButton(data, itemName)),
+                      ],
                     ],
                   ),
                 ),
@@ -260,6 +268,65 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                   textColor: primaryColor,
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReviewButton(Map<String, dynamic> data, String itemName) {
+    final orderId = data['id'];
+    final isReviewed = controller.isOrderReviewed(orderId) || 
+                       (data['has_rating'] ?? false) ||
+                       (data['rating'] != null);
+    
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: isReviewed
+            ? null
+            : () {
+                final fleet = data['fleet'];
+                final product = data['product'];
+                Get.bottomSheet(
+                  ModalReviewRating(
+                    itemName: itemName,
+                    orderId: orderId,
+                    fleetId: fleet?['id'],
+                    productId: product?['id'],
+                    onSuccess: () {
+                      // Refresh the list asynchronously without blocking
+                      Future.delayed(const Duration(milliseconds: 500), () {
+                        controller.getListKendaraan();
+                      });
+                    },
+                  ),
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                );
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isReviewed ? Colors.grey.shade300 : Colors.amber.shade600,
+          disabledBackgroundColor: Colors.grey.shade300,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: isReviewed ? 0 : 2,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isReviewed) ...[
+              const Icon(Icons.star, size: 16, color: Colors.grey),
+              const SizedBox(width: 6),
+            ],
+            poppinsText(
+              text: isReviewed ? "Sudah dirating" : "Beri Ulasan",
+              fontSize: 13,
+              textColor: isReviewed ? Colors.grey.shade700 : Colors.white,
+              fontWeight: FontWeight.w600,
             ),
           ],
         ),

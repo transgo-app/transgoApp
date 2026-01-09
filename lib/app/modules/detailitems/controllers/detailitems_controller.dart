@@ -27,6 +27,7 @@ class DetailitemsController extends GetxController {
     getDetailAPI(true).then((_) {
       getAddons();
       checkChargeSettings();
+      fetchRatings();
     });
     getDataInsurance();
 
@@ -81,6 +82,11 @@ class DetailitemsController extends GetxController {
   // Charge settings
   RxMap chargeSettings = {}.obs;
   Rxn<Map<String, dynamic>> currentChargeAlert = Rxn<Map<String, dynamic>>();
+
+  // Ratings
+  RxList ratings = [].obs;
+  RxBool isLoadingRatings = false.obs;
+  RxInt totalRatings = 0.obs;
   RxList selectedAddons = <Map<String, dynamic>>[].obs;
   RxList addonsList = <Map<String, dynamic>>[].obs;
   RxList vouchers = [].obs;
@@ -609,6 +615,54 @@ class DetailitemsController extends GetxController {
     } catch (e) {
       print("Error checking charge settings: $e");
       currentChargeAlert.value = null;
+    }
+  }
+
+  // Ratings methods
+  Future<void> fetchRatings({int page = 1, int limit = 2}) async {
+    if (isLoadingRatings.value) return;
+    
+    isLoadingRatings.value = true;
+    try {
+      // Get item ID from dataServer (passed from dashboard) or detailData
+      int? itemId;
+      if (dataServer['id'] != null) {
+        itemId = dataServer['id'];
+      } else {
+        if (isKendaraan) {
+          final fleetData = detailData['fleet'] as Map?;
+          itemId = fleetData?['id'];
+        } else {
+          final productData = detailData['product'] as Map?;
+          itemId = productData?['id'];
+        }
+      }
+      
+      if (itemId == null) {
+        ratings.value = [];
+        totalRatings.value = 0;
+        return;
+      }
+
+      final endpoint = isKendaraan 
+          ? '/fleets/$itemId/ratings?page=$page&limit=$limit'
+          : '/products/$itemId/ratings?page=$page&limit=$limit';
+      
+      var data = await APIService().get(endpoint);
+      
+      if (data != null && data['items'] != null) {
+        ratings.value = data['items'] as List;
+        totalRatings.value = data['meta']?['total_items'] ?? 0;
+      } else {
+        ratings.value = [];
+        totalRatings.value = 0;
+      }
+    } catch (e) {
+      print("Error fetching ratings: $e");
+      ratings.value = [];
+      totalRatings.value = 0;
+    } finally {
+      isLoadingRatings.value = false;
     }
   }
 }

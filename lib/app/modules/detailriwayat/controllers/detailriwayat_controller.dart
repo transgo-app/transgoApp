@@ -26,6 +26,7 @@ class DetailriwayatController extends GetxController {
   RxBool isLoadingCancelTicket = false.obs;
   RxBool isLoading = false.obs;
   RxBool isLoadingGetSingleData = false.obs;
+  RxBool hasRating = false.obs;
 
   void checkCancelOrderStatus(RxMap<dynamic, dynamic> detaiItemsID) {
     isCancelOrderDisabled.value =
@@ -41,10 +42,58 @@ class DetailriwayatController extends GetxController {
       var dataId = await APIService().get("/orders/${dataArguments['id']}");
       detaiItemsID.value = dataId;
       getDetailRiwayat();
+      checkRatingStatus();
     } catch (e) {
       print(e);
     } finally {
       isLoadingGetSingleData.value = false;
+    }
+  }
+
+  Future<void> checkRatingStatus() async {
+    try {
+      // Check if order has rating field directly
+      if (detaiItemsID['has_rating'] == true || detaiItemsID['rating'] != null) {
+        hasRating.value = true;
+        return;
+      }
+
+      // If not, check the fleet ratings to see if there's a rating for this order
+      final fleet = detaiItemsID['fleet'];
+      final product = detaiItemsID['product'];
+      final orderId = detaiItemsID['id'];
+      
+      if ((fleet == null && product == null) || orderId == null) {
+        hasRating.value = false;
+        return;
+      }
+
+      final itemId = fleet?['id'] ?? product?['id'];
+      if (itemId == null) {
+        hasRating.value = false;
+        return;
+      }
+
+      final endpoint = fleet != null 
+          ? '/fleets/$itemId/ratings?page=1&limit=100'
+          : '/products/$itemId/ratings?page=1&limit=100';
+      
+      final ratingResponse = await APIService().get(endpoint);
+      final ratings = ratingResponse['items'] as List?;
+      
+      if (ratings != null) {
+        // Check if any rating has this order_id
+        final hasRatingForOrder = ratings.any((rating) => 
+          rating['order']?['id'] == orderId || 
+          rating['order_id'] == orderId
+        );
+        hasRating.value = hasRatingForOrder;
+      } else {
+        hasRating.value = false;
+      }
+    } catch (e) {
+      print('Error checking rating status: $e');
+      hasRating.value = false;
     }
   }
 

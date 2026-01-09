@@ -212,6 +212,8 @@ class ItemCard extends StatelessWidget {
     final priceAfter = (price - (price * discount / 100)).round();
     final weekly = (data['weekly_price'] ?? 0).round();
     final monthly = (data['monthly_price'] ?? 0).round();
+    final averageRating = (data['average_rating'] ?? 0).toDouble();
+    final ratingCount = (data['rating_count'] ?? 0).toInt();
 
     return GestureDetector(
       onTap: onTap,
@@ -229,8 +231,30 @@ class ItemCard extends StatelessWidget {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: gabaritoText(
-                  text: name, fontSize: 16, fontWeight: FontWeight.w700),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  gabaritoText(
+                      text: name, fontSize: 16, fontWeight: FontWeight.w700),
+                  if (isKendaraan && averageRating > 0 && ratingCount > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Text(
+                          '⭐',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        const SizedBox(width: 4),
+                        poppinsText(
+                          text: '${averageRating.toStringAsFixed(1)} ($ratingCount ulasan)',
+                          fontSize: 13,
+                          textColor: Colors.grey.shade700,
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: 10),
             Padding(
