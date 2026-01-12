@@ -208,6 +208,9 @@ class _SearchCardState extends State<SearchCard> {
           controller.selectedKategori.value = filtered[index]['id'] ?? '';
           controller.teksLokasi.value = 'Harap tunggu...';
           controller.teksCari.value = 'Harap tunggu...';
+          // Reset filters and collapse filter section when category changes
+          controller.resetFilters();
+          controller.isFilterExpanded.value = false;
           await controller.getKotaKendaraan();
           controller.getList();
         },

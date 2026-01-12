@@ -121,6 +121,15 @@ class DashboardController extends GetxController
   RxList listKendaraan = [].obs;
   RxList listProduk = [].obs;
 
+  // Filter state variables
+  RxBool isFilterExpanded = false.obs;
+  RxString selectedBrand = ''.obs;
+  RxString selectedTier = ''.obs;
+  RxString minPrice = ''.obs;
+  RxString maxPrice = ''.obs;
+  RxList<Map<String, dynamic>> availableBrands = <Map<String, dynamic>>[].obs;
+  RxList<String> availableTiers = <String>[].obs;
+
   // Charge settings
   RxMap chargeSettings = {}.obs;
   Rxn<Map<String, dynamic>> currentChargeAlert = Rxn<Map<String, dynamic>>();
@@ -230,6 +239,7 @@ class DashboardController extends GetxController
     });
 
     await getKotaKendaraan();
+    await fetchBrandsAndTiers();
   }
 
   Future<void> getList([bool isPagination = false]) async {
@@ -261,37 +271,126 @@ class DashboardController extends GetxController
           selectedKategori.value == 'motorcycle');
 
       if (isKendaraan) {
+        String filterParams = '';
+        print('Filter values - Brand: ${selectedBrand.value}, Tier: ${selectedTier.value}, MinPrice: ${minPrice.value}, MaxPrice: ${maxPrice.value}');
+        if (selectedBrand.value.isNotEmpty) {
+          filterParams += '&brand_id=${Uri.encodeComponent(selectedBrand.value)}';
+        }
+        if (selectedTier.value.isNotEmpty) {
+          filterParams += '&tier=${Uri.encodeComponent(selectedTier.value)}';
+        }
+        if (minPrice.value.isNotEmpty) {
+          filterParams += '&min_price=${Uri.encodeComponent(minPrice.value)}';
+        }
+        if (maxPrice.value.isNotEmpty) {
+          filterParams += '&max_price=${Uri.encodeComponent(maxPrice.value)}';
+        }
         apiUrl =
-            '/fleets/available?limit=10&page=$currentPage&q=${searchQuery.value}&location_id=${selectedLokasiKendaraan.value}&date=${pickedDateTimeISO.value}&duration=${selectedDurasiSewa.value}${selectedKategori.value != '-' ? '&type=${selectedKategori.value}' : ''}';
+            '/fleets/available?limit=10&page=$currentPage&q=${Uri.encodeComponent(searchQuery.value)}&location_id=${selectedLokasiKendaraan.value}&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=${selectedDurasiSewa.value}${selectedKategori.value != '-' ? '&type=${selectedKategori.value}' : ''}$filterParams';
+        print('API URL with filters: $apiUrl');
       } else {
+        String filterParams = '';
+        if (selectedBrand.value.isNotEmpty) {
+          filterParams += '&brand_id=${Uri.encodeComponent(selectedBrand.value)}';
+        }
+        if (minPrice.value.isNotEmpty) {
+          filterParams += '&min_price=${Uri.encodeComponent(minPrice.value)}';
+        }
+        if (maxPrice.value.isNotEmpty) {
+          filterParams += '&max_price=${Uri.encodeComponent(maxPrice.value)}';
+        }
         apiUrl =
-            '/products/available?limit=10&page=$currentPage&q=${searchQuery.value}&category=${selectedKategori.value}&date=${pickedDateTimeISO.value}&duration=${selectedDurasiSewa.value}&location_id=${selectedLokasiKendaraan.value}';
+            '/products/available?limit=10&page=$currentPage&q=${Uri.encodeComponent(searchQuery.value)}&category=${selectedKategori.value}&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=${selectedDurasiSewa.value}&location_id=${selectedLokasiKendaraan.value}$filterParams';
+        print('API URL with filters: $apiUrl');
       }
 
       var data = await APIService().get(apiUrl);
 
       List newItems = data['items'];
-
+      
+      // Apply client-side filtering if API doesn't support it
       if (isKendaraan) {
+        // Filter by brand if selected
+        if (selectedBrand.value.isNotEmpty) {
+          newItems = newItems.where((item) {
+            final itemBrandId = item['brandRelation']?['id']?.toString() ?? '';
+            return itemBrandId == selectedBrand.value;
+          }).toList();
+        }
+        
+        // Filter by tier if selected
+        if (selectedTier.value.isNotEmpty) {
+          newItems = newItems.where((item) {
+            final itemTier = item['tier']?.toString() ?? '';
+            return itemTier == selectedTier.value;
+          }).toList();
+        }
+        
+        // Filter by price range if selected
+        if (minPrice.value.isNotEmpty || maxPrice.value.isNotEmpty) {
+          newItems = newItems.where((item) {
+            final priceAfterDiscount = item['price_after_discount'] ?? item['final_price'] ?? item['price'] ?? 0;
+            final price = (priceAfterDiscount is num) ? priceAfterDiscount.toInt() : int.tryParse(priceAfterDiscount.toString()) ?? 0;
+            
+            if (minPrice.value.isNotEmpty) {
+              final min = int.tryParse(minPrice.value) ?? 0;
+              if (price < min) return false;
+            }
+            if (maxPrice.value.isNotEmpty) {
+              final max = int.tryParse(maxPrice.value) ?? 0;
+              if (price > max) return false;
+            }
+            return true;
+          }).toList();
+        }
+        
         final filtered = newItems
             .where((item) =>
                 !listKendaraan.any((existing) => existing['id'] == item['id']))
             .toList();
         listKendaraan.addAll(filtered);
+        
+        // Update meta data with filtered count
+        if (!isPagination) {
+          jumlahData.value = {
+            'total_items': listKendaraan.length,
+            'total_pages': 1,
+            'current_page': 1,
+          };
+        } else {
+          jumlahData.value = {
+            'total_items': (jumlahData.value['total_items'] ?? 0) + filtered.length,
+            'total_pages': data['meta']?['total_pages'] ?? 1,
+            'current_page': data['meta']?['current_page'] ?? 1,
+          };
+        }
       } else {
         final filtered = newItems
             .where((item) =>
                 !listProduk.any((existing) => existing['id'] == item['id']))
             .toList();
         listProduk.addAll(filtered);
+        
+        // Update meta data with filtered count
+        if (!isPagination) {
+          jumlahData.value = {
+            'total_items': listProduk.length,
+            'total_pages': 1,
+            'current_page': 1,
+          };
+        } else {
+          jumlahData.value = {
+            'total_items': (jumlahData.value['total_items'] ?? 0) + filtered.length,
+            'total_pages': data['meta']?['total_pages'] ?? 1,
+            'current_page': data['meta']?['current_page'] ?? 1,
+          };
+        }
       }
 
       currentPage++;
       if (newItems.length < 10) {
         hasMore.value = false;
       }
-
-      jumlahData.value = data['meta'];
     } catch (e) {
       print("Error fetching data: $e");
     } finally {
@@ -337,6 +436,57 @@ class DashboardController extends GetxController
     } catch (e) {
       print('Error: $e');
     }
+  }
+
+  Future<void> fetchBrandsAndTiers() async {
+    try {
+      var data = await APIService().get('/fleets/?limit=1000&page=1');
+      List allFleets = data['items'] ?? [];
+
+      // Extract unique brands
+      Set<String> brandIds = {};
+      Map<String, String> brandMap = {};
+      
+      for (var fleet in allFleets) {
+        if (fleet['brandRelation'] != null) {
+          final brandId = fleet['brandRelation']['id'].toString();
+          final brandName = fleet['brandRelation']['name'].toString();
+          if (!brandIds.contains(brandId) && brandName.isNotEmpty) {
+            brandIds.add(brandId);
+            brandMap[brandId] = brandName;
+          }
+        }
+      }
+
+      // Convert to list format for dropdown
+      availableBrands.value = brandMap.entries.map((entry) {
+        return {'id': entry.key, 'name': entry.value};
+      }).toList();
+      
+      // Sort brands alphabetically
+      availableBrands.sort((a, b) => a['name'].compareTo(b['name']));
+
+      // Extract unique tiers
+      Set<String> tierSet = {};
+      for (var fleet in allFleets) {
+        if (fleet['tier'] != null && fleet['tier'].toString().isNotEmpty) {
+          tierSet.add(fleet['tier'].toString());
+        }
+      }
+      
+      availableTiers.value = tierSet.toList()..sort();
+    } catch (e) {
+      print('Error fetching brands and tiers: $e');
+      availableBrands.value = [];
+      availableTiers.value = [];
+    }
+  }
+
+  void resetFilters() {
+    selectedBrand.value = '';
+    selectedTier.value = '';
+    minPrice.value = '';
+    maxPrice.value = '';
   }
 
   final List<Map<String, String>> cardDataLayanan = [

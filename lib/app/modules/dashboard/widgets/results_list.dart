@@ -214,6 +214,7 @@ class ItemCard extends StatelessWidget {
     final monthly = (data['monthly_price'] ?? 0).round();
     final averageRating = (data['average_rating'] ?? 0).toDouble();
     final ratingCount = (data['rating_count'] ?? 0).toInt();
+    final tier = isKendaraan ? (data['tier']?.toString().toLowerCase() ?? '') : '';
 
     return GestureDetector(
       onTap: onTap,
@@ -236,6 +237,10 @@ class ItemCard extends StatelessWidget {
                 children: [
                   gabaritoText(
                       text: name, fontSize: 16, fontWeight: FontWeight.w700),
+                  if (isKendaraan && tier.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    _buildTierChip(tier),
+                  ],
                   if (isKendaraan && averageRating > 0 && ratingCount > 0) ...[
                     const SizedBox(height: 4),
                     Row(
@@ -521,6 +526,94 @@ class ItemCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildTierChip(String tier) {
+    // Normalize tier to lowercase for comparison
+    final tierLower = tier.toLowerCase();
+    
+    if (tierLower == 'premium') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFFFB84D), // Lighter golden-orange
+              Color(0xFFFF9500), // Darker golden-orange
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.orange.withOpacity(0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.workspace_premium_outlined,
+              color: Colors.white,
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            poppinsText(
+              text: 'Premium',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              textColor: Colors.white,
+            ),
+          ],
+        ),
+      );
+    } else if (tierLower == 'reguler' || tierLower == 'regular') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF4CAF50), // Lighter green
+              Color(0xFF2E7D32), // Darker green
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.shield_outlined,
+              color: Colors.white,
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            poppinsText(
+              text: 'Reguler',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              textColor: Colors.white,
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Default: return empty if tier doesn't match
+    return const SizedBox.shrink();
   }
 
   Widget productSpec(IconData icon, String value) {
