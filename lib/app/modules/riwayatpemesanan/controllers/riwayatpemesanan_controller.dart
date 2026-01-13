@@ -62,8 +62,15 @@ class RiwayatpemesananController extends GetxController {
     }
 
     try {
+      // Build query string so that when no status filter is selected ("Semua" tab),
+      // we do NOT send an empty status parameter to the API. Some backends treat
+      // "status=" as an actual filter that returns no data.
+      final String statusQuery = statusFilter.value.isNotEmpty
+          ? '&status=${statusFilter.value}'
+          : '';
+
       final response = await APIService().get(
-        '/orders?page=$currentPage&limit=$limit&status=${statusFilter.value}',
+        '/orders?page=$currentPage&limit=$limit$statusQuery',
       );
 
       final List items = response['items'] ?? [];

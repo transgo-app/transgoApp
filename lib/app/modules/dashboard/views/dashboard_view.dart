@@ -8,6 +8,7 @@ import '../widgets/search_card.dart';
 import '../widgets/filter_widget.dart';
 import '../widgets/results_list.dart';
 import '../widgets/charge_widget.dart';
+import '../widgets/flash_sale_widget.dart';
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({super.key});
@@ -33,6 +34,7 @@ class DashboardView extends GetView<DashboardController> {
                 await profileController.getDetailUser();
                 await profileController.getCheckAdditional();
               }
+              await controller.fetchFlashSales();
             },
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -50,6 +52,16 @@ class DashboardView extends GetView<DashboardController> {
                   ],
                 ),
               ),
+            ),
+          ),
+          // Flash sale overlay at top
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: FlashSaleWidget(controller: controller),
             ),
           ),
           Obx(

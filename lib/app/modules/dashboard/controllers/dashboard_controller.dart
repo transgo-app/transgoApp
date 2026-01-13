@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
@@ -12,6 +13,17 @@ class DashboardController extends GetxController
   double _lastScrollOffset = 0;
 
   RxMap jumlahData = {}.obs;
+
+  // Flash sale variables
+  Rxn<Map<String, dynamic>> activeFlashSale = Rxn<Map<String, dynamic>>();
+  RxBool showFlashSale = false.obs;
+  RxBool isFlashSaleDismissed = false.obs;
+  RxInt countdownDays = 0.obs;
+  RxInt countdownHours = 0.obs;
+  RxInt countdownMinutes = 0.obs;
+  RxInt countdownSeconds = 0.obs;
+  RxBool isFlashSaleActive = false.obs;
+  Timer? flashSaleTimer;
 
   RxString role = ''.obs;
   RxString userType = ''.obs;
@@ -80,6 +92,7 @@ class DashboardController extends GetxController
     _setDefaultDate();
     setDefaultTime();
     _startAutoScroll();
+    fetchFlashSales();
   }
 
   @override
@@ -87,6 +100,7 @@ class DashboardController extends GetxController
     scrollController.dispose();
     scrollContentController.dispose();
     scrollControllerLayanan.dispose();
+    flashSaleTimer?.cancel();
     super.onClose();
   }
 
@@ -908,5 +922,243 @@ class DashboardController extends GetxController
       print("Error checking charge settings: $e");
       currentChargeAlert.value = null;
     }
+  }
+
+  // Flash sale methods
+  Future<void> fetchFlashSales() async {
+    try {
+      print('Fetching flash sales...');
+      var data = await APIService().get('/flash-sales?page=1&limit=10&is_active=true');
+      List items = data['items'] ?? [];
+      
+      print('Flash sales API response - items count: ${items.length}');
+      
+      if (items.isEmpty) {
+        print('No flash sale items found');
+        activeFlashSale.value = null;
+        showFlashSale.value = false;
+        flashSaleTimer?.cancel();
+        return;
+      }
+
+      // Find the first active flash sale that should be shown
+      final now = DateTime.now();
+      Map<String, dynamic>? validFlashSale;
+
+      for (var item in items) {
+        final startDateStr = item['start_date'] as String?;
+        final endDateStr = item['end_date'] as String?;
+        
+        if (startDateStr == null || endDateStr == null) continue;
+
+        final startDate = DateTime.parse(startDateStr).toLocal();
+        final endDate = DateTime.parse(endDateStr).toLocal();
+        final twoHoursBeforeStart = startDate.subtract(const Duration(hours: 2));
+
+        // Show if: within 2 hours before start OR between start and end
+        if ((now.isAfter(twoHoursBeforeStart) && now.isBefore(startDate)) ||
+            (now.isAfter(startDate) && now.isBefore(endDate))) {
+          validFlashSale = item;
+          break;
+        }
+      }
+
+      if (validFlashSale != null) {
+        print('Valid flash sale found: ${validFlashSale['name']}');
+        print('Start date: ${validFlashSale['start_date']}');
+        print('End date: ${validFlashSale['end_date']}');
+        
+        final now = DateTime.now();
+        final startDate = DateTime.parse(validFlashSale['start_date']).toLocal();
+        final endDate = DateTime.parse(validFlashSale['end_date']).toLocal();
+        final twoHoursBeforeStart = startDate.subtract(const Duration(hours: 2));
+        
+        print('Current time: $now');
+        print('Two hours before start: $twoHoursBeforeStart');
+        print('Start date: $startDate');
+        print('End date: $endDate');
+        print('Is within 2 hours before start: ${now.isAfter(twoHoursBeforeStart) && now.isBefore(startDate)}');
+        print('Is between start and end: ${now.isAfter(startDate) && now.isBefore(endDate)}');
+        
+        activeFlashSale.value = validFlashSale;
+        showFlashSale.value = true;
+        // Reset dismissed state when a new flash sale is found
+        isFlashSaleDismissed.value = false;
+        _startFlashSaleCountdown();
+      } else {
+        print('No valid flash sale found (timing check failed)');
+        // Only clear if really no valid sale
+        activeFlashSale.value = null;
+        showFlashSale.value = false;
+        isFlashSaleDismissed.value = false;
+        flashSaleTimer?.cancel();
+      }
+    } catch (e) {
+      print("Error fetching flash sales: $e");
+      activeFlashSale.value = null;
+      showFlashSale.value = false;
+      flashSaleTimer?.cancel();
+    }
+  }
+
+  void _startFlashSaleCountdown() {
+    flashSaleTimer?.cancel();
+    
+    flashSaleTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (activeFlashSale.value == null) {
+        timer.cancel();
+        return;
+      }
+
+      final startDateStr = activeFlashSale.value!['start_date'] as String?;
+      final endDateStr = activeFlashSale.value!['end_date'] as String?;
+      
+      if (startDateStr == null || endDateStr == null) {
+        timer.cancel();
+        return;
+      }
+
+      final now = DateTime.now();
+      final startDate = DateTime.parse(startDateStr).toLocal();
+      final endDate = DateTime.parse(endDateStr).toLocal();
+      final twoHoursBeforeStart = startDate.subtract(const Duration(hours: 2));
+
+      Duration remaining;
+      bool isActive = false;
+
+      if (now.isBefore(twoHoursBeforeStart)) {
+        // Too early, but keep activeFlashSale - just don't show countdown yet
+        // Restart timer to check again later
+        showFlashSale.value = false;
+        timer.cancel();
+        // Restart check in 1 minute
+        Future.delayed(const Duration(minutes: 1), () {
+          if (activeFlashSale.value != null) {
+            _startFlashSaleCountdown();
+          }
+        });
+        return;
+      } else if (now.isAfter(twoHoursBeforeStart) && now.isBefore(startDate)) {
+        // Countdown to start (2 hours before)
+        remaining = startDate.difference(now);
+        isActive = false;
+        showFlashSale.value = true; // Make sure it's shown
+      } else if (now.isAfter(startDate) && now.isBefore(endDate)) {
+        // Countdown to end
+        remaining = endDate.difference(now);
+        isActive = true;
+        showFlashSale.value = true; // Make sure it's shown
+      } else {
+        // Sale has ended - only clear if truly ended
+        print('Flash sale has ended, clearing activeFlashSale');
+        showFlashSale.value = false;
+        activeFlashSale.value = null;
+        timer.cancel();
+        fetchFlashSales(); // Refresh to check for new sales
+        return;
+      }
+
+      isFlashSaleActive.value = isActive;
+      countdownDays.value = remaining.inDays;
+      countdownHours.value = remaining.inHours % 24;
+      countdownMinutes.value = remaining.inMinutes % 60;
+      countdownSeconds.value = remaining.inSeconds % 60;
+    });
+  }
+
+  void dismissFlashSale() {
+    isFlashSaleDismissed.value = true;
+  }
+
+  void expandFlashSale() {
+    isFlashSaleDismissed.value = false;
+  }
+
+  void showFlashSaleItems() {
+    if (activeFlashSale.value == null) return;
+    
+    // Get fleet IDs from flash sale
+    List fleets = activeFlashSale.value!['fleets'] ?? [];
+    List<int> flashSaleFleetIds = fleets.map((f) => f['id'] as int).toList();
+    
+    if (flashSaleFleetIds.isEmpty) return;
+    
+    // Set default search parameters to show flash sale cars
+    // First, check what types are in the flash sale
+    Set<String> availableTypes = {};
+    for (var fleet in fleets) {
+      if (fleet['type'] != null) {
+        availableTypes.add(fleet['type'].toString());
+      }
+    }
+    
+    // Set category to car if available, otherwise motorcycle
+    if (availableTypes.contains('car')) {
+      selectedKategori.value = 'car';
+    } else if (availableTypes.contains('motorcycle')) {
+      selectedKategori.value = 'motorcycle';
+    }
+    
+    // Ensure we have location and date set
+    if (selectedLokasiKendaraan.value.isEmpty && dataKota.isNotEmpty) {
+      selectedLokasiKendaraan.value = dataKota.first['id'].toString();
+    }
+    
+    if (pickedDate.value.isEmpty) {
+      _setDefaultDate();
+    }
+    
+    if (pickedTime.value.isEmpty) {
+      setDefaultTime();
+    }
+    
+    // Clear current results and trigger search
+    listKendaraan.clear();
+    listProduk.clear();
+    currentPage = 1;
+    hasMore.value = true;
+    
+    // Trigger search
+    getList().then((_) {
+      // After search completes, filter to show only flash sale items
+      if (selectedKategori.value == 'car' || selectedKategori.value == 'motorcycle') {
+        final filtered = listKendaraan.where((item) {
+          return flashSaleFleetIds.contains(item['id']);
+        }).toList();
+        
+        listKendaraan.value = filtered;
+        
+        // Update meta data
+        jumlahData.value = {
+          'total_items': filtered.length,
+          'total_pages': 1,
+          'current_page': 1,
+        };
+      } else {
+        final filtered = listProduk.where((item) {
+          return flashSaleFleetIds.contains(item['id']);
+        }).toList();
+        
+        listProduk.value = filtered;
+        
+        // Update meta data
+        jumlahData.value = {
+          'total_items': filtered.length,
+          'total_pages': 1,
+          'current_page': 1,
+        };
+      }
+      
+      // Scroll to results
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (scrollController.hasClients) {
+          scrollController.animateTo(
+            scrollController.position.maxScrollExtent * 0.3,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    });
   }
 }
