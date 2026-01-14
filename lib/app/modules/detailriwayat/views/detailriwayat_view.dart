@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_popup/flutter_popup.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import 'package:transgomobileapp/app/widget/Card/InfoCard.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBatalkanSewa.dart';
@@ -11,8 +13,60 @@ import '../controllers/detailriwayat_controller.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
 
-class DetailriwayatView extends GetView<DetailriwayatController> {
+class DetailriwayatView extends StatefulWidget {
   const DetailriwayatView({super.key});
+
+  @override
+  State<DetailriwayatView> createState() => _DetailriwayatViewState();
+}
+
+class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindingObserver {
+  late DetailriwayatController controller;
+  DateTime? _lastResumeTime;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<DetailriwayatController>();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // When app comes back to foreground (resumed)
+    if (state == AppLifecycleState.resumed) {
+      final now = DateTime.now();
+      
+      // Only refresh if:
+      // 1. This is the first resume, OR
+      // 2. At least 2 seconds have passed since last resume (to avoid multiple rapid refreshes)
+      if (_lastResumeTime == null || 
+          now.difference(_lastResumeTime!).inSeconds >= 2) {
+        _lastResumeTime = now;
+        
+        // Check if payment status is still pending before refreshing
+        // Access the reactive map value correctly
+        final paymentStatus = controller.detaiItemsID.value['payment_status'];
+        if (paymentStatus == 'pending') {
+          // Refresh the data automatically when user returns from payment app
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              controller.getDataById();
+            }
+          });
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,13 +89,15 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(child: CircularProgressIndicator(color: primaryColor));
+          return const Center(child: CircularProgressIndicator(color: primaryColor));
         } else if (controller.detaiItemsID.isNotEmpty) {
-          var fleet = controller.detaiItemsID['fleet'];
-          var product = controller.detaiItemsID['product'];
-          var startReq = controller.detaiItemsID['start_request'] ?? {};
-          var endReq = controller.detaiItemsID['end_request'] ?? {};
-          var insurance = controller.detaiItemsID['insurance'] ?? {};
+          // Extract data once to avoid repeated access
+          final detaiItemsID = controller.detaiItemsID;
+          final fleet = detaiItemsID['fleet'];
+          final product = detaiItemsID['product'];
+          final startReq = detaiItemsID['start_request'] ?? {};
+          final endReq = detaiItemsID['end_request'] ?? {};
+          final insurance = detaiItemsID['insurance'] ?? {};
           return Column(
             children: [
               Expanded(
@@ -67,12 +123,24 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                 color: Colors.grey),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                fleet?['photo']?['photo'] ??
-                                    product?['photo']?['photo'] ??
-                                    '',
-                                fit: BoxFit.fill,
+                            child: CachedNetworkImage(
+                              imageUrl: fleet?['photo']?['photo'] ??
+                                  product?['photo']?['photo'] ??
+                                  '',
+                              fit: BoxFit.fill,
+                              placeholder: (context, url) => Container(
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
                               ),
+                              errorWidget: (context, url, error) => Container(
+                                color: Colors.grey.shade300,
+                                child: const Icon(Icons.broken_image, size: 50),
+                              ),
+                              memCacheWidth: 1200,
+                              memCacheHeight: 800,
+                            ),
                             ),
                           ),
                           const SizedBox(height: 15),

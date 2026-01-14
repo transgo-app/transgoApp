@@ -35,6 +35,8 @@ class DashboardView extends GetView<DashboardController> {
                 await profileController.getCheckAdditional();
               }
               await controller.fetchFlashSales();
+              await controller.fetchTgPayBalance();
+              await controller.fetchTgRewardTier();
             },
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,

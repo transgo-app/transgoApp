@@ -1,4 +1,5 @@
 import 'package:iconsax_plus/iconsax_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../data/data.dart';
 import '../widgets.dart';
 
@@ -57,15 +58,21 @@ class CustomGestureCard extends StatelessWidget {
               height: 225,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  imagePath,
+                child: CachedNetworkImage(
+                  imageUrl: imagePath,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Image.asset(
-                      'assets/iconapp.png',
-                      fit: BoxFit.cover,
-                    );
-                  },
+                  placeholder: (context, url) => Container(
+                    color: Colors.grey.shade200,
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Image.asset(
+                    'assets/iconapp.png',
+                    fit: BoxFit.cover,
+                  ),
+                  memCacheWidth: 800, // Limit memory usage
+                  memCacheHeight: 600,
                 ),
               ),
             ),

@@ -28,6 +28,15 @@ class DashboardController extends GetxController
   RxString role = ''.obs;
   RxString userType = ''.obs;
 
+  // TG Pay variables
+  RxDouble tgPayBalance = 0.0.obs;
+  RxBool isBalanceVisible = true.obs;
+  RxBool isLoadingTgPay = false.obs;
+
+  // TG Rewards variables
+  RxString tgRewardTier = 'STARTER'.obs;
+  RxBool isLoadingTgReward = false.obs;
+
   void _setDefaultDate() {
     DateTime now = DateTime.now();
     DateTime defaultDate;
@@ -93,6 +102,8 @@ class DashboardController extends GetxController
     setDefaultTime();
     _startAutoScroll();
     fetchFlashSales();
+    fetchTgPayBalance();
+    fetchTgRewardTier();
   }
 
   @override
@@ -1160,5 +1171,41 @@ class DashboardController extends GetxController
         }
       });
     });
+  }
+
+  // TG Pay methods
+  Future<void> fetchTgPayBalance() async {
+    if (isLoadingTgPay.value) return;
+    
+    try {
+      isLoadingTgPay.value = true;
+      var data = await APIService().get('/topup/balance');
+      tgPayBalance.value = (data['balance'] ?? 0).toDouble();
+    } catch (e) {
+      print('Error fetching TG Pay balance: $e');
+      tgPayBalance.value = 0.0;
+    } finally {
+      isLoadingTgPay.value = false;
+    }
+  }
+
+  void toggleBalanceVisibility() {
+    isBalanceVisible.value = !isBalanceVisible.value;
+  }
+
+  // TG Rewards methods
+  Future<void> fetchTgRewardTier() async {
+    if (isLoadingTgReward.value) return;
+    
+    try {
+      isLoadingTgReward.value = true;
+      var data = await APIService().get('/loyalty/me');
+      tgRewardTier.value = (data['member_tier'] ?? 'STARTER').toString().toUpperCase();
+    } catch (e) {
+      print('Error fetching TG Reward tier: $e');
+      tgRewardTier.value = 'STARTER';
+    } finally {
+      isLoadingTgReward.value = false;
+    }
   }
 }

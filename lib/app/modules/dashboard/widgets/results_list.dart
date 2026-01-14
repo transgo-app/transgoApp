@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/dashboard_controller.dart';
 import 'empty_state/empty_state_section.dart';
 import '../../../widget/widgets.dart';
@@ -72,12 +73,15 @@ class KendaraanList extends StatelessWidget {
               textColor: textHeadline,
             ),
           ),
-          Obx(() => ListView.builder(
+          Obx(() {
+            final itemCount = controller.listKendaraan.length +
+                (controller.hasMore.value ? 1 : 0);
+            return ListView.builder(
                 padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
-                itemCount: controller.listKendaraan.length +
-                    (controller.hasMore.value ? 1 : 0),
+                cacheExtent: 500, // Cache more items for smoother scrolling
+                itemCount: itemCount,
                 itemBuilder: (context, index) {
                   if (index == controller.listKendaraan.length) {
                     return const Center(
@@ -111,7 +115,8 @@ class KendaraanList extends StatelessWidget {
                     },
                   );
                 },
-              )),
+              );
+          }),
         ],
       ),
     );
@@ -137,11 +142,14 @@ class ProdukList extends StatelessWidget {
               textColor: textHeadline,
             ),
           ),
-          Obx(() => ListView.builder(
+          Obx(() {
+            final itemCount = controller.listProduk.length;
+            return ListView.builder(
                 padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
-                itemCount: controller.listProduk.length,
+                cacheExtent: 500, // Cache more items for smoother scrolling
+                itemCount: itemCount,
                 itemBuilder: (context, index) {
                   final data = controller.listProduk[index];
                   return ItemCard(
@@ -159,7 +167,8 @@ class ProdukList extends StatelessWidget {
                     },
                   );
                 },
-              )),
+              );
+          }),
         ],
       ),
     );
@@ -332,8 +341,26 @@ class ItemCard extends StatelessWidget {
           topLeft: Radius.circular(18), topRight: Radius.circular(18)),
       child: Stack(
         children: [
-          Image.network(photo,
-              height: 250, width: double.infinity, fit: BoxFit.cover),
+          CachedNetworkImage(
+            imageUrl: photo,
+            height: 250,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              height: 250,
+              color: Colors.grey.shade200,
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              height: 250,
+              color: Colors.grey.shade200,
+              child: const Icon(Icons.broken_image, size: 50),
+            ),
+            memCacheWidth: 800, // Limit memory usage
+            memCacheHeight: 600,
+          ),
           if (discount > 0)
             Positioned(
               top: 12,
