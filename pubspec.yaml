@@ -70,6 +70,7 @@ dependencies:
   timezone: ^0.9.3
   cached_network_image: ^3.4.1
   upgrader: ^12.3.0
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_lints: ^3.0.0

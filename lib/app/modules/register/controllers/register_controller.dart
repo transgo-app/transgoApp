@@ -52,6 +52,7 @@ class RegisterController extends GetxController {
   var dataArgumentsDetailKendaraan = Get.arguments['detailKendaraan'];
 
   RxBool isLoading = false.obs;
+  RxBool isLoadingGoogle = false.obs;
 
   RxBool isUploadFile = false.obs;
 
@@ -409,6 +410,56 @@ class RegisterController extends GetxController {
       selectedRole.value = 'customer';
     } else if (isProductItem) {
       selectedRole.value = 'product_customer';
+    }
+  }
+
+  Future<void> registerWithGoogle() async {
+    // Check if running on iOS
+    if (Platform.isIOS) {
+      CustomSnackbar.show(
+        title: "Fitur Belum Tersedia",
+        message: "Daftar dengan Google belum tersedia untuk iOS. Silakan gunakan formulir pendaftaran biasa.",
+        icon: Icons.info_outline,
+        backgroundColor: Colors.orange,
+      );
+      return;
+    }
+
+    isLoadingGoogle.value = true;
+
+    try {
+      // Sign in with Google
+      final googleUser = await GoogleSignInService.signIn();
+
+      if (googleUser == null) {
+        // User cancelled the sign-in
+        isLoadingGoogle.value = false;
+        return;
+      }
+
+      // Prefill email and name from Google account
+      emailC.text = googleUser['email'] ?? '';
+      namaLengkapC.text = googleUser['name'] ?? '';
+
+      // Show message that user still needs to fill required fields
+      CustomSnackbar.show(
+        title: "Data Google Berhasil Dimuat",
+        message: "Email dan nama telah diisi. Silakan lengkapi data yang masih diperlukan.",
+        icon: Icons.check_circle,
+        backgroundColor: Colors.green,
+      );
+
+      // Trigger validation to update UI
+      validateInput();
+    } catch (e) {
+      print('Error signing in with Google: $e');
+      CustomSnackbar.show(
+        title: "Terjadi Kesalahan",
+        message: "Gagal memuat data dari Google. Silakan coba lagi.",
+        icon: Icons.error,
+      );
+    } finally {
+      isLoadingGoogle.value = false;
     }
   }
 }

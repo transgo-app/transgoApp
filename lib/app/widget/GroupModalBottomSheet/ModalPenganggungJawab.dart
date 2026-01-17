@@ -7,8 +7,50 @@ import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ParentModal.da
 import 'package:transgomobileapp/app/widget/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ModalPenanggungJawab extends StatelessWidget {
+class ModalPenanggungJawab extends StatefulWidget {
   const ModalPenanggungJawab({super.key});
+
+  @override
+  State<ModalPenanggungJawab> createState() => _ModalPenanggungJawabState();
+}
+
+class _ModalPenanggungJawabState extends State<ModalPenanggungJawab> {
+  bool _isLoadingLinks = true;
+  String _serahTerimaLink = WhatsAppLinksService.fallbackSerahTerimaLink;
+  String _pusatBantuanLink = WhatsAppLinksService.fallbackPusatBantuanLink;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLinks();
+  }
+
+  Future<void> _fetchLinks() async {
+    try {
+      final links = await WhatsAppLinksService.fetchLinks();
+      setState(() {
+        _serahTerimaLink = links['serahTerima'] ?? WhatsAppLinksService.fallbackSerahTerimaLink;
+        _pusatBantuanLink = links['pusatBantuan'] ?? WhatsAppLinksService.fallbackPusatBantuanLink;
+        _isLoadingLinks = false;
+      });
+    } catch (e) {
+      print('Error fetching WhatsApp links: $e');
+      setState(() {
+        _hasError = true;
+        _isLoadingLinks = false;
+        // Use fallback links
+        _serahTerimaLink = WhatsAppLinksService.fallbackSerahTerimaLink;
+        _pusatBantuanLink = WhatsAppLinksService.fallbackPusatBantuanLink;
+      });
+      // Show error message but still allow using fallback links
+      CustomSnackbar.show(
+        title: "Perhatian",
+        message: "Tidak dapat memperbarui link grup. Menggunakan link default.",
+        icon: Icons.info_outline,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +143,7 @@ class ModalPenanggungJawab extends StatelessWidget {
               ],
             ),
             ontap: () {
-              launchUrl(Uri.parse('https://chat.whatsapp.com/GZsmV1yRkJe9I3pBWk6mHI'));
+              launchUrl(Uri.parse(_serahTerimaLink));
             },
           ),
           const SizedBox(height: 10,),
@@ -118,7 +160,7 @@ class ModalPenanggungJawab extends StatelessWidget {
               ],
             ),
             ontap: () {
-              launchUrl(Uri.parse('https://chat.whatsapp.com/GL5iTEjYcFz8TJDK0NYLqo'));
+              launchUrl(Uri.parse(_pusatBantuanLink));
             },
           ),
           const SizedBox(height: 20,),

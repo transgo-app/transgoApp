@@ -18,6 +18,29 @@ class APIService {
     return 'Basic $encoded';
   }
 
+  /// Check if endpoint requires Basic Auth (always use Basic Auth for auth endpoints)
+  bool _requiresBasicAuth(String endpoint) {
+    final authEndpoints = [
+      '/auth/login',
+      '/auth/register',
+      '/auth/password/forgot',
+      '/auth/password/reset',
+    ];
+    return authEndpoints.any((authEndpoint) => endpoint.contains(authEndpoint));
+  }
+
+  /// Get authorization header based on endpoint and token availability
+  String _getAuthorizationHeader(String endpoint) {
+    // Always use Basic Auth for authentication endpoints
+    if (_requiresBasicAuth(endpoint)) {
+      return generateBasicAuth(username, password);
+    }
+    // For other endpoints, use Bearer token if available, otherwise Basic Auth
+    return GlobalVariables.token.value == ''
+        ? generateBasicAuth(username, password)
+        : 'Bearer ${GlobalVariables.token.value}';
+  }
+
   dynamic _handleResponse(http.Response response, String endpoint) {
     print(response.statusCode);
     print(response.body);
@@ -111,8 +134,7 @@ class APIService {
     final url = Uri.parse('$baseUrl$endpoint');
     var headersAuth = {
       'Content-Type': 'application/json',
-      'Authorization':
-          '${GlobalVariables.token.value == '' ? generateBasicAuth('$username', '$password') : 'Bearer ${GlobalVariables.token.value}'}'
+      'Authorization': _getAuthorizationHeader(endpoint),
     };
     print(headersAuth);
     try {
@@ -130,8 +152,7 @@ class APIService {
     final url = Uri.parse('$baseUrl$endpoint');
     var headersAuth = {
       'Content-Type': 'application/json',
-      'Authorization':
-          '${GlobalVariables.token.value == '' ? generateBasicAuth('$username', '$password') : 'Bearer ${GlobalVariables.token.value}'}'
+      'Authorization': _getAuthorizationHeader(endpoint),
     };
     print(headersAuth);
     try {
@@ -152,8 +173,7 @@ class APIService {
     final url = Uri.parse('$baseUrl$endpoint');
     var headersAuth = {
       'Content-Type': 'application/json',
-      'Authorization':
-          '${GlobalVariables.token.value == '' ? generateBasicAuth('$username', '$password') : 'Bearer ${GlobalVariables.token.value}'}'
+      'Authorization': _getAuthorizationHeader(endpoint),
     };
     try {
       final response = await http.put(
@@ -182,8 +202,7 @@ class APIService {
     try {
       final response = await http.delete(url, headers: {
         'Content-Type': 'application/json',
-        'Authorization':
-            '${GlobalVariables.token.value == '' ? generateBasicAuth('$username', '$password') : 'Bearer ${GlobalVariables.token.value}'}'
+        'Authorization': _getAuthorizationHeader(endpoint),
       });
       return _handleResponse(response, endpoint);
     } catch (e) {
