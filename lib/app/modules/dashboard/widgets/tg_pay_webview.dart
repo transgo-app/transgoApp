@@ -15,10 +15,13 @@ class TgPayWebViewPage extends StatefulWidget {
   State<TgPayWebViewPage> createState() => _TgPayWebViewPageState();
 }
 
-class _TgPayWebViewPageState extends State<TgPayWebViewPage> {
+class _TgPayWebViewPageState extends State<TgPayWebViewPage> with AutomaticKeepAliveClientMixin {
   WebViewController? _controller;
   bool isLoading = true;
   bool _isInitialized = false;
+  
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -27,68 +30,134 @@ class _TgPayWebViewPageState extends State<TgPayWebViewPage> {
   }
 
   Future<void> _initializeWebView() async {
-    final url = Uri.parse('https://dev.transgo.id/transgo-pay?token=${widget.token}');
+    // Validate token before proceeding
+    if (widget.token.isEmpty) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+      return;
+    }
     
-    // Create controller first
+    // Properly encode the token in the URL to handle special characters
+    final url = Uri.https(
+      'dev.transgo.id',
+      '/transgo-pay',
+      {'token': widget.token},
+    );
+    
+    // Create controller with performance optimizations
     final controller = WebViewController();
     
     // Set up navigation delegate using the controller
     controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     
+    // Set background color to prevent white flash during loading
+    controller.setBackgroundColor(Colors.white);
+    
     // Add JavaScript channel for early communication
     controller.addJavaScriptChannel(
       'TransgoAuth',
       onMessageReceived: (JavaScriptMessage message) {
-        print('Message from WebView: ${message.message}');
+        // Channel available for future use
+      },
+    );
+    
+    // Add JavaScript channel for console logging from webview
+    controller.addJavaScriptChannel(
+      'ConsoleLog',
+      onMessageReceived: (JavaScriptMessage message) {
+        // Log console messages from webview to Flutter console
+        print('[WebView Console] ${message.message}');
       },
     );
     controller.setNavigationDelegate(
       NavigationDelegate(
         onPageStarted: (String url) {
+          // Inject early console capture script immediately
+          if (_controller != null) {
+            _controller!.runJavaScript('''
+              (function() {
+                if (window.ConsoleLog && !window.__consoleCaptured) {
+                  window.__consoleCaptured = true;
+                  const originalConsoleError = console.error;
+                  const originalConsoleLog = console.log;
+                  const originalConsoleWarn = console.warn;
+                  
+                  const sendToFlutter = function(level, args) {
+                    try {
+                      const message = args.map(function(arg) {
+                        if (typeof arg === 'object') {
+                          try {
+                            return JSON.stringify(arg, null, 2);
+                          } catch (e) {
+                            return String(arg);
+                          }
+                        }
+                        return String(arg);
+                      }).join(' ');
+                      window.ConsoleLog.postMessage('[' + level + '] ' + message);
+                    } catch (e) {}
+                  };
+                  
+                  console.error = function(...args) {
+                    originalConsoleError.apply(console, args);
+                    sendToFlutter('ERROR', args);
+                  };
+                  
+                  console.log = function(...args) {
+                    originalConsoleLog.apply(console, args);
+                    sendToFlutter('LOG', args);
+                  };
+                  
+                  console.warn = function(...args) {
+                    originalConsoleWarn.apply(console, args);
+                    sendToFlutter('WARN', args);
+                  };
+                }
+              })();
+            ''');
+          }
+          
           if (mounted) {
-            setState(() {
-              isLoading = true;
-            });
-            // Inject script IMMEDIATELY when page starts loading
-            // This ensures interceptors are set up before Next.js makes API calls
-            Future.delayed(const Duration(milliseconds: 50), () {
-              if (mounted && _controller != null) {
-                _injectAuthScript(_controller!);
+            // Use microtask to reduce setState overhead
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  isLoading = true;
+                });
               }
             });
           }
         },
         onProgress: (int progress) {
-          // Inject at 25%, 50%, 75% progress to catch early API calls
-          if (progress == 25 || progress == 50 || progress == 75) {
-            if (mounted && _controller != null) {
-              _injectAuthScript(_controller!);
-            }
-          }
+          // Skip progress callbacks to reduce overhead
         },
         onPageFinished: (String url) {
           if (mounted) {
-            setState(() {
-              isLoading = false;
-            });
-            // Inject multiple times after page finishes to ensure it runs
+            // Inject script once after page finishes
             if (_controller != null) {
               _injectAuthScript(_controller!);
-              Future.delayed(const Duration(milliseconds: 100), () {
-                if (mounted && _controller != null) {
-                  _injectAuthScript(_controller!);
-                }
-              });
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (mounted && _controller != null) {
-                  _injectAuthScript(_controller!);
+              // Use microtask for setState to reduce jank
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    isLoading = false;
+                  });
                 }
               });
             }
           }
         },
         onWebResourceError: (WebResourceError error) {
-          print('WebView error: ${error.description}');
+          // Log network errors for debugging
+          print('[WebView Network Error]');
+          print('  URL: ${error.url}');
+          print('  Description: ${error.description}');
+          print('  Error Code: ${error.errorCode}');
+          print('  Error Type: ${error.errorType}');
+          
           if (mounted) {
             setState(() {
               isLoading = false;
@@ -113,19 +182,119 @@ class _TgPayWebViewPageState extends State<TgPayWebViewPage> {
   void _injectAuthScript(WebViewController controller) {
     // Enhanced script with URL fix interceptor and token storage
     // This script must run BEFORE Next.js makes any API calls
+    // Optimized to reduce execution time and improve performance
+    
+    // Escape the token for safe JavaScript string insertion
+    // Replace backslashes, single quotes, and newlines to prevent XSS and syntax errors
+    final escapedToken = widget.token
+        .replaceAll('\\', '\\\\')  // Escape backslashes
+        .replaceAll("'", "\\'")    // Escape single quotes
+        .replaceAll('\n', '\\n')   // Escape newlines
+        .replaceAll('\r', '\\r');  // Escape carriage returns
+    
     final script = '''
       (function() {
-        // Prevent multiple injections
-        if (window.__transgoAuthInjected) {
-          return;
-        }
-        window.__transgoAuthInjected = true;
-        
         try {
-          const token = '${widget.token}';
-          console.log('[Transgo] Setting auth token in storage');
+          const token = '$escapedToken';
           
-          // Store token in localStorage for the website to access
+          // If script already injected with the same token, no work needed
+          if (window.__transgoAuthInjected === true && window.transgoAuthToken === token) {
+            return;
+          }
+          
+          // Mark as injected for this token
+          window.__transgoAuthInjected = true;
+          
+          // Capture console logs and send to Flutter
+          if (window.ConsoleLog) {
+            const originalConsoleLog = console.log;
+            const originalConsoleError = console.error;
+            const originalConsoleWarn = console.warn;
+            const originalConsoleInfo = console.info;
+            
+            const sendToFlutter = function(level, args) {
+              try {
+                const message = args.map(function(arg) {
+                  if (typeof arg === 'object') {
+                    try {
+                      return JSON.stringify(arg, null, 2);
+                    } catch (e) {
+                      return String(arg);
+                    }
+                  }
+                  return String(arg);
+                }).join(' ');
+                window.ConsoleLog.postMessage('[' + level + '] ' + message);
+              } catch (e) {
+                // Ignore errors in logging
+              }
+            };
+            
+            console.log = function(...args) {
+              originalConsoleLog.apply(console, args);
+              sendToFlutter('LOG', args);
+            };
+            
+            console.error = function(...args) {
+              originalConsoleError.apply(console, args);
+              sendToFlutter('ERROR', args);
+            };
+            
+            console.warn = function(...args) {
+              originalConsoleWarn.apply(console, args);
+              sendToFlutter('WARN', args);
+            };
+            
+            console.info = function(...args) {
+              originalConsoleInfo.apply(console, args);
+              sendToFlutter('INFO', args);
+            };
+          }
+          
+          // CLEAR previous auth/session data so switching account uses the new one
+          try {
+            // Clear localStorage keys commonly used for auth
+            localStorage.removeItem('transgo_auth_token');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('token');
+          } catch (e) {}
+          
+          try {
+            // Clear sessionStorage auth keys
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('auth_token');
+          } catch (e) {}
+          
+          try {
+            // Best-effort cookie cleanup (NextAuth / custom cookies)
+            const cookieNames = [
+              'next-auth.session-token',
+              'next-auth.csrf-token',
+              'accessToken',
+              'auth_token',
+              'token'
+            ];
+            const domainParts = window.location.hostname.split('.');
+            const possibleDomains = [];
+            if (domainParts.length >= 2) {
+              const rootDomain = domainParts.slice(-2).join('.');
+              possibleDomains.push(rootDomain);
+              possibleDomains.push(window.location.hostname);
+            } else {
+              possibleDomains.push(window.location.hostname);
+            }
+            cookieNames.forEach(function(name) {
+              // Clear for current path
+              document.cookie = name + '=; Max-Age=0; path=/';
+              // Clear for possible domains
+              possibleDomains.forEach(function(d) {
+                document.cookie = name + '=; Max-Age=0; path=/; domain=' + d;
+              });
+            });
+          } catch (e) {}
+          
+          // Store NEW token in localStorage for the website to access
           localStorage.setItem('transgo_auth_token', token);
           localStorage.setItem('accessToken', token);
           localStorage.setItem('auth_token', token);
@@ -176,7 +345,6 @@ class _TgPayWebViewPageState extends State<TgPayWebViewPage> {
               url = url.replace(/(https?:\\/\\/[^\\/]+)\\/api\\/v1\\/api\\/v1/g, '\$' + '1/api/v1');
               
               if (url !== args[0]) {
-                console.log('[Transgo] Fixed duplicated API path:', args[0], '->', url);
                 args[0] = url;
               }
             } else if (url && typeof url === 'object' && url.url) {
@@ -184,7 +352,6 @@ class _TgPayWebViewPageState extends State<TgPayWebViewPage> {
               if (url.url.includes('/api/v1/api/v1/')) {
                 url.url = url.url.replace(/\\/api\\/v1\\/api\\/v1\\//g, '/api/v1/');
                 url.url = url.url.replace(/\\/api\\/v1\\/api\\/v1([^\\/])/g, '/api/v1\$' + '1');
-                console.log('[Transgo] Fixed duplicated API path in Request:', url.url);
               }
             }
             
@@ -218,9 +385,7 @@ class _TgPayWebViewPageState extends State<TgPayWebViewPage> {
               // Pattern 3: Full URL with duplication
               url = url.replace(/(https?:\\/\\/[^\\/]+)\\/api\\/v1\\/api\\/v1/g, '\$' + '1/api/v1');
               
-              if (url !== originalUrl) {
-                console.log('[Transgo] Fixed duplicated API path in XHR:', originalUrl, '->', url);
-              }
+              // URL fixed silently
             }
             return originalXHROpen.apply(this, [method, url, ...rest]);
           };
@@ -269,53 +434,152 @@ class _TgPayWebViewPageState extends State<TgPayWebViewPage> {
             detail: { token: token } 
           }));
           
-          console.log('[Transgo] Auth token set successfully and interceptors installed');
+          // AGGRESSIVE Performance optimizations for smoother scrolling
+          // Force GPU acceleration on all elements
+          const style = document.createElement('style');
+          style.textContent = \`
+            * {
+              -webkit-transform: translateZ(0);
+              transform: translateZ(0);
+              -webkit-backface-visibility: hidden;
+              backface-visibility: hidden;
+              -webkit-perspective: 1000;
+              perspective: 1000;
+            }
+            body, html {
+              -webkit-overflow-scrolling: touch;
+              overflow-scrolling: touch;
+              -webkit-transform: translate3d(0, 0, 0);
+              transform: translate3d(0, 0, 0);
+              will-change: transform;
+            }
+            /* Optimize all scrollable containers */
+            [class*="scroll"], [id*="scroll"], main, section, div {
+              -webkit-transform: translateZ(0);
+              transform: translateZ(0);
+              will-change: scroll-position;
+            }
+          \`;
+          document.head.appendChild(style);
+          
+          // Optimize scroll performance with throttling
+          let lastScrollTime = 0;
+          const scrollThrottle = 16; // ~60fps
+          
+          const optimizedScroll = function() {
+            const now = Date.now();
+            if (now - lastScrollTime >= scrollThrottle) {
+              lastScrollTime = now;
+              // Use requestAnimationFrame for smooth updates
+              requestAnimationFrame(function() {
+                // Scroll handling is done by browser
+              });
+            }
+          };
+          
+          // Use passive listeners for better performance
+          if (window.addEventListener) {
+            window.addEventListener('scroll', optimizedScroll, { passive: true, capture: false });
+            window.addEventListener('touchmove', function() {}, { passive: true });
+            window.addEventListener('wheel', function() {}, { passive: true });
+          }
+          
+          // Disable expensive operations during scroll
+          let isScrolling = false;
+          const scrollStart = function() {
+            isScrolling = true;
+          };
+          const scrollEnd = function() {
+            isScrolling = false;
+          };
+          
+          let scrollTimeout;
+          window.addEventListener('scroll', function() {
+            if (!isScrolling) scrollStart();
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(scrollEnd, 150);
+          }, { passive: true });
+          
+          // Optimize images and media during scroll
+          if (window.IntersectionObserver) {
+            const observer = new IntersectionObserver(function(entries) {
+              entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                  const img = entry.target;
+                  if (img.dataset && img.dataset.src) {
+                    img.src = img.dataset.src;
+                    observer.unobserve(img);
+                  }
+                }
+              });
+            }, { rootMargin: '50px' });
+            
+            document.querySelectorAll('img[data-src]').forEach(function(img) {
+              observer.observe(img);
+            });
+          }
+          
+          // Auth token and interceptors installed successfully
         } catch (e) {
-          console.log('[Transgo] Auth script error:', e);
+          // Silently handle injection errors
         }
       })();
     ''';
     
     controller.runJavaScript(script).catchError((error) {
-      print('JavaScript injection error: $error');
+      // Silently handle JavaScript injection errors
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: gabaritoText(
-          text: 'Transgo Pay Top Up',
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          textColor: Colors.black,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black),
-            onPressed: () {
-              if (_controller != null) {
-                _controller!.reload();
-              }
-            },
-          ),
-        ],
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    
+    // Memoize AppBar to prevent rebuilds
+    final appBar = AppBar(
+      backgroundColor: Colors.white,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.black),
+        onPressed: () => Navigator.of(context).pop(),
       ),
+      title: gabaritoText(
+        text: 'Transgo Pay Top Up',
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        textColor: Colors.black,
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh, color: Colors.black),
+          onPressed: () {
+            if (_controller != null) {
+              _controller!.reload();
+            }
+          },
+        ),
+      ],
+    );
+    
+    return Scaffold(
+      appBar: appBar,
       body: _isInitialized && _controller != null
           ? Stack(
               children: [
-                WebViewWidget(controller: _controller!),
+                // Use multiple optimization layers
+                RepaintBoundary(
+                  child: ClipRect(
+                    child: WebViewWidget(
+                      controller: _controller!,
+                    ),
+                  ),
+                ),
                 if (isLoading)
-                  Container(
-                    color: Colors.white,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.white,
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
                     ),
                   ),
               ],

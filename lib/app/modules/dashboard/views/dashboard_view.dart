@@ -35,8 +35,11 @@ class DashboardView extends GetView<DashboardController> {
                 await profileController.getCheckAdditional();
               }
               await controller.fetchFlashSales();
-              await controller.fetchTgPayBalance();
-              await controller.fetchTgRewardTier();
+              // Only fetch TG Pay and TG Rewards if user is logged in (not guest mode)
+              if (GlobalVariables.token.value.isNotEmpty) {
+                await controller.fetchTgPayBalance();
+                await controller.fetchTgRewardTier();
+              }
             },
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,

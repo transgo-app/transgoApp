@@ -3,6 +3,7 @@ import 'package:flutter_popup/flutter_popup.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import 'package:transgomobileapp/app/widget/Card/InfoCard.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBatalkanSewa.dart';
@@ -12,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../controllers/detailriwayat_controller.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
+import '../../../data/theme.dart';
 
 class DetailriwayatView extends StatefulWidget {
   const DetailriwayatView({super.key});
@@ -89,10 +91,10 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: primaryColor));
+          return Center(child: CircularProgressIndicator(color: primaryColor));
         } else if (controller.detaiItemsID.isNotEmpty) {
           // Extract data once to avoid repeated access
-          final detaiItemsID = controller.detaiItemsID;
+          final detaiItemsID = controller.detaiItemsID.value;
           final fleet = detaiItemsID['fleet'];
           final product = detaiItemsID['product'];
           final startReq = detaiItemsID['start_request'] ?? {};
@@ -154,12 +156,8 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   StatusRiwayatStyle(
-                                    orderStatus: controller
-                                            .detaiItemsID['order_status'] ??
-                                        '',
-                                    paymentStatus: controller
-                                            .detaiItemsID['payment_status'] ??
-                                        '',
+                                    orderStatus: detaiItemsID['order_status'] ?? '',
+                                    paymentStatus: detaiItemsID['payment_status'] ?? '',
                                   ),
                                 ],
                               ),
@@ -177,8 +175,8 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                           iconWithDetailSewa(
                             IconsaxPlusBold.calendar_edit,
                             formatTanggalSewa(
-                                controller.detaiItemsID['start_date'],
-                                controller.detaiItemsID['duration']),
+                                detaiItemsID['start_date'],
+                                detaiItemsID['duration']),
                           ),
                           iconWithDetailSewa(
                             (fleet?['type'] ?? 'car') == 'car'
@@ -194,9 +192,9 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                                   product?['specifications']?['color'] ??
                                   ''),
                           // Beri Ulasan button (only for done orders)
-                          if (controller.detaiItemsID['order_status'] == 'done') ...[
+                          if (detaiItemsID['order_status'] == 'done') ...[
                             const SizedBox(height: 15),
-                            _buildReviewButton(controller),
+                            _buildReviewButton(controller, detaiItemsID),
                           ],
                           const SizedBox(height: 15),
                           const gabaritoText(text: "Estimasi Total Pembayaran"),
@@ -294,9 +292,7 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   gabaritoText(
-                                    text: controller.detaiItemsID[
-                                                'is_out_of_town'] ==
-                                            false
+                                    text: detaiItemsID['is_out_of_town'] == false
                                         ? "Dalam Kota"
                                         : "Luar Kota",
                                     fontSize: 16,
@@ -408,8 +404,8 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                           ),
                           const SizedBox(height: 20),
                           // Only show button when order_status is "confirmed" or "done"
-                          if (controller.detaiItemsID['order_status'] == 'confirmed' ||
-                              controller.detaiItemsID['order_status'] == 'done')
+                          if (detaiItemsID['order_status'] == 'confirmed' ||
+                              detaiItemsID['order_status'] == 'done')
                             ReusableButton(
                               ontap: () {
                                 showModalBottomSheet(
@@ -517,10 +513,8 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                             ),
                           ),
                           const SizedBox(width: 10),
-                          if (controller.detaiItemsID['payment_status'] ==
-                                  'pending' &&
-                              controller.dataArguments['payment_pdf_url'] !=
-                                  null)
+                          if (detaiItemsID['payment_status'] == 'pending' &&
+                              controller.dataArguments['payment_pdf_url'] != null)
                             Expanded(
                               child: ReusableButton(
                                 height: 50,
@@ -532,10 +526,8 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                                 title: "Bayar Sekarang",
                               ),
                             ),
-                          if (controller.detaiItemsID['payment_status'] !=
-                                  'pending' ||
-                              controller.dataArguments['payment_pdf_url'] ==
-                                  null)
+                          if (detaiItemsID['payment_status'] != 'pending' ||
+                              controller.dataArguments['payment_pdf_url'] == null)
                             Expanded(
                               child: ReusableButton(
                                 height: 50,
@@ -606,13 +598,14 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
     );
   }
 
-  Widget _buildReviewButton(DetailriwayatController controller) {
-    final orderId = controller.detaiItemsID['id'];
+
+  Widget _buildReviewButton(DetailriwayatController controller, Map<dynamic, dynamic> detaiItemsID) {
+    final orderId = detaiItemsID['id'];
     final isReviewed = controller.hasRating.value ||
-                       (controller.detaiItemsID['has_rating'] ?? false) ||
-                       (controller.detaiItemsID['rating'] != null);
-    final fleet = controller.detaiItemsID['fleet'];
-    final product = controller.detaiItemsID['product'];
+                       (detaiItemsID['has_rating'] ?? false) ||
+                       (detaiItemsID['rating'] != null);
+    final fleet = detaiItemsID['fleet'];
+    final product = detaiItemsID['product'];
     final itemName = fleet?['name'] ?? product?['name'] ?? 'Item';
     
     return SizedBox(

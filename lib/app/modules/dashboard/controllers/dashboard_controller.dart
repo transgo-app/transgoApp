@@ -102,8 +102,11 @@ class DashboardController extends GetxController
     setDefaultTime();
     _startAutoScroll();
     fetchFlashSales();
-    fetchTgPayBalance();
-    fetchTgRewardTier();
+    // Only fetch TG Pay and TG Rewards if user is logged in (not guest mode)
+    if (GlobalVariables.token.value.isNotEmpty) {
+      fetchTgPayBalance();
+      fetchTgRewardTier();
+    }
   }
 
   @override
@@ -297,7 +300,6 @@ class DashboardController extends GetxController
 
       if (isKendaraan) {
         String filterParams = '';
-        print('Filter values - Brand: ${selectedBrand.value}, Tier: ${selectedTier.value}, MinPrice: ${minPrice.value}, MaxPrice: ${maxPrice.value}');
         if (selectedBrand.value.isNotEmpty) {
           filterParams += '&brand_id=${Uri.encodeComponent(selectedBrand.value)}';
         }
@@ -312,7 +314,6 @@ class DashboardController extends GetxController
         }
         apiUrl =
             '/fleets/available?limit=10&page=$currentPage&q=${Uri.encodeComponent(searchQuery.value)}&location_id=${selectedLokasiKendaraan.value}&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=${selectedDurasiSewa.value}${selectedKategori.value != '-' ? '&type=${selectedKategori.value}' : ''}$filterParams';
-        print('API URL with filters: $apiUrl');
       } else {
         String filterParams = '';
         if (selectedBrand.value.isNotEmpty) {
@@ -326,7 +327,6 @@ class DashboardController extends GetxController
         }
         apiUrl =
             '/products/available?limit=10&page=$currentPage&q=${Uri.encodeComponent(searchQuery.value)}&category=${selectedKategori.value}&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=${selectedDurasiSewa.value}&location_id=${selectedLokasiKendaraan.value}$filterParams';
-        print('API URL with filters: $apiUrl');
       }
 
       var data = await APIService().get(apiUrl);
@@ -417,7 +417,7 @@ class DashboardController extends GetxController
         hasMore.value = false;
       }
     } catch (e) {
-      print("Error fetching data: $e");
+      // Error handled silently
     } finally {
       isFetchingMore = false;
       isLoading.value = false;
@@ -459,7 +459,7 @@ class DashboardController extends GetxController
         selectedLokasiKendaraan.value = dataKota.first['id'].toString();
       }
     } catch (e) {
-      print('Error: $e');
+      // Error handled silently
     }
   }
 
@@ -501,7 +501,6 @@ class DashboardController extends GetxController
       
       availableTiers.value = tierSet.toList()..sort();
     } catch (e) {
-      print('Error fetching brands and tiers: $e');
       availableBrands.value = [];
       availableTiers.value = [];
     }
@@ -775,7 +774,6 @@ class DashboardController extends GetxController
       var data = await APIService().get('/order-calculation-settings');
       chargeSettings.value = data ?? {};
     } catch (e) {
-      print("Error fetching charge settings: $e");
       chargeSettings.value = {};
     }
   }
@@ -930,7 +928,6 @@ class DashboardController extends GetxController
 
       currentChargeAlert.value = mostRelevantAlert;
     } catch (e) {
-      print("Error checking charge settings: $e");
       currentChargeAlert.value = null;
     }
   }
@@ -938,14 +935,10 @@ class DashboardController extends GetxController
   // Flash sale methods
   Future<void> fetchFlashSales() async {
     try {
-      print('Fetching flash sales...');
       var data = await APIService().get('/flash-sales?page=1&limit=10&is_active=true');
       List items = data['items'] ?? [];
       
-      print('Flash sales API response - items count: ${items.length}');
-      
       if (items.isEmpty) {
-        print('No flash sale items found');
         activeFlashSale.value = null;
         showFlashSale.value = false;
         flashSaleTimer?.cancel();
@@ -975,21 +968,10 @@ class DashboardController extends GetxController
       }
 
       if (validFlashSale != null) {
-        print('Valid flash sale found: ${validFlashSale['name']}');
-        print('Start date: ${validFlashSale['start_date']}');
-        print('End date: ${validFlashSale['end_date']}');
-        
         final now = DateTime.now();
         final startDate = DateTime.parse(validFlashSale['start_date']).toLocal();
         final endDate = DateTime.parse(validFlashSale['end_date']).toLocal();
         final twoHoursBeforeStart = startDate.subtract(const Duration(hours: 2));
-        
-        print('Current time: $now');
-        print('Two hours before start: $twoHoursBeforeStart');
-        print('Start date: $startDate');
-        print('End date: $endDate');
-        print('Is within 2 hours before start: ${now.isAfter(twoHoursBeforeStart) && now.isBefore(startDate)}');
-        print('Is between start and end: ${now.isAfter(startDate) && now.isBefore(endDate)}');
         
         activeFlashSale.value = validFlashSale;
         showFlashSale.value = true;
@@ -997,7 +979,6 @@ class DashboardController extends GetxController
         isFlashSaleDismissed.value = false;
         _startFlashSaleCountdown();
       } else {
-        print('No valid flash sale found (timing check failed)');
         // Only clear if really no valid sale
         activeFlashSale.value = null;
         showFlashSale.value = false;
@@ -1005,7 +986,6 @@ class DashboardController extends GetxController
         flashSaleTimer?.cancel();
       }
     } catch (e) {
-      print("Error fetching flash sales: $e");
       activeFlashSale.value = null;
       showFlashSale.value = false;
       flashSaleTimer?.cancel();
@@ -1061,7 +1041,6 @@ class DashboardController extends GetxController
         showFlashSale.value = true; // Make sure it's shown
       } else {
         // Sale has ended - only clear if truly ended
-        print('Flash sale has ended, clearing activeFlashSale');
         showFlashSale.value = false;
         activeFlashSale.value = null;
         timer.cancel();
@@ -1182,7 +1161,6 @@ class DashboardController extends GetxController
       var data = await APIService().get('/topup/balance');
       tgPayBalance.value = (data['balance'] ?? 0).toDouble();
     } catch (e) {
-      print('Error fetching TG Pay balance: $e');
       tgPayBalance.value = 0.0;
     } finally {
       isLoadingTgPay.value = false;
@@ -1202,7 +1180,6 @@ class DashboardController extends GetxController
       var data = await APIService().get('/loyalty/me');
       tgRewardTier.value = (data['member_tier'] ?? 'STARTER').toString().toUpperCase();
     } catch (e) {
-      print('Error fetching TG Reward tier: $e');
       tgRewardTier.value = 'STARTER';
     } finally {
       isLoadingTgReward.value = false;

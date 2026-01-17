@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../controllers/dashboard_controller.dart';
 
 class MediaLogosSection extends StatelessWidget {
@@ -29,12 +30,19 @@ class MediaLogosSection extends StatelessWidget {
                         child: Icon(Icons.image, color: Colors.grey),
                       ),
                     )
-                  : Image.network(
-                      controller.getImageUrl(fileName),
+                  : CachedNetworkImage(
+                      imageUrl: controller.getImageUrl(fileName),
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(color: Colors.grey[300], child: Icon(Icons.image_not_supported));
-                      },
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.image, color: Colors.grey),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image_not_supported),
+                      ),
+                      memCacheWidth: 200,
+                      memCacheHeight: 100,
                     ),
             );
           }).toList(),

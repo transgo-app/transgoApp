@@ -7,7 +7,7 @@ import '../../../routes/Navbar.dart';
 import '../controllers/dashboard_controller.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ParentModal.dart';
-import 'tg_pay_webview.dart';
+import '../../../routes/app_pages.dart';
 
 class SearchCard extends StatefulWidget {
   final DashboardController controller;
@@ -49,8 +49,15 @@ class _SearchCardState extends State<SearchCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTgPayRewards(controller),
-              const SizedBox(height: 16),
+              // Only show TG Pay and TG Rewards if user is logged in (not guest mode)
+              Obx(() => GlobalVariables.token.value.isNotEmpty
+                  ? Column(
+                      children: [
+                        _buildTgPayRewards(controller),
+                        const SizedBox(height: 16),
+                      ],
+                    )
+                  : const SizedBox.shrink()),
               _buildSearch(controller),
               const SizedBox(height: 16),
               _buildLokasi(controller),
@@ -166,7 +173,7 @@ class _SearchCardState extends State<SearchCard> {
           ),
           child: TextButton(
             onPressed: () {
-              // Navigate to Transgo Pay website with authentication token
+              // Navigate to Transgo Pay page
               final token = GlobalVariables.token.value;
               if (token.isEmpty) {
                 CustomSnackbar.show(
@@ -177,12 +184,8 @@ class _SearchCardState extends State<SearchCard> {
                 return;
               }
 
-              // Navigate to custom WebView page that handles authentication
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => TgPayWebViewPage(token: token),
-                ),
-              );
+              // Navigate to native TG Pay page
+              Get.toNamed(Routes.TGPAY);
             },
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,

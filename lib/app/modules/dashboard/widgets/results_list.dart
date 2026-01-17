@@ -38,7 +38,7 @@ class ResultsArea extends StatelessWidget {
               child: Column(
                 children: [
                   Image.asset('assets/nodata.jpg', scale: 10),
-                  poppinsText(
+                  const poppinsText(
                     text: "Data Tidak Ditemukan",
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -64,7 +64,7 @@ class KendaraanList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          Obx(() => Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: gabaritoText(
               text:
@@ -72,7 +72,7 @@ class KendaraanList extends StatelessWidget {
               fontSize: 18,
               textColor: textHeadline,
             ),
-          ),
+          )),
           Obx(() {
             final itemCount = controller.listKendaraan.length +
                 (controller.hasMore.value ? 1 : 0);
@@ -134,14 +134,14 @@ class ProdukList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          Obx(() => Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: gabaritoText(
               text: "Hasil Pencarian: ${controller.jumlahData['total_items'] ?? ''} Produk",
               fontSize: 18,
               textColor: textHeadline,
             ),
-          ),
+          )),
           Obx(() {
             final itemCount = controller.listProduk.length;
             return ListView.builder(
@@ -179,51 +179,73 @@ class ItemCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback? onTap;
   final bool isKendaraan;
+  
+  // Pre-computed values to avoid recalculating in build
+  final String photo;
+  final String name;
+  final String type;
+  final String statusLabel;
+  final String category;
+  final String location;
+  final String brand;
+  final String color;
+  final String capacity;
+  final int price;
+  final int discount;
+  final int priceAfter;
+  final int weekly;
+  final int monthly;
+  final double averageRating;
+  final int ratingCount;
+  final String tier;
 
-  const ItemCard(
-      {super.key, required this.data, this.onTap, this.isKendaraan = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final String photo = isKendaraan
+  ItemCard({
+    super.key,
+    required this.data,
+    this.onTap,
+    this.isKendaraan = false,
+  }) : 
+    // Pre-compute all values in constructor
+    photo = isKendaraan
         ? (data['photo']?['photo'] ??
             ((data['photos'] != null && (data['photos'] as List).isNotEmpty)
                 ? data['photos'][0]['photo']
                 : 'https://transgo.id/logo/image%203.svg'))
-        : (data['photo']?['photo'] ?? '');
-
-    final name = data['name'] ?? '-';
-    String mapVehicleType(dynamic type) {
-      switch (type) {
-        case 'car':
-          return 'mobil';
-        case 'motorcycle':
-          return 'motor';
-        default:
-          return type?.toString() ?? '-';
-      }
-    }
-
-    final type = mapVehicleType(data['type']);
-    final statusLabel = data['status_label'] ?? '';
-    final category =
-        isKendaraan ? (data['type'] ?? '-') : (data['category_label'] ?? '');
-    final location = data['location']?['location'] ?? '-';
-    final brand = isKendaraan
+        : (data['photo']?['photo'] ?? ''),
+    name = data['name'] ?? '-',
+    type = _mapVehicleType(data['type']),
+    statusLabel = data['status_label'] ?? '',
+    category = isKendaraan ? (data['type'] ?? '-') : (data['category_label'] ?? ''),
+    location = data['location']?['location'] ?? '-',
+    brand = isKendaraan
         ? (data['brandRelation']?['name'] ?? '-')
-        : data['specifications']?['brand'] ?? '';
-    final color = isKendaraan
+        : (data['specifications']?['brand'] ?? ''),
+    color = isKendaraan
         ? (data['color'] ?? '-')
-        : data['specifications']?['color'] ?? '';
-    final capacity = data['specifications']?['size'] ?? '';
-    final price = (data['price'] ?? 0).round();
-    final discount = data['discount'] ?? 0;
-    final priceAfter = (price - (price * discount / 100)).round();
-    final weekly = (data['weekly_price'] ?? 0).round();
-    final monthly = (data['monthly_price'] ?? 0).round();
-    final averageRating = (data['average_rating'] ?? 0).toDouble();
-    final ratingCount = (data['rating_count'] ?? 0).toInt();
-    final tier = isKendaraan ? (data['tier']?.toString().toLowerCase() ?? '') : '';
+        : (data['specifications']?['color'] ?? ''),
+    capacity = data['specifications']?['size'] ?? '',
+    price = (data['price'] ?? 0).round(),
+    discount = data['discount'] ?? 0,
+    priceAfter = ((data['price'] ?? 0).round() - ((data['price'] ?? 0).round() * (data['discount'] ?? 0) / 100)).round(),
+    weekly = (data['weekly_price'] ?? 0).round(),
+    monthly = (data['monthly_price'] ?? 0).round(),
+    averageRating = (data['average_rating'] ?? 0).toDouble(),
+    ratingCount = (data['rating_count'] ?? 0).toInt(),
+    tier = isKendaraan ? (data['tier']?.toString().toLowerCase() ?? '') : '';
+
+  static String _mapVehicleType(dynamic type) {
+    switch (type) {
+      case 'car':
+        return 'mobil';
+      case 'motorcycle':
+        return 'motor';
+      default:
+        return type?.toString() ?? '-';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return GestureDetector(
       onTap: onTap,
@@ -414,14 +436,14 @@ class ItemCard extends StatelessWidget {
   }
 
   Widget _buildPriceSection(
-      int discount, num price, num priceAfter, num? weekly, num? monthly) {
-    final weeklyPrice = discount > 0
-        ? ((priceAfter * (weekly ?? 0) / price)).round()
-        : (weekly ?? 0);
+      int discount, int price, int priceAfter, int weekly, int monthly) {
+    final weeklyPrice = discount > 0 && price > 0
+        ? ((priceAfter * weekly / price)).round()
+        : weekly;
 
-    final monthlyPrice = discount > 0
-        ? ((priceAfter * (monthly ?? 0) / price)).round()
-        : (monthly ?? 0);
+    final monthlyPrice = discount > 0 && price > 0
+        ? ((priceAfter * monthly / price)).round()
+        : monthly;
 
     return Container(
       width: double.infinity,

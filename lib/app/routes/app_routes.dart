@@ -17,6 +17,7 @@ abstract class Routes {
   static const PANDUAN = _Paths.PANDUAN;
   static const SYARATKETENTUAN = _Paths.SYARATKETENTUAN;
   static const REVIEWS = _Paths.REVIEWS;
+  static const TGPAY = _Paths.TGPAY;
 }
 
 abstract class _Paths {
@@ -35,4 +36,5 @@ abstract class _Paths {
   static const PANDUAN = '/panduantransgo';
   static const SYARATKETENTUAN = '/syaratdanketentuan';
   static const REVIEWS = '/reviews';
+  static const TGPAY = '/tgpay';
 }

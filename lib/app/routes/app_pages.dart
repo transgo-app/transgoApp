@@ -26,6 +26,8 @@ import '../modules/syaratdanketentuan/bindings/syaratdanketentuan_binding.dart';
 import '../modules/syaratdanketentuan/views/syaratdanketentuan_view.dart';
 import '../modules/reviews/bindings/reviews_binding.dart';
 import '../modules/reviews/views/reviews_view.dart';
+import '../modules/tgpay/bindings/tgpay_binding.dart';
+import '../modules/tgpay/views/tgpay_view.dart';
 
 
 part 'app_routes.dart';
@@ -112,6 +114,11 @@ class AppPages {
       name: Routes.REVIEWS,
       page: () => const ReviewsView(),
       binding: ReviewsBinding(),
+    ),
+    GetPage(
+      name: Routes.TGPAY,
+      page: () => const TgPayView(),
+      binding: TgPayBinding(),
     ),
   ];
 }

@@ -22,6 +22,7 @@ class DetailitemsController extends GetxController {
     selectedDurasi.value = duration;
     if (isLoggedIn) {
       getMyVouchers();
+      fetchTgPayBalance();
     }
 
     getDetailAPI(true).then((_) {
@@ -219,6 +220,28 @@ class DetailitemsController extends GetxController {
   }
 
   RxBool menyetujuiSnK = false.obs;
+  
+  // TG Pay balance
+  RxDouble tgPayBalance = 0.0.obs;
+  RxBool isLoadingTgPayBalance = false.obs;
+  RxBool useTgPayBalance = false.obs;
+  
+  Future<void> fetchTgPayBalance() async {
+    if (GlobalVariables.token.value.isEmpty) {
+      tgPayBalance.value = 0.0;
+      return;
+    }
+    
+    isLoadingTgPayBalance.value = true;
+    try {
+      final data = await APIService().get('/topup/balance');
+      tgPayBalance.value = (data['balance'] ?? 0).toDouble();
+    } catch (e) {
+      tgPayBalance.value = 0.0;
+    } finally {
+      isLoadingTgPayBalance.value = false;
+    }
+  }
 
   Future getDetailAPI([bool needLoading = false, bool? isOrder = false]) async {
     _apiDebounce?.cancel();
@@ -265,6 +288,7 @@ class DetailitemsController extends GetxController {
                       : addon['quantity'],
                 })
             .toList(),
+      "use_balance": useTgPayBalance.value,
     };
     Map<String, dynamic>? response;
 

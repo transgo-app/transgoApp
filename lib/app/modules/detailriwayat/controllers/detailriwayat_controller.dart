@@ -1,4 +1,5 @@
 import '../../../data/data.dart';
+import '../../../widget/widgets.dart';
 
 class DetailriwayatController extends GetxController {
   @override
@@ -10,6 +11,7 @@ class DetailriwayatController extends GetxController {
       getDetailRiwayat();
     });
     permintaanKhususC.text = dataArguments['description'] ?? 'Tidak Ada';
+    fetchTgPayBalance();
   }
 
   var dataArguments = Get.arguments;
@@ -27,6 +29,11 @@ class DetailriwayatController extends GetxController {
   RxBool isLoading = false.obs;
   RxBool isLoadingGetSingleData = false.obs;
   RxBool hasRating = false.obs;
+  
+  // Transgo Pay balance
+  RxDouble tgPayBalance = 0.0.obs;
+  RxBool isLoadingBalance = false.obs;
+  RxBool isProcessingPayment = false.obs;
 
   void checkCancelOrderStatus(RxMap<dynamic, dynamic> detaiItemsID) {
     isCancelOrderDisabled.value =
@@ -44,7 +51,7 @@ class DetailriwayatController extends GetxController {
       getDetailRiwayat();
       checkRatingStatus();
     } catch (e) {
-      print(e);
+      // Error handled silently
     } finally {
       isLoadingGetSingleData.value = false;
     }
@@ -92,7 +99,6 @@ class DetailriwayatController extends GetxController {
         hasRating.value = false;
       }
     } catch (e) {
-      print('Error checking rating status: $e');
       hasRating.value = false;
     }
   }
@@ -136,7 +142,7 @@ class DetailriwayatController extends GetxController {
       detailKendaraan.value = data;
       checkCancelOrderStatus(detaiItemsID);
     } catch (e) {
-      print('Error: $e');
+      // Error handled silently
     } finally {
       isLoading.value = false;
     }
@@ -162,7 +168,7 @@ class DetailriwayatController extends GetxController {
             "Kami menginformasikan bahwa sewa Anda telah dibatalkan. Hubungi layanan pelanggan jika perlu."
       );
     } catch (e) {
-      print('Error: $e');
+      // Error handled silently
     } finally {
       isLoadingCancelTicket.value = false;
     }
@@ -180,5 +186,67 @@ class DetailriwayatController extends GetxController {
     var item = items.firstWhere((item) => item['price'] == targetPrice,
         orElse: () => null);
     return item != null ? item['name'] ?? '' : 'Item dengan harga $targetPrice tidak ditemukan.';
+  }
+
+  Future<void> fetchTgPayBalance() async {
+    if (GlobalVariables.token.value.isEmpty) {
+      tgPayBalance.value = 0.0;
+      return;
+    }
+    
+    isLoadingBalance.value = true;
+    try {
+      final data = await APIService().get('/topup/balance');
+      tgPayBalance.value = (data['balance'] ?? 0).toDouble();
+    } catch (e) {
+      tgPayBalance.value = 0.0;
+    } finally {
+      isLoadingBalance.value = false;
+    }
+  }
+
+  Future<bool> payWithTransgoPay() async {
+    if (isProcessingPayment.value) return false;
+    
+    final orderId = dataArguments['id'];
+    final grandTotal = detailKendaraan['grand_total'] ?? 0;
+    
+    if (tgPayBalance.value < grandTotal) {
+      CustomSnackbar.show(
+        title: 'Saldo Tidak Cukup',
+        message: 'Saldo anda kurang, silahkan topup terlebih dahulu',
+        backgroundColor: Colors.red,
+      );
+      return false;
+    }
+
+    isProcessingPayment.value = true;
+    try {
+      // Call API to pay with Transgo Pay balance
+      await APIService().post('/orders/$orderId/pay-with-balance', {
+        'amount': grandTotal,
+      });
+      
+      // Refresh order data and balance
+      await getDataById();
+      await fetchTgPayBalance();
+      
+      CustomSnackbar.show(
+        title: 'Pembayaran Berhasil',
+        message: 'Pembayaran menggunakan Transgo Pay berhasil dilakukan',
+        backgroundColor: Colors.green,
+      );
+      
+      return true;
+    } catch (e) {
+      CustomSnackbar.show(
+        title: 'Pembayaran Gagal',
+        message: 'Terjadi kesalahan saat memproses pembayaran',
+        backgroundColor: Colors.red,
+      );
+      return false;
+    } finally {
+      isProcessingPayment.value = false;
+    }
   }
 }

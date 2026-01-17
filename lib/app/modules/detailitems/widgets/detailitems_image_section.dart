@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/detailitems_controller.dart';
 
 class DetailitemsImageSection extends StatelessWidget {
@@ -50,11 +51,19 @@ class DetailitemsImageSection extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: Image.network(
-          imgUrl,
+        child: CachedNetworkImage(
+          imageUrl: imgUrl,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
+          placeholder: (context, url) => Container(
+            color: Colors.grey.shade200,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          errorWidget: (context, url, error) =>
               const Icon(Icons.broken_image, size: 60),
+          memCacheWidth: 1200,
+          memCacheHeight: 800,
         ),
       ),
     );
