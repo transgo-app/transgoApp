@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:transgomobileapp/app/widget/General/text.dart';
 import '../controllers/riwayatpemesanan_controller.dart';
 import '../../../data/data.dart';
@@ -91,59 +92,66 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: controller.listKendaraan.length +
-                        (controller.hasMore.value ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == controller.listKendaraan.length) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Center(
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(),
+                  Obx(() {
+                    final itemCount = controller.listKendaraan.length +
+                        (controller.hasMore.value ? 1 : 0);
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      cacheExtent: 250, // Optimized for low-end devices
+                      itemCount: itemCount,
+                      itemBuilder: (context, index) {
+                        if (index == controller.listKendaraan.length) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final data = controller.listKendaraan[index];
+                        final fleet = data['fleet'];
+                        final product = data['product'];
+
+                        final imagePath = fleet != null
+                            ? (fleet['photo']?['photo'] ?? '')
+                            : (product?['photo']?['photo'] ?? '');
+
+                        final location = limitText(
+                          fleet != null
+                              ? (fleet['location']?['name'] ?? '')
+                              : (product?['location']?['name'] ?? '-'),
+                        );
+
+                        final typeLabel = fleet != null
+                            ? fleet['type_label'] ?? ''
+                            : product?['category_label'] ?? '';
+
+                        final itemName = fleet != null
+                            ? fleet['name'] ?? ''
+                            : product?['name'] ?? '';
+
+                        return RepaintBoundary(
+                          key: ValueKey('riwayat_${data['id']}'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: _customCard(
+                              data,
+                              imagePath,
+                              itemName,
+                              location,
+                              typeLabel,
                             ),
                           ),
                         );
-                      }
-
-                      final data = controller.listKendaraan[index];
-                      final fleet = data['fleet'];
-                      final product = data['product'];
-
-                      final imagePath = fleet != null
-                          ? (fleet['photo']?['photo'] ?? '')
-                          : (product?['photo']?['photo'] ?? '');
-
-                      final location = limitText(
-                        fleet != null
-                            ? (fleet['location']?['name'] ?? '')
-                            : (product?['location']?['name'] ?? '-'),
-                      );
-
-                      final typeLabel = fleet != null
-                          ? fleet['type_label'] ?? ''
-                          : product?['category_label'] ?? '';
-
-                      final itemName = fleet != null
-                          ? fleet['name'] ?? ''
-                          : product?['name'] ?? '';
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: _customCard(
-                          data,
-                          imagePath,
-                          itemName,
-                          location,
-                          typeLabel,
-                        ),
-                      );
-                    },
-                  ),
+                      },
+                    );
+                  }),
                 ],
               ),
             );
@@ -182,16 +190,34 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    imagePath,
+                  child: CachedNetworkImage(
+                    imageUrl: imagePath,
                     width: 100,
                     height: 100,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    // Optimized for low-end devices
+                    memCacheWidth: 200, // 100 * 2 for retina
+                    memCacheHeight: 200,
+                    maxWidthDiskCache: 200,
+                    maxHeightDiskCache: 200,
+                    filterQuality: FilterQuality.low,
+                    placeholder: (context, url) => Container(
+                      width: 100,
+                      height: 100,
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
                       width: 100,
                       height: 100,
                       color: Colors.grey[300],
-                      child: const Icon(Icons.image_not_supported),
+                      child: const Icon(Icons.image_not_supported, size: 30),
                     ),
                   ),
                 ),

@@ -95,26 +95,49 @@ class DashboardController extends GetxController
       }
     });
     GlobalVariables.initializeData();
-    loadRole();
-    getKotaKendaraan();
-
+    
     _setDefaultDate();
     setDefaultTime();
+    
+    // Load data in parallel for better performance
+    _initializeData();
+    
     _startAutoScroll();
-    fetchFlashSales();
-    // Only fetch TG Pay and TG Rewards if user is logged in (not guest mode)
-    if (GlobalVariables.token.value.isNotEmpty) {
-      fetchTgPayBalance();
-      fetchTgRewardTier();
-    }
+  }
+  
+  /// Initialize data in parallel where possible
+  Future<void> _initializeData() async {
+    // Load role first as it affects other operations
+    await loadRole();
+    
+    // Parallel API calls for independent data
+    await Future.wait([
+      getKotaKendaraan(),
+      fetchFlashSales(),
+      if (GlobalVariables.token.value.isNotEmpty) ...[
+        fetchTgPayBalance(),
+        fetchTgRewardTier(),
+      ],
+    ], eagerError: false); // Don't fail all if one fails
   }
 
   @override
   void onClose() {
+    // Cancel all timers
+    flashSaleTimer?.cancel();
+    
+    // Dispose scroll controllers
     scrollController.dispose();
     scrollContentController.dispose();
     scrollControllerLayanan.dispose();
-    flashSaleTimer?.cancel();
+    
+    // Clear large data structures to free memory
+    listKendaraan.clear();
+    listProduk.clear();
+    dataKota.clear();
+    availableBrands.clear();
+    availableTiers.clear();
+    
     super.onClose();
   }
 

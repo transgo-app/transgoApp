@@ -80,7 +80,7 @@ class KendaraanList extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
-                cacheExtent: 500, // Cache more items for smoother scrolling
+                cacheExtent: 250, // Reduced for low-end devices
                 itemCount: itemCount,
                 itemBuilder: (context, index) {
                   if (index == controller.listKendaraan.length) {
@@ -98,21 +98,24 @@ class KendaraanList extends StatelessWidget {
 
                   final data = controller.listKendaraan[index];
 
-                  return ItemCard(
-                    data: data,
-                    isKendaraan: true,
-                    onTap: () {
-                      Get.toNamed('/detailkendaraan', arguments: {
-                        'isKendaraan': true,
-                        'dataClient': {
-                          'is_with_driver':
-                              controller.jenisSewa.value == 1 ? false : true,
-                          'date': controller.pickedDateTimeISO.value,
-                          'duration': controller.selectedDurasiSewa.value,
-                        },
-                        'dataServer': data,
-                      });
-                    },
+                  return RepaintBoundary(
+                    key: ValueKey('kendaraan_${data['id']}'),
+                    child: ItemCard(
+                      data: data,
+                      isKendaraan: true,
+                      onTap: () {
+                        Get.toNamed('/detailkendaraan', arguments: {
+                          'isKendaraan': true,
+                          'dataClient': {
+                            'is_with_driver':
+                                controller.jenisSewa.value == 1 ? false : true,
+                            'date': controller.pickedDateTimeISO.value,
+                            'duration': controller.selectedDurasiSewa.value,
+                          },
+                          'dataServer': data,
+                        });
+                      },
+                    ),
                   );
                 },
               );
@@ -148,23 +151,26 @@ class ProdukList extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
-                cacheExtent: 500, // Cache more items for smoother scrolling
+                cacheExtent: 250, // Reduced for low-end devices
                 itemCount: itemCount,
                 itemBuilder: (context, index) {
                   final data = controller.listProduk[index];
-                  return ItemCard(
-                    data: data,
-                    isKendaraan: false,
-                    onTap: () {
-                      Get.toNamed('/detailkendaraan', arguments: {
-                        'isKendaraan': false,
-                        'dataClient': {
-                          'date': controller.pickedDateTimeISO.value,
-                          'duration': controller.selectedDurasiSewa.value,
-                        },
-                        'dataServer': data,
-                      });
-                    },
+                  return RepaintBoundary(
+                    key: ValueKey('produk_${data['id']}'),
+                    child: ItemCard(
+                      data: data,
+                      isKendaraan: false,
+                      onTap: () {
+                        Get.toNamed('/detailkendaraan', arguments: {
+                          'isKendaraan': false,
+                          'dataClient': {
+                            'date': controller.pickedDateTimeISO.value,
+                            'duration': controller.selectedDurasiSewa.value,
+                          },
+                          'dataServer': data,
+                        });
+                      },
+                    ),
                   );
                 },
               );
@@ -246,7 +252,6 @@ class ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -380,8 +385,13 @@ class ItemCard extends StatelessWidget {
               color: Colors.grey.shade200,
               child: const Icon(Icons.broken_image, size: 50),
             ),
-            memCacheWidth: 800, // Limit memory usage
-            memCacheHeight: 600,
+            // Optimized for low-end devices: reduce memory cache
+            memCacheWidth: 500,
+            memCacheHeight: 375,
+            maxWidthDiskCache: 800,
+            maxHeightDiskCache: 600,
+            fadeInDuration: const Duration(milliseconds: 200),
+            filterQuality: FilterQuality.low,
           ),
           if (discount > 0)
             Positioned(

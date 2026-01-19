@@ -139,9 +139,22 @@ class DetailitemsController extends GetxController {
 
   @override
   void onClose() {
+    // Cancel all timers
+    _debounce?.cancel();
+    _apiDebounce?.cancel();
+    
+    // Dispose focus nodes
     focusNode1.dispose();
     focusNode2.dispose();
     focusNode3.dispose();
+    
+    // Clear large data structures to free memory
+    dataAsuransi.clear();
+    dataAddons.clear();
+    addonsList.clear();
+    vouchers.clear();
+    ratings.clear();
+    
     Get.delete<DetailitemsController>();
     super.onClose();
   }

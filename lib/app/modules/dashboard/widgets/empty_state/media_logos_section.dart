@@ -41,8 +41,12 @@ class MediaLogosSection extends StatelessWidget {
                         color: Colors.grey[300],
                         child: const Icon(Icons.image_not_supported),
                       ),
-                      memCacheWidth: 200,
-                      memCacheHeight: 100,
+                      // Optimized for low-end devices
+                      memCacheWidth: 192, // 96 * 2 for retina
+                      memCacheHeight: 96, // 48 * 2 for retina
+                      maxWidthDiskCache: 200,
+                      maxHeightDiskCache: 100,
+                      filterQuality: FilterQuality.low,
                     ),
             );
           }).toList(),

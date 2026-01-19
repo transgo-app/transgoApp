@@ -62,8 +62,15 @@ class DetailitemsImageSection extends StatelessWidget {
           ),
           errorWidget: (context, url, error) =>
               const Icon(Icons.broken_image, size: 60),
-          memCacheWidth: 1200,
-          memCacheHeight: 800,
+          // Optimized for low-end devices: calculate based on screen width
+          memCacheWidth: (MediaQuery.of(context).size.width * 
+                          MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
+          memCacheHeight: (MediaQuery.of(context).size.width * 0.75 * 
+                           MediaQuery.of(context).devicePixelRatio).round().clamp(300, 600),
+          maxWidthDiskCache: 1200,
+          maxHeightDiskCache: 800,
+          fadeInDuration: const Duration(milliseconds: 200),
+          filterQuality: FilterQuality.medium,
         ),
       ),
     );
