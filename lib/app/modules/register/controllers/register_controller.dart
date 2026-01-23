@@ -6,6 +6,7 @@ import 'package:transgomobileapp/app/widget/Dialog/DialogSuccessUploadRegister.d
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBerhasilDaftar.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
+import '../../../services/google_auth_service.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
@@ -48,11 +49,12 @@ class RegisterController extends GetxController {
     },
   ].obs;
 
-  var dataArgumentsParamPost = Get.arguments['paramPost'];
-  var dataArgumentsDetailKendaraan = Get.arguments['detailKendaraan'];
+  // Argumen dari berbagai entry point (detail sewa, login Google, dll)
+  var dataArgumentsParamPost = Get.arguments?['paramPost'] ?? {};
+  var dataArgumentsDetailKendaraan = Get.arguments?['detailKendaraan'];
+  var dataArgumentsPrefillFromGoogle = Get.arguments?['prefillFromGoogle'];
 
   RxBool isLoading = false.obs;
-
   RxBool isUploadFile = false.obs;
 
   late Map<String, dynamic> paramPost;
@@ -196,9 +198,55 @@ class RegisterController extends GetxController {
     allowedToRegistrasi.value = isValid;
   }
 
+  Future<void> prefillRegisterFromGoogle() async {
+    try {
+      final account = await GoogleAuthService.instance
+          .signIn(forceAccountSelection: true);
+      if (account == null) {
+        // User batal memilih akun atau terjadi error, diam saja sesuai requirement.
+        return;
+      }
+
+      namaLengkapC.text = account.displayName ?? '';
+      emailC.text = account.email;
+
+      // Biarkan field lain (termasuk password) tetap kosong dan tetap bisa diedit.
+
+      CustomSnackbar.show(
+        title: "Berhasil",
+        message:
+            "Data dari Google berhasil diambil, silakan lengkapi data lainnya.",
+        icon: Icons.check,
+        backgroundColor: Colors.green,
+      );
+
+      validateInput();
+    } catch (e) {
+      print('Error prefill register from Google: $e');
+      CustomSnackbar.show(
+        title: "Terjadi Kesalahan",
+        message: "Gagal mengambil data dari Google. Silakan coba lagi.",
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
+
+    // Prefill dari login Google (jika ada)
+    if (dataArgumentsPrefillFromGoogle != null) {
+      final name = dataArgumentsPrefillFromGoogle['name'] as String? ?? '';
+      final email = dataArgumentsPrefillFromGoogle['email'] as String? ?? '';
+
+      if (name.isNotEmpty) {
+        namaLengkapC.text = name;
+      }
+      if (email.isNotEmpty) {
+        emailC.text = email;
+      }
+    }
 
     final productData = dataArgumentsDetailKendaraan?['product'];
     final fleetData = dataArgumentsDetailKendaraan?['fleet'];
@@ -411,6 +459,7 @@ class RegisterController extends GetxController {
       selectedRole.value = 'product_customer';
     }
   }
+
 }
 
 typedef CompressAndAddImage = Future<void> Function(XFile file);

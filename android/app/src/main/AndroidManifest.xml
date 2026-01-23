@@ -40,6 +40,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        
+        <!-- Google Sign-In Configuration - Android Client ID -->
+        <meta-data
+            android:name="com.google.android.gms.auth.api.signin.google.client_id"
+            android:value="1022276810838-55v4dksil5af2e5m02j025p9lrv9h8pp.apps.googleusercontent.com" />
     </application>
 
     <queries>

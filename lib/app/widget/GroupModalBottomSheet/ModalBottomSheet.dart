@@ -150,6 +150,91 @@ class RincianOrderModal extends StatelessWidget {
                         Padding(
                             padding: EdgeInsets.symmetric(vertical: 8),
                             child: Divider()),
+                      // TG Pay Balance Checkbox
+                      Obx(() {
+                        final grandTotal = controller.detailData['grand_total'] ?? 0;
+                        final balance = controller.tgPayBalance.value;
+                        final useBalance = controller.useTgPayBalance.value;
+                        final isSufficient = balance >= grandTotal;
+                        final balanceUsed = balance > grandTotal ? grandTotal : balance;
+                        final remaining = grandTotal - balanceUsed;
+                        
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                controller.useTgPayBalance.value = !controller.useTgPayBalance.value;
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: useBalance
+                                      ? primaryColor.withOpacity(0.1)
+                                      : Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: useBalance
+                                        ? primaryColor
+                                        : Colors.grey.shade300,
+                                    width: useBalance ? 2 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Checkbox(
+                                      activeColor: primaryColor,
+                                      value: useBalance,
+                                      onChanged: (value) {
+                                        controller.useTgPayBalance.value = value ?? false;
+                                      },
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: gabaritoText(
+                                                  text: 'Gunakan Saldo Transgo Pay',
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  textColor: textHeadline,
+                                                ),
+                                              ),
+                                              if (useBalance)
+                                                gabaritoText(
+                                                  text: 'Rp ${formatRupiah(balanceUsed.toInt())}',
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  textColor: primaryColor,
+                                                ),
+                                            ],
+                                          ),
+                                          if (useBalance) ...[
+                                            SizedBox(height: 8),
+                                            gabaritoText(
+                                              text: isSufficient
+                                                  ? 'Saldo cukup, order akan langsung lunas'
+                                                  : 'Saldo akan digunakan Rp ${formatRupiah(balanceUsed.toInt())}, sisa tagihan Rp ${formatRupiah(remaining.toInt())} akan dibayar melalui payment gateway',
+                                              fontSize: 12,
+                                              textColor: isSufficient ? Colors.green.shade700 : Colors.orange.shade700,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                          ],
+                        );
+                      }),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,

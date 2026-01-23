@@ -1,10 +1,6 @@
 
 import 'package:lottie/lottie.dart';
 import 'package:transgomobileapp/app/data/data.dart';
-import 'package:transgomobileapp/app/modules/dashboard/controllers/dashboard_controller.dart';
-import 'package:transgomobileapp/app/modules/detailitems/controllers/detailitems_controller.dart';
-import 'package:transgomobileapp/app/modules/riwayatpemesanan/controllers/riwayatpemesanan_controller.dart';
-import 'package:transgomobileapp/app/routes/Navbar.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -13,8 +9,6 @@ class DialogBerhasilSewa extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<DashboardController>();
-    final controllerRiwayat = Get.find<RiwayatpemesananController>();
     return Dialog(
       backgroundColor: Colors.white,
       child: Container(
@@ -44,31 +38,19 @@ class DialogBerhasilSewa extends StatelessWidget {
               title: "Kontak Admin Sekarang",
             ),
             const SizedBox(height: 10,),
-            Obx(() => ReusableButton(
+            ReusableButton(
               height: 50,
               ontap: () {
-                controllerRiwayat.statusFilter.value = '';
-                controllerRiwayat.indexActive.value = 0;
-                controllerRiwayat.getListKendaraan().then((value) {
-                  controller.getList().then((value) {
-                    Get.offAll(NavigationPage(selectedIndex: 1));
-                    Get.delete<DetailitemsController>();
-                  },); 
-                },);
+                // Close dialog and go back to detail kendaraan page
+                Get.back();
               },
               bgColor: Colors.white,
               borderSideColor: Colors.grey,
               textColor: Colors.black,
               widget: Center(
-                child: controllerRiwayat.isLoading.value ? SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.black,
-                  ),
-                ) : poppinsText(text: "Lihat Riwayat Sewa", textColor: Colors.black, fontWeight: FontWeight.w600,)
+                child: poppinsText(text: "Kembali", textColor: Colors.black, fontWeight: FontWeight.w600,)
               ),
-            ),),
+            ),
             const SizedBox(height: 10,)
           ],
         ),

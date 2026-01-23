@@ -210,6 +210,32 @@ class LoginView extends GetView<LoginController> {
                         const Expanded(child: Divider()),
                       ]),
                     ),
+                    const SizedBox(height: 10),
+                    ReusableButton(
+                      height: 55,
+                      bgColor: Colors.white,
+                      borderSideColor: Colors.grey,
+                      widget: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/google_logo.png',
+                            height: 24,
+                            width: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          const gabaritoText(
+                            text: "Masuk Dengan Google",
+                            textColor: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ],
+                      ),
+                      ontap: () {
+                        controller.loginWithGoogle();
+                      },
+                    ),
+                    const SizedBox(height: 10),
                     ReusableButton(
                       height: 55,
                       bgColor: Colors.white,

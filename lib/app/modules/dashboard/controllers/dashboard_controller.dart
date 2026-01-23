@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
@@ -13,8 +14,28 @@ class DashboardController extends GetxController
 
   RxMap jumlahData = {}.obs;
 
+  // Flash sale variables
+  Rxn<Map<String, dynamic>> activeFlashSale = Rxn<Map<String, dynamic>>();
+  RxBool showFlashSale = false.obs;
+  RxBool isFlashSaleDismissed = false.obs;
+  RxInt countdownDays = 0.obs;
+  RxInt countdownHours = 0.obs;
+  RxInt countdownMinutes = 0.obs;
+  RxInt countdownSeconds = 0.obs;
+  RxBool isFlashSaleActive = false.obs;
+  Timer? flashSaleTimer;
+
   RxString role = ''.obs;
   RxString userType = ''.obs;
+
+  // TG Pay variables
+  RxDouble tgPayBalance = 0.0.obs;
+  RxBool isBalanceVisible = true.obs;
+  RxBool isLoadingTgPay = false.obs;
+
+  // TG Rewards variables
+  RxString tgRewardTier = 'STARTER'.obs;
+  RxBool isLoadingTgReward = false.obs;
 
   void _setDefaultDate() {
     DateTime now = DateTime.now();
@@ -74,19 +95,49 @@ class DashboardController extends GetxController
       }
     });
     GlobalVariables.initializeData();
-    loadRole();
-    getKotaKendaraan();
-
+    
     _setDefaultDate();
     setDefaultTime();
+    
+    // Load data in parallel for better performance
+    _initializeData();
+    
     _startAutoScroll();
+  }
+  
+  /// Initialize data in parallel where possible
+  Future<void> _initializeData() async {
+    // Load role first as it affects other operations
+    await loadRole();
+    
+    // Parallel API calls for independent data
+    await Future.wait([
+      getKotaKendaraan(),
+      fetchFlashSales(),
+      if (GlobalVariables.token.value.isNotEmpty) ...[
+        fetchTgPayBalance(),
+        fetchTgRewardTier(),
+      ],
+    ], eagerError: false); // Don't fail all if one fails
   }
 
   @override
   void onClose() {
+    // Cancel all timers
+    flashSaleTimer?.cancel();
+    
+    // Dispose scroll controllers
     scrollController.dispose();
     scrollContentController.dispose();
     scrollControllerLayanan.dispose();
+    
+    // Clear large data structures to free memory
+    listKendaraan.clear();
+    listProduk.clear();
+    dataKota.clear();
+    availableBrands.clear();
+    availableTiers.clear();
+    
     super.onClose();
   }
 
@@ -120,6 +171,15 @@ class DashboardController extends GetxController
   RxList dataKota = [].obs;
   RxList listKendaraan = [].obs;
   RxList listProduk = [].obs;
+
+  // Filter state variables
+  RxBool isFilterExpanded = false.obs;
+  RxString selectedBrand = ''.obs;
+  RxString selectedTier = ''.obs;
+  RxString minPrice = ''.obs;
+  RxString maxPrice = ''.obs;
+  RxList<Map<String, dynamic>> availableBrands = <Map<String, dynamic>>[].obs;
+  RxList<String> availableTiers = <String>[].obs;
 
   // Charge settings
   RxMap chargeSettings = {}.obs;
@@ -230,6 +290,7 @@ class DashboardController extends GetxController
     });
 
     await getKotaKendaraan();
+    await fetchBrandsAndTiers();
   }
 
   Future<void> getList([bool isPagination = false]) async {
@@ -261,39 +322,125 @@ class DashboardController extends GetxController
           selectedKategori.value == 'motorcycle');
 
       if (isKendaraan) {
+        String filterParams = '';
+        if (selectedBrand.value.isNotEmpty) {
+          filterParams += '&brand_id=${Uri.encodeComponent(selectedBrand.value)}';
+        }
+        if (selectedTier.value.isNotEmpty) {
+          filterParams += '&tier=${Uri.encodeComponent(selectedTier.value)}';
+        }
+        if (minPrice.value.isNotEmpty) {
+          filterParams += '&min_price=${Uri.encodeComponent(minPrice.value)}';
+        }
+        if (maxPrice.value.isNotEmpty) {
+          filterParams += '&max_price=${Uri.encodeComponent(maxPrice.value)}';
+        }
         apiUrl =
-            '/fleets/available?limit=10&page=$currentPage&q=${searchQuery.value}&location_id=${selectedLokasiKendaraan.value}&date=${pickedDateTimeISO.value}&duration=${selectedDurasiSewa.value}${selectedKategori.value != '-' ? '&type=${selectedKategori.value}' : ''}';
+            '/fleets/available?limit=10&page=$currentPage&q=${Uri.encodeComponent(searchQuery.value)}&location_id=${selectedLokasiKendaraan.value}&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=${selectedDurasiSewa.value}${selectedKategori.value != '-' ? '&type=${selectedKategori.value}' : ''}$filterParams';
       } else {
+        String filterParams = '';
+        if (selectedBrand.value.isNotEmpty) {
+          filterParams += '&brand_id=${Uri.encodeComponent(selectedBrand.value)}';
+        }
+        if (minPrice.value.isNotEmpty) {
+          filterParams += '&min_price=${Uri.encodeComponent(minPrice.value)}';
+        }
+        if (maxPrice.value.isNotEmpty) {
+          filterParams += '&max_price=${Uri.encodeComponent(maxPrice.value)}';
+        }
         apiUrl =
-            '/products/available?limit=10&page=$currentPage&q=${searchQuery.value}&category=${selectedKategori.value}&date=${pickedDateTimeISO.value}&duration=${selectedDurasiSewa.value}&location_id=${selectedLokasiKendaraan.value}';
+            '/products/available?limit=10&page=$currentPage&q=${Uri.encodeComponent(searchQuery.value)}&category=${selectedKategori.value}&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=${selectedDurasiSewa.value}&location_id=${selectedLokasiKendaraan.value}$filterParams';
       }
 
       var data = await APIService().get(apiUrl);
 
       List newItems = data['items'];
-
+      
+      // Apply client-side filtering if API doesn't support it
       if (isKendaraan) {
+        // Filter by brand if selected
+        if (selectedBrand.value.isNotEmpty) {
+          newItems = newItems.where((item) {
+            final itemBrandId = item['brandRelation']?['id']?.toString() ?? '';
+            return itemBrandId == selectedBrand.value;
+          }).toList();
+        }
+        
+        // Filter by tier if selected
+        if (selectedTier.value.isNotEmpty) {
+          newItems = newItems.where((item) {
+            final itemTier = item['tier']?.toString() ?? '';
+            return itemTier == selectedTier.value;
+          }).toList();
+        }
+        
+        // Filter by price range if selected
+        if (minPrice.value.isNotEmpty || maxPrice.value.isNotEmpty) {
+          newItems = newItems.where((item) {
+            final priceAfterDiscount = item['price_after_discount'] ?? item['final_price'] ?? item['price'] ?? 0;
+            final price = (priceAfterDiscount is num) ? priceAfterDiscount.toInt() : int.tryParse(priceAfterDiscount.toString()) ?? 0;
+            
+            if (minPrice.value.isNotEmpty) {
+              final min = int.tryParse(minPrice.value) ?? 0;
+              if (price < min) return false;
+            }
+            if (maxPrice.value.isNotEmpty) {
+              final max = int.tryParse(maxPrice.value) ?? 0;
+              if (price > max) return false;
+            }
+            return true;
+          }).toList();
+        }
+        
         final filtered = newItems
             .where((item) =>
                 !listKendaraan.any((existing) => existing['id'] == item['id']))
             .toList();
         listKendaraan.addAll(filtered);
+        
+        // Update meta data with filtered count
+        if (!isPagination) {
+          jumlahData.value = {
+            'total_items': listKendaraan.length,
+            'total_pages': 1,
+            'current_page': 1,
+          };
+        } else {
+          jumlahData.value = {
+            'total_items': (jumlahData.value['total_items'] ?? 0) + filtered.length,
+            'total_pages': data['meta']?['total_pages'] ?? 1,
+            'current_page': data['meta']?['current_page'] ?? 1,
+          };
+        }
       } else {
         final filtered = newItems
             .where((item) =>
                 !listProduk.any((existing) => existing['id'] == item['id']))
             .toList();
         listProduk.addAll(filtered);
+        
+        // Update meta data with filtered count
+        if (!isPagination) {
+          jumlahData.value = {
+            'total_items': listProduk.length,
+            'total_pages': 1,
+            'current_page': 1,
+          };
+        } else {
+          jumlahData.value = {
+            'total_items': (jumlahData.value['total_items'] ?? 0) + filtered.length,
+            'total_pages': data['meta']?['total_pages'] ?? 1,
+            'current_page': data['meta']?['current_page'] ?? 1,
+          };
+        }
       }
 
       currentPage++;
       if (newItems.length < 10) {
         hasMore.value = false;
       }
-
-      jumlahData.value = data['meta'];
     } catch (e) {
-      print("Error fetching data: $e");
+      // Error handled silently
     } finally {
       isFetchingMore = false;
       isLoading.value = false;
@@ -335,8 +482,58 @@ class DashboardController extends GetxController
         selectedLokasiKendaraan.value = dataKota.first['id'].toString();
       }
     } catch (e) {
-      print('Error: $e');
+      // Error handled silently
     }
+  }
+
+  Future<void> fetchBrandsAndTiers() async {
+    try {
+      var data = await APIService().get('/fleets/?limit=1000&page=1');
+      List allFleets = data['items'] ?? [];
+
+      // Extract unique brands
+      Set<String> brandIds = {};
+      Map<String, String> brandMap = {};
+      
+      for (var fleet in allFleets) {
+        if (fleet['brandRelation'] != null) {
+          final brandId = fleet['brandRelation']['id'].toString();
+          final brandName = fleet['brandRelation']['name'].toString();
+          if (!brandIds.contains(brandId) && brandName.isNotEmpty) {
+            brandIds.add(brandId);
+            brandMap[brandId] = brandName;
+          }
+        }
+      }
+
+      // Convert to list format for dropdown
+      availableBrands.value = brandMap.entries.map((entry) {
+        return {'id': entry.key, 'name': entry.value};
+      }).toList();
+      
+      // Sort brands alphabetically
+      availableBrands.sort((a, b) => a['name'].compareTo(b['name']));
+
+      // Extract unique tiers
+      Set<String> tierSet = {};
+      for (var fleet in allFleets) {
+        if (fleet['tier'] != null && fleet['tier'].toString().isNotEmpty) {
+          tierSet.add(fleet['tier'].toString());
+        }
+      }
+      
+      availableTiers.value = tierSet.toList()..sort();
+    } catch (e) {
+      availableBrands.value = [];
+      availableTiers.value = [];
+    }
+  }
+
+  void resetFilters() {
+    selectedBrand.value = '';
+    selectedTier.value = '';
+    minPrice.value = '';
+    maxPrice.value = '';
   }
 
   final List<Map<String, String>> cardDataLayanan = [
@@ -600,7 +797,6 @@ class DashboardController extends GetxController
       var data = await APIService().get('/order-calculation-settings');
       chargeSettings.value = data ?? {};
     } catch (e) {
-      print("Error fetching charge settings: $e");
       chargeSettings.value = {};
     }
   }
@@ -755,8 +951,261 @@ class DashboardController extends GetxController
 
       currentChargeAlert.value = mostRelevantAlert;
     } catch (e) {
-      print("Error checking charge settings: $e");
       currentChargeAlert.value = null;
+    }
+  }
+
+  // Flash sale methods
+  Future<void> fetchFlashSales() async {
+    try {
+      var data = await APIService().get('/flash-sales?page=1&limit=10&is_active=true');
+      List items = data['items'] ?? [];
+      
+      if (items.isEmpty) {
+        activeFlashSale.value = null;
+        showFlashSale.value = false;
+        flashSaleTimer?.cancel();
+        return;
+      }
+
+      // Find the first active flash sale that should be shown
+      final now = DateTime.now();
+      Map<String, dynamic>? validFlashSale;
+
+      for (var item in items) {
+        final startDateStr = item['start_date'] as String?;
+        final endDateStr = item['end_date'] as String?;
+        
+        if (startDateStr == null || endDateStr == null) continue;
+
+        final startDate = DateTime.parse(startDateStr).toLocal();
+        final endDate = DateTime.parse(endDateStr).toLocal();
+        final twoHoursBeforeStart = startDate.subtract(const Duration(hours: 2));
+
+        // Show if: within 2 hours before start OR between start and end
+        if ((now.isAfter(twoHoursBeforeStart) && now.isBefore(startDate)) ||
+            (now.isAfter(startDate) && now.isBefore(endDate))) {
+          validFlashSale = item;
+          break;
+        }
+      }
+
+      if (validFlashSale != null) {
+        final now = DateTime.now();
+        final startDate = DateTime.parse(validFlashSale['start_date']).toLocal();
+        final endDate = DateTime.parse(validFlashSale['end_date']).toLocal();
+        final twoHoursBeforeStart = startDate.subtract(const Duration(hours: 2));
+        
+        activeFlashSale.value = validFlashSale;
+        showFlashSale.value = true;
+        // Reset dismissed state when a new flash sale is found
+        isFlashSaleDismissed.value = false;
+        _startFlashSaleCountdown();
+      } else {
+        // Only clear if really no valid sale
+        activeFlashSale.value = null;
+        showFlashSale.value = false;
+        isFlashSaleDismissed.value = false;
+        flashSaleTimer?.cancel();
+      }
+    } catch (e) {
+      activeFlashSale.value = null;
+      showFlashSale.value = false;
+      flashSaleTimer?.cancel();
+    }
+  }
+
+  void _startFlashSaleCountdown() {
+    flashSaleTimer?.cancel();
+    
+    flashSaleTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (activeFlashSale.value == null) {
+        timer.cancel();
+        return;
+      }
+
+      final startDateStr = activeFlashSale.value!['start_date'] as String?;
+      final endDateStr = activeFlashSale.value!['end_date'] as String?;
+      
+      if (startDateStr == null || endDateStr == null) {
+        timer.cancel();
+        return;
+      }
+
+      final now = DateTime.now();
+      final startDate = DateTime.parse(startDateStr).toLocal();
+      final endDate = DateTime.parse(endDateStr).toLocal();
+      final twoHoursBeforeStart = startDate.subtract(const Duration(hours: 2));
+
+      Duration remaining;
+      bool isActive = false;
+
+      if (now.isBefore(twoHoursBeforeStart)) {
+        // Too early, but keep activeFlashSale - just don't show countdown yet
+        // Restart timer to check again later
+        showFlashSale.value = false;
+        timer.cancel();
+        // Restart check in 1 minute
+        Future.delayed(const Duration(minutes: 1), () {
+          if (activeFlashSale.value != null) {
+            _startFlashSaleCountdown();
+          }
+        });
+        return;
+      } else if (now.isAfter(twoHoursBeforeStart) && now.isBefore(startDate)) {
+        // Countdown to start (2 hours before)
+        remaining = startDate.difference(now);
+        isActive = false;
+        showFlashSale.value = true; // Make sure it's shown
+      } else if (now.isAfter(startDate) && now.isBefore(endDate)) {
+        // Countdown to end
+        remaining = endDate.difference(now);
+        isActive = true;
+        showFlashSale.value = true; // Make sure it's shown
+      } else {
+        // Sale has ended - only clear if truly ended
+        showFlashSale.value = false;
+        activeFlashSale.value = null;
+        timer.cancel();
+        fetchFlashSales(); // Refresh to check for new sales
+        return;
+      }
+
+      isFlashSaleActive.value = isActive;
+      countdownDays.value = remaining.inDays;
+      countdownHours.value = remaining.inHours % 24;
+      countdownMinutes.value = remaining.inMinutes % 60;
+      countdownSeconds.value = remaining.inSeconds % 60;
+    });
+  }
+
+  void dismissFlashSale() {
+    isFlashSaleDismissed.value = true;
+  }
+
+  void expandFlashSale() {
+    isFlashSaleDismissed.value = false;
+  }
+
+  void showFlashSaleItems() {
+    if (activeFlashSale.value == null) return;
+    
+    // Get fleet IDs from flash sale
+    List fleets = activeFlashSale.value!['fleets'] ?? [];
+    List<int> flashSaleFleetIds = fleets.map((f) => f['id'] as int).toList();
+    
+    if (flashSaleFleetIds.isEmpty) return;
+    
+    // Set default search parameters to show flash sale cars
+    // First, check what types are in the flash sale
+    Set<String> availableTypes = {};
+    for (var fleet in fleets) {
+      if (fleet['type'] != null) {
+        availableTypes.add(fleet['type'].toString());
+      }
+    }
+    
+    // Set category to car if available, otherwise motorcycle
+    if (availableTypes.contains('car')) {
+      selectedKategori.value = 'car';
+    } else if (availableTypes.contains('motorcycle')) {
+      selectedKategori.value = 'motorcycle';
+    }
+    
+    // Ensure we have location and date set
+    if (selectedLokasiKendaraan.value.isEmpty && dataKota.isNotEmpty) {
+      selectedLokasiKendaraan.value = dataKota.first['id'].toString();
+    }
+    
+    if (pickedDate.value.isEmpty) {
+      _setDefaultDate();
+    }
+    
+    if (pickedTime.value.isEmpty) {
+      setDefaultTime();
+    }
+    
+    // Clear current results and trigger search
+    listKendaraan.clear();
+    listProduk.clear();
+    currentPage = 1;
+    hasMore.value = true;
+    
+    // Trigger search
+    getList().then((_) {
+      // After search completes, filter to show only flash sale items
+      if (selectedKategori.value == 'car' || selectedKategori.value == 'motorcycle') {
+        final filtered = listKendaraan.where((item) {
+          return flashSaleFleetIds.contains(item['id']);
+        }).toList();
+        
+        listKendaraan.value = filtered;
+        
+        // Update meta data
+        jumlahData.value = {
+          'total_items': filtered.length,
+          'total_pages': 1,
+          'current_page': 1,
+        };
+      } else {
+        final filtered = listProduk.where((item) {
+          return flashSaleFleetIds.contains(item['id']);
+        }).toList();
+        
+        listProduk.value = filtered;
+        
+        // Update meta data
+        jumlahData.value = {
+          'total_items': filtered.length,
+          'total_pages': 1,
+          'current_page': 1,
+        };
+      }
+      
+      // Scroll to results
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (scrollController.hasClients) {
+          scrollController.animateTo(
+            scrollController.position.maxScrollExtent * 0.3,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    });
+  }
+
+  // TG Pay methods
+  Future<void> fetchTgPayBalance() async {
+    if (isLoadingTgPay.value) return;
+    
+    try {
+      isLoadingTgPay.value = true;
+      var data = await APIService().get('/topup/balance');
+      tgPayBalance.value = (data['balance'] ?? 0).toDouble();
+    } catch (e) {
+      tgPayBalance.value = 0.0;
+    } finally {
+      isLoadingTgPay.value = false;
+    }
+  }
+
+  void toggleBalanceVisibility() {
+    isBalanceVisible.value = !isBalanceVisible.value;
+  }
+
+  // TG Rewards methods
+  Future<void> fetchTgRewardTier() async {
+    if (isLoadingTgReward.value) return;
+    
+    try {
+      isLoadingTgReward.value = true;
+      var data = await APIService().get('/loyalty/me');
+      tgRewardTier.value = (data['member_tier'] ?? 'STARTER').toString().toUpperCase();
+    } catch (e) {
+      tgRewardTier.value = 'STARTER';
+    } finally {
+      isLoadingTgReward.value = false;
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/dashboard_controller.dart';
 import 'empty_state/empty_state_section.dart';
 import '../../../widget/widgets.dart';
@@ -37,7 +38,7 @@ class ResultsArea extends StatelessWidget {
               child: Column(
                 children: [
                   Image.asset('assets/nodata.jpg', scale: 10),
-                  poppinsText(
+                  const poppinsText(
                     text: "Data Tidak Ditemukan",
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -63,7 +64,7 @@ class KendaraanList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          Obx(() => Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: gabaritoText(
               text:
@@ -71,13 +72,16 @@ class KendaraanList extends StatelessWidget {
               fontSize: 18,
               textColor: textHeadline,
             ),
-          ),
-          Obx(() => ListView.builder(
+          )),
+          Obx(() {
+            final itemCount = controller.listKendaraan.length +
+                (controller.hasMore.value ? 1 : 0);
+            return ListView.builder(
                 padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
-                itemCount: controller.listKendaraan.length +
-                    (controller.hasMore.value ? 1 : 0),
+                cacheExtent: 250, // Reduced for low-end devices
+                itemCount: itemCount,
                 itemBuilder: (context, index) {
                   if (index == controller.listKendaraan.length) {
                     return const Center(
@@ -94,24 +98,28 @@ class KendaraanList extends StatelessWidget {
 
                   final data = controller.listKendaraan[index];
 
-                  return ItemCard(
-                    data: data,
-                    isKendaraan: true,
-                    onTap: () {
-                      Get.toNamed('/detailkendaraan', arguments: {
-                        'isKendaraan': true,
-                        'dataClient': {
-                          'is_with_driver':
-                              controller.jenisSewa.value == 1 ? false : true,
-                          'date': controller.pickedDateTimeISO.value,
-                          'duration': controller.selectedDurasiSewa.value,
-                        },
-                        'dataServer': data,
-                      });
-                    },
+                  return RepaintBoundary(
+                    key: ValueKey('kendaraan_${data['id']}'),
+                    child: ItemCard(
+                      data: data,
+                      isKendaraan: true,
+                      onTap: () {
+                        Get.toNamed('/detailkendaraan', arguments: {
+                          'isKendaraan': true,
+                          'dataClient': {
+                            'is_with_driver':
+                                controller.jenisSewa.value == 1 ? false : true,
+                            'date': controller.pickedDateTimeISO.value,
+                            'duration': controller.selectedDurasiSewa.value,
+                          },
+                          'dataServer': data,
+                        });
+                      },
+                    ),
                   );
                 },
-              )),
+              );
+          }),
         ],
       ),
     );
@@ -129,37 +137,44 @@ class ProdukList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          Obx(() => Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: gabaritoText(
               text: "Hasil Pencarian: ${controller.jumlahData['total_items'] ?? ''} Produk",
               fontSize: 18,
               textColor: textHeadline,
             ),
-          ),
-          Obx(() => ListView.builder(
+          )),
+          Obx(() {
+            final itemCount = controller.listProduk.length;
+            return ListView.builder(
                 padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
-                itemCount: controller.listProduk.length,
+                cacheExtent: 250, // Reduced for low-end devices
+                itemCount: itemCount,
                 itemBuilder: (context, index) {
                   final data = controller.listProduk[index];
-                  return ItemCard(
-                    data: data,
-                    isKendaraan: false,
-                    onTap: () {
-                      Get.toNamed('/detailkendaraan', arguments: {
-                        'isKendaraan': false,
-                        'dataClient': {
-                          'date': controller.pickedDateTimeISO.value,
-                          'duration': controller.selectedDurasiSewa.value,
-                        },
-                        'dataServer': data,
-                      });
-                    },
+                  return RepaintBoundary(
+                    key: ValueKey('produk_${data['id']}'),
+                    child: ItemCard(
+                      data: data,
+                      isKendaraan: false,
+                      onTap: () {
+                        Get.toNamed('/detailkendaraan', arguments: {
+                          'isKendaraan': false,
+                          'dataClient': {
+                            'date': controller.pickedDateTimeISO.value,
+                            'duration': controller.selectedDurasiSewa.value,
+                          },
+                          'dataServer': data,
+                        });
+                      },
+                    ),
                   );
                 },
-              )),
+              );
+          }),
         ],
       ),
     );
@@ -170,49 +185,73 @@ class ItemCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback? onTap;
   final bool isKendaraan;
+  
+  // Pre-computed values to avoid recalculating in build
+  final String photo;
+  final String name;
+  final String type;
+  final String statusLabel;
+  final String category;
+  final String location;
+  final String brand;
+  final String color;
+  final String capacity;
+  final int price;
+  final int discount;
+  final int priceAfter;
+  final int weekly;
+  final int monthly;
+  final double averageRating;
+  final int ratingCount;
+  final String tier;
 
-  const ItemCard(
-      {super.key, required this.data, this.onTap, this.isKendaraan = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final String photo = isKendaraan
+  ItemCard({
+    super.key,
+    required this.data,
+    this.onTap,
+    this.isKendaraan = false,
+  }) : 
+    // Pre-compute all values in constructor
+    photo = isKendaraan
         ? (data['photo']?['photo'] ??
             ((data['photos'] != null && (data['photos'] as List).isNotEmpty)
                 ? data['photos'][0]['photo']
                 : 'https://transgo.id/logo/image%203.svg'))
-        : (data['photo']?['photo'] ?? '');
-
-    final name = data['name'] ?? '-';
-    String mapVehicleType(dynamic type) {
-      switch (type) {
-        case 'car':
-          return 'mobil';
-        case 'motorcycle':
-          return 'motor';
-        default:
-          return type?.toString() ?? '-';
-      }
-    }
-
-    final type = mapVehicleType(data['type']);
-    final statusLabel = data['status_label'] ?? '';
-    final category =
-        isKendaraan ? (data['type'] ?? '-') : (data['category_label'] ?? '');
-    final location = data['location']?['location'] ?? '-';
-    final brand = isKendaraan
+        : (data['photo']?['photo'] ?? ''),
+    name = data['name'] ?? '-',
+    type = _mapVehicleType(data['type']),
+    statusLabel = data['status_label'] ?? '',
+    category = isKendaraan ? (data['type'] ?? '-') : (data['category_label'] ?? ''),
+    location = data['location']?['location'] ?? '-',
+    brand = isKendaraan
         ? (data['brandRelation']?['name'] ?? '-')
-        : data['specifications']?['brand'] ?? '';
-    final color = isKendaraan
+        : (data['specifications']?['brand'] ?? ''),
+    color = isKendaraan
         ? (data['color'] ?? '-')
-        : data['specifications']?['color'] ?? '';
-    final capacity = data['specifications']?['size'] ?? '';
-    final price = (data['price'] ?? 0).round();
-    final discount = data['discount'] ?? 0;
-    final priceAfter = (price - (price * discount / 100)).round();
-    final weekly = (data['weekly_price'] ?? 0).round();
-    final monthly = (data['monthly_price'] ?? 0).round();
+        : (data['specifications']?['color'] ?? ''),
+    capacity = data['specifications']?['size'] ?? '',
+    price = (data['price'] ?? 0).round(),
+    discount = data['discount'] ?? 0,
+    priceAfter = ((data['price'] ?? 0).round() - ((data['price'] ?? 0).round() * (data['discount'] ?? 0) / 100)).round(),
+    weekly = (data['weekly_price'] ?? 0).round(),
+    monthly = (data['monthly_price'] ?? 0).round(),
+    averageRating = (data['average_rating'] ?? 0).toDouble(),
+    ratingCount = (data['rating_count'] ?? 0).toInt(),
+    tier = isKendaraan ? (data['tier']?.toString().toLowerCase() ?? '') : '';
 
+  static String _mapVehicleType(dynamic type) {
+    switch (type) {
+      case 'car':
+        return 'mobil';
+      case 'motorcycle':
+        return 'motor';
+      default:
+        return type?.toString() ?? '-';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -229,8 +268,34 @@ class ItemCard extends StatelessWidget {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: gabaritoText(
-                  text: name, fontSize: 16, fontWeight: FontWeight.w700),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  gabaritoText(
+                      text: name, fontSize: 16, fontWeight: FontWeight.w700),
+                  if (isKendaraan && tier.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    _buildTierChip(tier),
+                  ],
+                  if (isKendaraan && averageRating > 0 && ratingCount > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Text(
+                          '⭐',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        const SizedBox(width: 4),
+                        poppinsText(
+                          text: '${averageRating.toStringAsFixed(1)} ($ratingCount ulasan)',
+                          fontSize: 13,
+                          textColor: Colors.grey.shade700,
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -303,8 +368,31 @@ class ItemCard extends StatelessWidget {
           topLeft: Radius.circular(18), topRight: Radius.circular(18)),
       child: Stack(
         children: [
-          Image.network(photo,
-              height: 250, width: double.infinity, fit: BoxFit.cover),
+          CachedNetworkImage(
+            imageUrl: photo,
+            height: 250,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              height: 250,
+              color: Colors.grey.shade200,
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              height: 250,
+              color: Colors.grey.shade200,
+              child: const Icon(Icons.broken_image, size: 50),
+            ),
+            // Optimized for low-end devices: reduce memory cache
+            memCacheWidth: 500,
+            memCacheHeight: 375,
+            maxWidthDiskCache: 800,
+            maxHeightDiskCache: 600,
+            fadeInDuration: const Duration(milliseconds: 200),
+            filterQuality: FilterQuality.low,
+          ),
           if (discount > 0)
             Positioned(
               top: 12,
@@ -358,14 +446,14 @@ class ItemCard extends StatelessWidget {
   }
 
   Widget _buildPriceSection(
-      int discount, num price, num priceAfter, num? weekly, num? monthly) {
-    final weeklyPrice = discount > 0
-        ? ((priceAfter * (weekly ?? 0) / price)).round()
-        : (weekly ?? 0);
+      int discount, int price, int priceAfter, int weekly, int monthly) {
+    final weeklyPrice = discount > 0 && price > 0
+        ? ((priceAfter * weekly / price)).round()
+        : weekly;
 
-    final monthlyPrice = discount > 0
-        ? ((priceAfter * (monthly ?? 0) / price)).round()
-        : (monthly ?? 0);
+    final monthlyPrice = discount > 0 && price > 0
+        ? ((priceAfter * monthly / price)).round()
+        : monthly;
 
     return Container(
       width: double.infinity,
@@ -497,6 +585,94 @@ class ItemCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildTierChip(String tier) {
+    // Normalize tier to lowercase for comparison
+    final tierLower = tier.toLowerCase();
+    
+    if (tierLower == 'premium') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFFFB84D), // Lighter golden-orange
+              Color(0xFFFF9500), // Darker golden-orange
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.orange.withOpacity(0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.workspace_premium_outlined,
+              color: Colors.white,
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            poppinsText(
+              text: 'Premium',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              textColor: Colors.white,
+            ),
+          ],
+        ),
+      );
+    } else if (tierLower == 'reguler' || tierLower == 'regular') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF4CAF50), // Lighter green
+              Color(0xFF2E7D32), // Darker green
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.shield_outlined,
+              color: Colors.white,
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            poppinsText(
+              text: 'Reguler',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              textColor: Colors.white,
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Default: return empty if tier doesn't match
+    return const SizedBox.shrink();
   }
 
   Widget productSpec(IconData icon, String value) {
