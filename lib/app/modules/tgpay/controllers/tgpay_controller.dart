@@ -66,6 +66,13 @@ class TgPayController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    // Panggil network request setelah first frame selesai dirender
+    // untuk menghindari error "setState() called during build"
     fetchUserId();
     fetchPaymentMethods();
     fetchBalance();
@@ -141,7 +148,15 @@ class TgPayController extends GetxController {
         vaEnabled.value = va['enabled'] == true;
         final min = va['minimumAmount']?['value'];
         final max = va['maximumAmount']?['value'];
-        if (min is int) vaMinAmount.value = min;
+
+        // Pastikan VA minimal tetap 10K sesuai requirement bisnis,
+        // abaikan konfigurasi backend jika lebih tinggi dari 10K.
+        if (min is int) {
+          vaMinAmount.value = min < 10000 ? 10000 : 10000;
+        } else {
+          vaMinAmount.value = 10000;
+        }
+
         if (max is int) vaMaxAmount.value = max;
 
         final channels = va['acceptedChannels'] as List<dynamic>? ?? [];

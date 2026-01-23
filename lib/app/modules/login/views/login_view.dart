@@ -210,57 +210,30 @@ class LoginView extends GetView<LoginController> {
                         const Expanded(child: Divider()),
                       ]),
                     ),
-                    Obx(
-                      () => ReusableButton(
-                        height: 55,
-                        bgColor: Colors.white,
-                        borderSideColor: Colors.grey.shade300,
-                        widget: Center(
-                          child: controller.isLoadingGoogle.value
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.blue,
-                                  ),
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    // Google Logo - Using official Google logo
-                                    Image.network(
-                                      'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                                      height: 24,
-                                      width: 24,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        // Fallback: Use Google's official logo PNG
-                                        return Image.network(
-                                          'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
-                                          height: 24,
-                                          width: 24,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return const Icon(
-                                              Icons.g_mobiledata,
-                                              size: 24,
-                                              color: Color(0xFF4285F4), // Google Blue
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const gabaritoText(
-                                      text: "Masuk dengan Google",
-                                      textColor: Colors.black87,
-                                      fontSize: 16,
-                                    ),
-                                  ],
-                                ),
-                        ),
-                        ontap: () {
-                          controller.loginWithGoogle();
-                        },
+                    const SizedBox(height: 10),
+                    ReusableButton(
+                      height: 55,
+                      bgColor: Colors.white,
+                      borderSideColor: Colors.grey,
+                      widget: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/google_logo.png',
+                            height: 24,
+                            width: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          const gabaritoText(
+                            text: "Masuk Dengan Google",
+                            textColor: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ],
                       ),
+                      ontap: () {
+                        controller.loginWithGoogle();
+                      },
                     ),
                     const SizedBox(height: 10),
                     ReusableButton(

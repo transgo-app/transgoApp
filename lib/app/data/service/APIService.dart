@@ -260,6 +260,26 @@ class APIService {
       rethrow;
     }
   }
+
+  // PATCH request
+  Future<dynamic> patch(String endpoint, dynamic data,
+      {Map<String, String>? headers}) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    var headersAuth = {
+      'Content-Type': 'application/json',
+      'Authorization': _getAuthorizationHeader(endpoint),
+    };
+    try {
+      final response = await http.patch(
+        url,
+        headers: headersAuth,
+        body: jsonEncode(data),
+      );
+      return _handleResponse(response, endpoint);
+    } catch (e) {
+      rethrow;
+    }
+  }
   String getWhatsAppAdminUrl() {
     const message =
         'Halo admin Transgo, saya ingin bertanya terkait layanan yang tersedia. Terima kasih.';
