@@ -35,6 +35,9 @@ class DashboardView extends GetView<DashboardController> {
                 await profileController.getCheckAdditional();
               }
               await controller.fetchFlashSales();
+              // Refetch high season charge settings
+              await controller.fetchChargeSettings();
+              await controller.checkChargeSettings();
               // Only fetch TG Pay and TG Rewards if user is logged in (not guest mode)
               if (GlobalVariables.token.value.isNotEmpty) {
                 await controller.fetchTgPayBalance();
@@ -76,7 +79,7 @@ class DashboardView extends GetView<DashboardController> {
               curve: Curves.easeOut,
               right: MediaQuery.of(context).size.width < 360 ? 8.0 : 20.0, // Closer to right edge
               bottom: controller.showWhatsApp.value 
-                  ? (MediaQuery.of(context).padding.bottom + 50) // Closer to bottom, accounting for bottom nav bar
+                  ? (MediaQuery.of(context).padding.bottom + 70) // Account for bottom nav bar + extra spacing
                   : -100, // Hide completely when scrolling down
               child: GestureDetector(
                 onTap: _openWhatsAppAdmin,
