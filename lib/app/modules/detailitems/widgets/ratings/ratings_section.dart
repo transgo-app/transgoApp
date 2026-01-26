@@ -48,10 +48,16 @@ class RatingsSection extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 15),
             child: Divider(),
           ),
-          gabaritoText(
-            text: 'Ulasan Pelanggan $itemName',
-            fontSize: 18,
-            textColor: textHeadline,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: gabaritoText(
+              text: 'Ulasan Pelanggan $itemName',
+              fontSize: 18,
+              textColor: textHeadline,
+              Maxlines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           const SizedBox(height: 12),
           // Overall rating card

@@ -253,11 +253,15 @@ class _SearchCardState extends State<SearchCard> {
               ),
               const SizedBox(height: 4),
               Obx(() {
-                return gabaritoText(
-                  text: controller.tgRewardTier.value,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  textColor: Colors.black,
+                return FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: gabaritoText(
+                    text: controller.tgRewardTier.value,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    textColor: Colors.black,
+                  ),
                 );
               }),
             ],
@@ -435,10 +439,18 @@ class _SearchCardState extends State<SearchCard> {
         tabs: filtered.map((cat) {
           return Tab(
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset('assets/${cat['id']}.png', scale: 3),
                 const SizedBox(width: 6),
-                gabaritoText(text: cat['name'], fontSize: 14),
+                Flexible(
+                  child: gabaritoText(
+                    text: cat['name'],
+                    fontSize: 14,
+                    Maxlines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           );
@@ -592,7 +604,14 @@ class _SelectBox extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              gabaritoText(text: value),
+              Expanded(
+                child: gabaritoText(
+                  text: value,
+                  Maxlines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               Icon(icon),
             ],
           ),

@@ -30,20 +30,31 @@ class HeaderWidget extends StatelessWidget {
               ),
               Positioned(
                 left: 20,
+                right: 20,
                 top: 80,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    gabaritoText(
-                      text: controller.getGreetingText(),
-                      textColor: Colors.white,
-                      fontSize: 20,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: gabaritoText(
+                        text: controller.getGreetingText(),
+                        textColor: Colors.white,
+                        fontSize: 20,
+                      ),
                     ),
-                    gabaritoText(
-                      text:
-                          "Hari yang baru, rencana baru! Siapin kendaraan\nfavoritmu bareng Transgo.",
-                      textColor: Colors.white,
-                      fontSize: 14,
+                    const SizedBox(height: 8),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        return gabaritoText(
+                          text: "Hari yang baru, rencana baru! Siapin kendaraan favoritmu bareng Transgo.",
+                          textColor: Colors.white,
+                          fontSize: 14,
+                          Maxlines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
                     ),
                   ],
                 ),

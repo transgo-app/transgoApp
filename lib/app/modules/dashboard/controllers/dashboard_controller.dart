@@ -70,11 +70,25 @@ class DashboardController extends GetxController
   }
 
   void _handleScrollVisibility() {
+    if (!scrollController.hasClients) return;
+    
     final currentOffset = scrollController.offset;
+    
+    // Always show button when at the top
+    if (currentOffset <= 0) {
+      if (!showWhatsApp.value) showWhatsApp.value = true;
+      _lastScrollOffset = currentOffset;
+      return;
+    }
+    
     final delta = currentOffset - _lastScrollOffset;
+    
+    // Hide when scrolling down
     if (delta > 5 && currentOffset > 0) {
       if (showWhatsApp.value) showWhatsApp.value = false;
-    } else if (delta < -5) {
+    } 
+    // Show when scrolling up
+    else if (delta < -5) {
       if (!showWhatsApp.value) showWhatsApp.value = true;
     }
 

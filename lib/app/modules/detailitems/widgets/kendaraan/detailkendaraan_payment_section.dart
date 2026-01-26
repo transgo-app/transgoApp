@@ -62,6 +62,8 @@ class DetailKendaraanPaymentSection extends StatelessWidget {
                   text:
                       'Jika transfer di luar metode pembayaran di atas, kami tidak bertanggung jawab atas kerugian yang dialami!',
                   fontSize: 14,
+                  Maxlines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
