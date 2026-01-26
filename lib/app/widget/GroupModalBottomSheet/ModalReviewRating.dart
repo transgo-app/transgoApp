@@ -169,6 +169,7 @@ class _ModalReviewRatingState extends State<ModalReviewRating> {
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     
     return Container(
       constraints: BoxConstraints(
@@ -179,7 +180,7 @@ class _ModalReviewRatingState extends State<ModalReviewRating> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SingleChildScrollView(
-        padding: EdgeInsets.only(bottom: keyboardHeight),
+        padding: EdgeInsets.only(bottom: keyboardHeight + bottomPadding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -359,7 +360,7 @@ class _ModalReviewRatingState extends State<ModalReviewRating> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
         ],
         ),
       ),

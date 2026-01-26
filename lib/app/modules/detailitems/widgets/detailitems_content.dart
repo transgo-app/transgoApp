@@ -36,6 +36,7 @@ class DetailitemsContent extends StatelessWidget {
               DetailitemsImageSection(controller: controller),
               const SizedBox(height: 14),
               DetailitemsInfo(controller: controller),
+              WeekendAlertWidget(controller: controller),
               DetailChargeWidget(controller: controller),
               FasilitasWidget(controller),
               DetailKendaraanImportantInfo(controller: controller),
