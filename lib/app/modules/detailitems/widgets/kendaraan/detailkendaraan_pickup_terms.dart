@@ -21,15 +21,21 @@ class DetailKendaraanPickupTerms extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 15),
             child: Divider(),
           ),
-          gabaritoText(
-            text: 'Ketentuan Antar - Jemput',
-            fontSize: 18,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: gabaritoText(
+              text: 'Ketentuan Antar - Jemput',
+              fontSize: 18,
+            ),
           ),
           gabaritoText(
             text:
                 'Berikut ini biaya antar-jemput kendaraan per unit kalau dilakukan di luar jam operasional, ya!',
             fontSize: 14,
             textColor: textPrimary,
+            Maxlines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 10),
           Column(
@@ -147,6 +153,8 @@ class DetailKendaraanPickupTerms extends StatelessWidget {
               text: "→  $cost",
               fontSize: 15,
               textAlign: TextAlign.left,
+              Maxlines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

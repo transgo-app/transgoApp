@@ -53,26 +53,30 @@ class CustomGestureCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: 225,
+            Padding(
+              padding: const EdgeInsets.all(12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: imagePath,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey.shade200,
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Image.asset(
-                    'assets/iconapp.png',
+                child: AspectRatio(
+                  aspectRatio: 1.0,
+                  child: CachedNetworkImage(
+                    imageUrl: imagePath,
                     fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Image.asset(
+                      'assets/iconapp.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,
+                    ),
+                    memCacheWidth: 600, // Limit memory usage
+                    memCacheHeight: 600,
                   ),
-                  memCacheWidth: 800, // Limit memory usage
-                  memCacheHeight: 600,
                 ),
               ),
             ),
@@ -107,6 +111,8 @@ class CustomGestureCard extends StatelessWidget {
               text: vehicleName,
               fontSize: 16,
               textColor: textHeadline,
+              Maxlines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
 
             const SizedBox(height: 8),
@@ -133,23 +139,27 @@ class CustomGestureCard extends StatelessWidget {
                 child: gabaritoText(text: 'Estimasi Biaya'),
               ),
 
-            Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: price,
-                    style: gabaritoTextStyle.copyWith(
-                      fontSize: 16,
-                      color: primaryColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (orderStatus == null)
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text.rich(
+                TextSpan(
+                  children: [
                     TextSpan(
-                      text: '/ Hari',
-                      style: poppinsTextStyle.copyWith(fontSize: 12),
+                      text: price,
+                      style: gabaritoTextStyle.copyWith(
+                        fontSize: 16,
+                        color: primaryColor,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                ],
+                    if (orderStatus == null)
+                      TextSpan(
+                        text: '/ Hari',
+                        style: poppinsTextStyle.copyWith(fontSize: 12),
+                      ),
+                  ],
+                ),
               ),
             ),
 
@@ -184,6 +194,8 @@ class CustomGestureCard extends StatelessWidget {
               text: title.isNotEmpty ? title : '-',
               fontSize: 14,
               textColor: textPrimary,
+              Maxlines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

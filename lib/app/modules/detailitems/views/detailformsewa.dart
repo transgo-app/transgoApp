@@ -65,20 +65,24 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
+                          SizedBox(
                             width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.grey,
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                foto,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    Container(color: Colors.grey),
+                            child: AspectRatio(
+                              aspectRatio: 1.0, // 1:1 aspect ratio
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.grey,
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.network(
+                                    foto,
+                                    fit: BoxFit.cover, // Crop to fill, maintaining aspect ratio
+                                    errorBuilder: (_, __, ___) =>
+                                        Container(color: Colors.grey),
+                                  ),
+                                ),
                               ),
                             ),
                           ),

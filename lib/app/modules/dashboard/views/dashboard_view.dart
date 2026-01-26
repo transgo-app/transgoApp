@@ -69,12 +69,15 @@ class DashboardView extends GetView<DashboardController> {
               child: FlashSaleWidget(controller: controller),
             ),
           ),
+          // WhatsApp button at bottom right
           Obx(
             () => AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOut,
-              right: 32,
-              bottom: controller.showWhatsApp.value ? 48 : -80,
+              right: MediaQuery.of(context).size.width < 360 ? 8.0 : 20.0, // Closer to right edge
+              bottom: controller.showWhatsApp.value 
+                  ? (MediaQuery.of(context).padding.bottom + 50) // Closer to bottom, accounting for bottom nav bar
+                  : -100, // Hide completely when scrolling down
               child: GestureDetector(
                 onTap: _openWhatsAppAdmin,
                 child: Container(

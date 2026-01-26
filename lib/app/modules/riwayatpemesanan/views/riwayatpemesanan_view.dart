@@ -190,34 +190,32 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: CachedNetworkImage(
-                    imageUrl: imagePath,
+                  child: SizedBox(
                     width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    // Optimized for low-end devices
-                    memCacheWidth: 200, // 100 * 2 for retina
-                    memCacheHeight: 200,
-                    maxWidthDiskCache: 200,
-                    maxHeightDiskCache: 200,
-                    filterQuality: FilterQuality.low,
-                    placeholder: (context, url) => Container(
-                      width: 100,
-                      height: 100,
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                    child: AspectRatio(
+                      aspectRatio: 1.0, // 1:1 aspect ratio
+                      child: Container(
+                        color: Colors.grey[200],
+                        child: CachedNetworkImage(
+                          imageUrl: imagePath,
+                          fit: BoxFit.cover, // Crop to fill, maintaining aspect ratio
+                          // Optimized for low-end devices
+                          memCacheWidth: 200, // ~ width * 2 for high-density
+                          memCacheHeight: 200, // 1:1 ratio
+                          maxWidthDiskCache: 200,
+                          maxHeightDiskCache: 200,
+                          filterQuality: FilterQuality.low,
+                          placeholder: (context, url) => const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) =>
+                              const Icon(Icons.image_not_supported, size: 30),
                         ),
                       ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      width: 100,
-                      height: 100,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.image_not_supported, size: 30),
                     ),
                   ),
                 ),
@@ -230,13 +228,22 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                         text: itemName,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
                           const Icon(Icons.location_on_outlined, size: 14),
                           const SizedBox(width: 4),
-                          poppinsText(text: itemLocation, fontSize: 12),
+                          Expanded(
+                            child: poppinsText(
+                              text: itemLocation,
+                              fontSize: 12,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -244,11 +251,15 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                         children: [
                           const Icon(Icons.calendar_today_outlined, size: 14),
                           const SizedBox(width: 4),
-                          poppinsText(
-                            text:
-                                '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['start_date']))} - '
-                                '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['end_date']))}',
-                            fontSize: 12,
+                          Expanded(
+                            child: poppinsText(
+                              text:
+                                  '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['start_date']))} - '
+                                  '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['end_date']))}',
+                              fontSize: 12,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
@@ -282,16 +293,23 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                StatusRiwayatStyle(
-                  orderStatus: data['order_status'],
-                  paymentStatus: data['payment_status'],
+                Flexible(
+                  child: StatusRiwayatStyle(
+                    orderStatus: data['order_status'],
+                    paymentStatus: data['payment_status'],
+                  ),
                 ),
-                poppinsText(
-                  text:
-                      'Rp ${NumberFormat.decimalPattern('id').format(data['total_price'])}',
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  textColor: primaryColor,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: poppinsText(
+                    text:
+                        'Rp ${NumberFormat.decimalPattern('id').format(data['total_price'])}',
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    textColor: primaryColor,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

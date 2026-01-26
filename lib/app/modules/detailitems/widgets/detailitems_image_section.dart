@@ -42,35 +42,39 @@ class DetailitemsImageSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imgUrl = getImageUrl(controller.detailData);
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
-      width: MediaQuery.of(context).size.width,
+      width: screenWidth,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         color: Colors.grey.shade200,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: CachedNetworkImage(
-          imageUrl: imgUrl,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Container(
-            color: Colors.grey.shade200,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
+        child: AspectRatio(
+          aspectRatio: 1.0, // 1:1 aspect ratio
+          child: CachedNetworkImage(
+            imageUrl: imgUrl,
+            fit: BoxFit.cover, // Crop to fill, maintaining aspect ratio
+            placeholder: (context, url) => Container(
+              color: Colors.grey.shade200,
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
+            errorWidget: (context, url, error) =>
+                const Icon(Icons.broken_image, size: 60),
+            // Optimized for low-end devices: 1:1 ratio cache
+            memCacheWidth: (screenWidth * 
+                            MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
+            memCacheHeight: (screenWidth * 
+                             MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
+            maxWidthDiskCache: 1200,
+            maxHeightDiskCache: 1200,
+            fadeInDuration: const Duration(milliseconds: 200),
+            filterQuality: FilterQuality.medium,
           ),
-          errorWidget: (context, url, error) =>
-              const Icon(Icons.broken_image, size: 60),
-          // Optimized for low-end devices: calculate based on screen width
-          memCacheWidth: (MediaQuery.of(context).size.width * 
-                          MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
-          memCacheHeight: (MediaQuery.of(context).size.width * 0.75 * 
-                           MediaQuery.of(context).devicePixelRatio).round().clamp(300, 600),
-          maxWidthDiskCache: 1200,
-          maxHeightDiskCache: 800,
-          fadeInDuration: const Duration(milliseconds: 200),
-          filterQuality: FilterQuality.medium,
         ),
       ),
     );

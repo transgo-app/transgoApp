@@ -264,7 +264,7 @@ class ItemCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildImageSection(photo, discount, statusLabel, type, category),
+            _buildImageSection(context, photo, discount, statusLabel, type, category),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -272,27 +272,50 @@ class ItemCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   gabaritoText(
-                      text: name, fontSize: 16, fontWeight: FontWeight.w700),
+                      text: name,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      Maxlines: 2,
+                      overflow: TextOverflow.ellipsis),
                   if (isKendaraan && tier.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     _buildTierChip(tier),
                   ],
-                  if (isKendaraan && averageRating > 0 && ratingCount > 0) ...[
+                  if (isKendaraan) ...[
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Text(
-                          '⭐',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        const SizedBox(width: 4),
-                        poppinsText(
-                          text: '${averageRating.toStringAsFixed(1)} ($ratingCount ulasan)',
-                          fontSize: 13,
-                          textColor: Colors.grey.shade700,
-                        ),
-                      ],
-                    ),
+                    if (averageRating > 0 && ratingCount > 0)
+                      Row(
+                        children: [
+                          const Text(
+                            '⭐',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(width: 4),
+                          poppinsText(
+                            text: '${averageRating.toStringAsFixed(1)} ($ratingCount ulasan)',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            textColor: Colors.grey.shade700,
+                          ),
+                        ],
+                      )
+                    else
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.star_outline,
+                            size: 16,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(width: 4),
+                          poppinsText(
+                            text: 'Belum dirating',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            textColor: Colors.grey.shade400,
+                          ),
+                        ],
+                      ),
                   ],
                 ],
               ),
@@ -361,86 +384,112 @@ class ItemCard extends StatelessWidget {
     return productSpec(icon, v);
   }
 
-  Widget _buildImageSection(String photo, int discount, String statusLabel,
+  Widget _buildImageSection(BuildContext context, String photo, int discount, String statusLabel,
       String type, String category) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(18), topRight: Radius.circular(18)),
-      child: Stack(
-        children: [
-          CachedNetworkImage(
-            imageUrl: photo,
-            height: 250,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              height: 250,
-              color: Colors.grey.shade200,
-              child: const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: AspectRatio(
+          aspectRatio: 1.0,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              CachedNetworkImage(
+                imageUrl: photo,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                placeholder: (context, url) => Container(
+                  color: Colors.grey.shade200,
+                  child: const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey.shade200,
+                  child: const Icon(
+                    Icons.broken_image,
+                    size: 50,
+                  ),
+                ),
+                // Optimized for low-end devices: reduce memory cache
+                memCacheWidth: 500,
+                memCacheHeight: 500,
+                maxWidthDiskCache: 600,
+                maxHeightDiskCache: 600,
+                fadeInDuration: const Duration(milliseconds: 200),
+                filterQuality: FilterQuality.low,
               ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              height: 250,
-              color: Colors.grey.shade200,
-              child: const Icon(Icons.broken_image, size: 50),
-            ),
-            // Optimized for low-end devices: reduce memory cache
-            memCacheWidth: 500,
-            memCacheHeight: 375,
-            maxWidthDiskCache: 800,
-            maxHeightDiskCache: 600,
-            fadeInDuration: const Duration(milliseconds: 200),
-            filterQuality: FilterQuality.low,
-          ),
-          if (discount > 0)
-            Positioned(
-              top: 12,
-              left: 12,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                    color: Colors.red.shade400,
-                    borderRadius: BorderRadius.circular(20)),
-                child: poppinsText(
-                    text: "-$discount%",
+              if (discount > 0)
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 80),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade400,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: poppinsText(
+                        text: "-$discount%",
+                        fontSize: 12,
+                        textColor: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.3,
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade700,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: poppinsText(
+                      text: statusLabel,
+                      fontSize: 12,
+                      textColor: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 12,
+                left: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade700,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: poppinsText(
+                    text: category,
                     fontSize: 12,
-                    textColor: Colors.white,
-                    fontWeight: FontWeight.w600),
+                    textColor: Colors.blue.shade50,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                  color: Colors.blue.shade700,
-                  borderRadius: BorderRadius.circular(20)),
-              child: poppinsText(
-                  text: statusLabel,
-                  fontSize: 12,
-                  textColor: Colors.white,
-                  fontWeight: FontWeight.w600),
-            ),
+            ],
           ),
-          Positioned(
-            bottom: 12,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                  color: Colors.blue.shade700,
-                  borderRadius: BorderRadius.circular(20)),
-              child: poppinsText(
-                  text: category,
-                  fontSize: 12,
-                  textColor: Colors.blue.shade50,
-                  fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -684,7 +733,11 @@ class ItemCard extends StatelessWidget {
           const SizedBox(width: 6),
           Flexible(
               child: poppinsText(
-                  text: value, fontSize: 13, textColor: Colors.grey.shade800)),
+                  text: value,
+                  fontSize: 13,
+                  textColor: Colors.grey.shade800,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis)),
         ],
       ),
     );

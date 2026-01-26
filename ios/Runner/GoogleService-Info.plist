@@ -26,5 +26,12 @@
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:1022276810838:ios:cdbed5e01a0eefe05763f7</string>
+	
+	<!-- Google Sign In Configuration -->
+	<key>CLIENT_ID</key>
+	<string>1022276810838-1ir96jl6p6c7188a7ujc1pov7rkg6b3v.apps.googleusercontent.com</string>
+	
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1022276810838-1ir96jl6p6c7188a7ujc1pov7rkg6b3v</string>
 </dict>
 </plist>
