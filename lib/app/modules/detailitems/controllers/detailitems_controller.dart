@@ -22,11 +22,13 @@ class DetailitemsController extends GetxController {
     selectedDurasi.value = duration;
     if (isLoggedIn) {
       getMyVouchers();
+      fetchTgPayBalance();
     }
 
     getDetailAPI(true).then((_) {
       getAddons();
       checkChargeSettings();
+      fetchRatings();
     });
     getDataInsurance();
 
@@ -81,6 +83,11 @@ class DetailitemsController extends GetxController {
   // Charge settings
   RxMap chargeSettings = {}.obs;
   Rxn<Map<String, dynamic>> currentChargeAlert = Rxn<Map<String, dynamic>>();
+
+  // Ratings
+  RxList ratings = [].obs;
+  RxBool isLoadingRatings = false.obs;
+  RxInt totalRatings = 0.obs;
   RxList selectedAddons = <Map<String, dynamic>>[].obs;
   RxList addonsList = <Map<String, dynamic>>[].obs;
   RxList vouchers = [].obs;
@@ -132,9 +139,22 @@ class DetailitemsController extends GetxController {
 
   @override
   void onClose() {
+    // Cancel all timers
+    _debounce?.cancel();
+    _apiDebounce?.cancel();
+    
+    // Dispose focus nodes
     focusNode1.dispose();
     focusNode2.dispose();
     focusNode3.dispose();
+    
+    // Clear large data structures to free memory
+    dataAsuransi.clear();
+    dataAddons.clear();
+    addonsList.clear();
+    vouchers.clear();
+    ratings.clear();
+    
     Get.delete<DetailitemsController>();
     super.onClose();
   }
@@ -213,6 +233,28 @@ class DetailitemsController extends GetxController {
   }
 
   RxBool menyetujuiSnK = false.obs;
+  
+  // TG Pay balance
+  RxDouble tgPayBalance = 0.0.obs;
+  RxBool isLoadingTgPayBalance = false.obs;
+  RxBool useTgPayBalance = false.obs;
+  
+  Future<void> fetchTgPayBalance() async {
+    if (GlobalVariables.token.value.isEmpty) {
+      tgPayBalance.value = 0.0;
+      return;
+    }
+    
+    isLoadingTgPayBalance.value = true;
+    try {
+      final data = await APIService().get('/topup/balance');
+      tgPayBalance.value = (data['balance'] ?? 0).toDouble();
+    } catch (e) {
+      tgPayBalance.value = 0.0;
+    } finally {
+      isLoadingTgPayBalance.value = false;
+    }
+  }
 
   Future getDetailAPI([bool needLoading = false, bool? isOrder = false]) async {
     _apiDebounce?.cancel();
@@ -259,6 +301,7 @@ class DetailitemsController extends GetxController {
                       : addon['quantity'],
                 })
             .toList(),
+      "use_balance": useTgPayBalance.value,
     };
     Map<String, dynamic>? response;
 
@@ -609,6 +652,54 @@ class DetailitemsController extends GetxController {
     } catch (e) {
       print("Error checking charge settings: $e");
       currentChargeAlert.value = null;
+    }
+  }
+
+  // Ratings methods
+  Future<void> fetchRatings({int page = 1, int limit = 2}) async {
+    if (isLoadingRatings.value) return;
+    
+    isLoadingRatings.value = true;
+    try {
+      // Get item ID from dataServer (passed from dashboard) or detailData
+      int? itemId;
+      if (dataServer['id'] != null) {
+        itemId = dataServer['id'];
+      } else {
+        if (isKendaraan) {
+          final fleetData = detailData['fleet'] as Map?;
+          itemId = fleetData?['id'];
+        } else {
+          final productData = detailData['product'] as Map?;
+          itemId = productData?['id'];
+        }
+      }
+      
+      if (itemId == null) {
+        ratings.value = [];
+        totalRatings.value = 0;
+        return;
+      }
+
+      final endpoint = isKendaraan 
+          ? '/fleets/$itemId/ratings?page=$page&limit=$limit'
+          : '/products/$itemId/ratings?page=$page&limit=$limit';
+      
+      var data = await APIService().get(endpoint);
+      
+      if (data != null && data['items'] != null) {
+        ratings.value = data['items'] as List;
+        totalRatings.value = data['meta']?['total_items'] ?? 0;
+      } else {
+        ratings.value = [];
+        totalRatings.value = 0;
+      }
+    } catch (e) {
+      print("Error fetching ratings: $e");
+      ratings.value = [];
+      totalRatings.value = 0;
+    } finally {
+      isLoadingRatings.value = false;
     }
   }
 }

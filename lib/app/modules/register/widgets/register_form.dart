@@ -19,20 +19,21 @@ class RegisterForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final RegisterController controller = Get.find<RegisterController>();
 
-    final productData = controller.dataArgumentsDetailKendaraan['product'];
-final fleetData = controller.dataArgumentsDetailKendaraan['fleet'];
+    final detailKendaraan = controller.dataArgumentsDetailKendaraan;
+    final productData = detailKendaraan?['product'];
+    final fleetData = detailKendaraan?['fleet'];
 
-final bool isProductItem =
-    productData != null && productData is Map && productData.isNotEmpty;
+    final bool isProductItem =
+        productData != null && productData is Map && productData.isNotEmpty;
 
-final bool isFleetItem =
-    fleetData != null && fleetData is Map && fleetData.isNotEmpty;
+    final bool isFleetItem =
+        fleetData != null && fleetData is Map && fleetData.isNotEmpty;
 
-final bool isItemAvailable = isProductItem || isFleetItem;
-final bool isDefaultMode = !isItemAvailable;
+    final bool isItemAvailable = isProductItem || isFleetItem;
+    final bool isDefaultMode = !isItemAvailable;
 
-final Map<String, dynamic>? itemData =
-    isFleetItem ? fleetData : productData;
+    final Map<String, dynamic>? itemData =
+        isFleetItem ? fleetData : productData;
 
     // WidgetsBinding.instance.addPostFrameCallback((_) {
     //   controller.initRoleByItem(
@@ -423,18 +424,47 @@ final Map<String, dynamic>? itemData =
             },
           ),
         ),
+        const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(children: <Widget>[
-            const Expanded(child: Divider()),
-            gabaritoText(
-              text: "Atau",
-              fontSize: 14,
-              textColor: textPrimary,
-            ),
-            const Expanded(child: Divider()),
-          ]),
+          child: Row(
+            children: <Widget>[
+              const Expanded(child: Divider()),
+              gabaritoText(
+                text: "Atau",
+                fontSize: 14,
+                textColor: textPrimary,
+              ),
+              const Expanded(child: Divider()),
+            ],
+          ),
         ),
+        const SizedBox(height: 10),
+        ReusableButton(
+          height: 55,
+          bgColor: Colors.white,
+          borderSideColor: Colors.grey,
+          widget: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/google_logo.png',
+                height: 24,
+                width: 24,
+              ),
+              const SizedBox(width: 10),
+              const gabaritoText(
+                text: "Daftar Dengan Google",
+                textColor: Colors.black,
+                fontSize: 16,
+              ),
+            ],
+          ),
+          ontap: () {
+            controller.prefillRegisterFromGoogle();
+          },
+        ),
+        const SizedBox(height: 10),
         ReusableButton(
           height: 55,
           bgColor: Colors.white,

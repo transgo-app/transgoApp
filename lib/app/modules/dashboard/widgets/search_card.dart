@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
+import '../../../routes/Navbar.dart';
 import '../controllers/dashboard_controller.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ParentModal.dart';
+import '../../../routes/app_pages.dart';
 
 class SearchCard extends StatefulWidget {
   final DashboardController controller;
@@ -45,6 +49,15 @@ class _SearchCardState extends State<SearchCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Only show TG Pay and TG Rewards if user is logged in (not guest mode)
+              Obx(() => GlobalVariables.token.value.isNotEmpty
+                  ? Column(
+                      children: [
+                        _buildTgPayRewards(controller),
+                        const SizedBox(height: 16),
+                      ],
+                    )
+                  : const SizedBox.shrink()),
               _buildSearch(controller),
               const SizedBox(height: 16),
               _buildLokasi(controller),
@@ -62,6 +75,236 @@ class _SearchCardState extends State<SearchCard> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTgPayRewards(DashboardController controller) {
+    return Column(
+      children: [
+        _buildTgPaySection(controller),
+        const SizedBox(height: 16),
+        Container(
+          height: 1,
+          color: Colors.grey.withOpacity(0.2),
+        ),
+        const SizedBox(height: 16),
+        _buildTgRewardSection(controller),
+      ],
+    );
+  }
+
+  Widget _buildTgPaySection(DashboardController controller) {
+    return Row(
+      children: [
+        // Icon
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.account_balance_wallet_outlined,
+            color: primaryColor,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Text and Balance
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              gabaritoText(
+                text: 'Transgo Pay',
+                fontSize: 12,
+                textColor: Colors.grey,
+              ),
+              const SizedBox(height: 4),
+              Obx(() {
+                final balance = controller.tgPayBalance.value;
+                final isVisible = controller.isBalanceVisible.value;
+                final formattedBalance = NumberFormat.currency(
+                  locale: 'id_ID',
+                  symbol: 'Rp ',
+                  decimalDigits: 0,
+                ).format(balance);
+
+                return Row(
+                  children: [
+                    Flexible(
+                      child: GestureDetector(
+                        onTap: controller.toggleBalanceVisibility,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: gabaritoText(
+                            text: isVisible ? formattedBalance : 'Rp ••••••',
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            textColor: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: controller.toggleBalanceVisibility,
+                      child: Icon(
+                        isVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ],
+          ),
+        ),
+        // Top Up Button
+        Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: primaryColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: TextButton(
+            onPressed: () {
+              // Navigate to Transgo Pay page
+              final token = GlobalVariables.token.value;
+              if (token.isEmpty) {
+                CustomSnackbar.show(
+                  title: "Error",
+                  message: "Silakan login terlebih dahulu",
+                  icon: Icons.error_outline,
+                );
+                return;
+              }
+
+              // Navigate to native TG Pay page
+              Get.toNamed(Routes.TGPAY);
+            },
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_upward,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                gabaritoText(
+                  text: 'Top Up',
+                  fontSize: 14,
+                  textColor: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTgRewardSection(DashboardController controller) {
+    return Row(
+      children: [
+        // Icon
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.shield_outlined,
+            color: primaryColor,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Text and Tier
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              gabaritoText(
+                text: 'Transgo Reward',
+                fontSize: 12,
+                textColor: Colors.grey,
+              ),
+              const SizedBox(height: 4),
+              Obx(() {
+                return FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: gabaritoText(
+                    text: controller.tgRewardTier.value,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    textColor: Colors.black,
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        // Detail Button
+        Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: TextButton(
+            onPressed: () {
+              // Navigate to TransGo Reward page via bottom navigation
+              Get.offAll(() => NavigationPage(selectedIndex: 2));
+            },
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.emoji_events_outlined,
+                  size: 18,
+                  color: Colors.black87,
+                ),
+                const SizedBox(width: 6),
+                gabaritoText(
+                  text: 'Detail',
+                  fontSize: 14,
+                  textColor: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -196,10 +439,18 @@ class _SearchCardState extends State<SearchCard> {
         tabs: filtered.map((cat) {
           return Tab(
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset('assets/${cat['id']}.png', scale: 3),
                 const SizedBox(width: 6),
-                gabaritoText(text: cat['name'], fontSize: 14),
+                Flexible(
+                  child: gabaritoText(
+                    text: cat['name'],
+                    fontSize: 14,
+                    Maxlines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           );
@@ -208,6 +459,9 @@ class _SearchCardState extends State<SearchCard> {
           controller.selectedKategori.value = filtered[index]['id'] ?? '';
           controller.teksLokasi.value = 'Harap tunggu...';
           controller.teksCari.value = 'Harap tunggu...';
+          // Reset filters and collapse filter section when category changes
+          controller.resetFilters();
+          controller.isFilterExpanded.value = false;
           await controller.getKotaKendaraan();
           controller.getList();
         },
@@ -350,7 +604,14 @@ class _SelectBox extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              gabaritoText(text: value),
+              Expanded(
+                child: gabaritoText(
+                  text: value,
+                  Maxlines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
               Icon(icon),
             ],
           ),

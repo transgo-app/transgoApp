@@ -1,10 +1,12 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:transgomobileapp/app/widget/General/text.dart';
 import '../controllers/riwayatpemesanan_controller.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
+import '../../../widget/GroupModalBottomSheet/ModalReviewRating.dart';
 
 class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
   const RiwayatpemesananView({super.key});
@@ -58,6 +60,7 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
         body: RefreshIndicator(
           backgroundColor: primaryColor,
           color: Colors.white,
+          // Enable pull-to-refresh for the whole history list
           onRefresh: () => controller.getListKendaraan(),
           child: Obx(() {
             if (controller.isLoading.value) {
@@ -84,63 +87,71 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
 
             return SingleChildScrollView(
               controller: controller.scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: controller.listKendaraan.length +
-                        (controller.hasMore.value ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == controller.listKendaraan.length) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Center(
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(),
+                  Obx(() {
+                    final itemCount = controller.listKendaraan.length +
+                        (controller.hasMore.value ? 1 : 0);
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      cacheExtent: 250, // Optimized for low-end devices
+                      itemCount: itemCount,
+                      itemBuilder: (context, index) {
+                        if (index == controller.listKendaraan.length) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final data = controller.listKendaraan[index];
+                        final fleet = data['fleet'];
+                        final product = data['product'];
+
+                        final imagePath = fleet != null
+                            ? (fleet['photo']?['photo'] ?? '')
+                            : (product?['photo']?['photo'] ?? '');
+
+                        final location = limitText(
+                          fleet != null
+                              ? (fleet['location']?['name'] ?? '')
+                              : (product?['location']?['name'] ?? '-'),
+                        );
+
+                        final typeLabel = fleet != null
+                            ? fleet['type_label'] ?? ''
+                            : product?['category_label'] ?? '';
+
+                        final itemName = fleet != null
+                            ? fleet['name'] ?? ''
+                            : product?['name'] ?? '';
+
+                        return RepaintBoundary(
+                          key: ValueKey('riwayat_${data['id']}'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: _customCard(
+                              data,
+                              imagePath,
+                              itemName,
+                              location,
+                              typeLabel,
                             ),
                           ),
                         );
-                      }
-
-                      final data = controller.listKendaraan[index];
-                      final fleet = data['fleet'];
-                      final product = data['product'];
-
-                      final imagePath = fleet != null
-                          ? (fleet['photo']?['photo'] ?? '')
-                          : (product?['photo']?['photo'] ?? '');
-
-                      final location = limitText(
-                        fleet != null
-                            ? (fleet['location']?['name'] ?? '')
-                            : (product?['location']?['name'] ?? '-'),
-                      );
-
-                      final typeLabel = fleet != null
-                          ? fleet['type_label'] ?? ''
-                          : product?['category_label'] ?? '';
-
-                      final itemName = fleet != null
-                          ? fleet['name'] ?? ''
-                          : product?['name'] ?? '';
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: _customCard(
-                          data,
-                          imagePath,
-                          itemName,
-                          location,
-                          typeLabel,
-                        ),
-                      );
-                    },
-                  ),
+                      },
+                    );
+                  }),
                 ],
               ),
             );
@@ -179,16 +190,32 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    imagePath,
+                  child: SizedBox(
                     width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 100,
-                      height: 100,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.image_not_supported),
+                    child: AspectRatio(
+                      aspectRatio: 1.0, // 1:1 aspect ratio
+                      child: Container(
+                        color: Colors.grey[200],
+                        child: CachedNetworkImage(
+                          imageUrl: imagePath,
+                          fit: BoxFit.cover, // Crop to fill, maintaining aspect ratio
+                          // Optimized for low-end devices
+                          memCacheWidth: 200, // ~ width * 2 for high-density
+                          memCacheHeight: 200, // 1:1 ratio
+                          maxWidthDiskCache: 200,
+                          maxHeightDiskCache: 200,
+                          filterQuality: FilterQuality.low,
+                          placeholder: (context, url) => const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) =>
+                              const Icon(Icons.image_not_supported, size: 30),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -201,13 +228,22 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                         text: itemName,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
                           const Icon(Icons.location_on_outlined, size: 14),
                           const SizedBox(width: 4),
-                          poppinsText(text: itemLocation, fontSize: 12),
+                          Expanded(
+                            child: poppinsText(
+                              text: itemLocation,
+                              fontSize: 12,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -215,11 +251,15 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                         children: [
                           const Icon(Icons.calendar_today_outlined, size: 14),
                           const SizedBox(width: 4),
-                          poppinsText(
-                            text:
-                                '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['start_date']))} - '
-                                '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['end_date']))}',
-                            fontSize: 12,
+                          Expanded(
+                            child: poppinsText(
+                              text:
+                                  '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['start_date']))} - '
+                                  '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['end_date']))}',
+                              fontSize: 12,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
@@ -237,6 +277,11 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                           ),
                         ],
                       ),
+                      // Beri Ulasan button (only for done orders)
+                      if (data['order_status'] == 'done') ...[
+                        const SizedBox(height: 8),
+                        Obx(() => _buildReviewButton(data, itemName)),
+                      ],
                     ],
                   ),
                 ),
@@ -248,18 +293,84 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                StatusRiwayatStyle(
-                  orderStatus: data['order_status'],
-                  paymentStatus: data['payment_status'],
+                Flexible(
+                  child: StatusRiwayatStyle(
+                    orderStatus: data['order_status'],
+                    paymentStatus: data['payment_status'],
+                  ),
                 ),
-                poppinsText(
-                  text:
-                      'Rp ${NumberFormat.decimalPattern('id').format(data['total_price'])}',
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  textColor: primaryColor,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: poppinsText(
+                    text:
+                        'Rp ${NumberFormat.decimalPattern('id').format(data['total_price'])}',
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    textColor: primaryColor,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReviewButton(Map<String, dynamic> data, String itemName) {
+    final orderId = data['id'];
+    final isReviewed = controller.isOrderReviewed(orderId) || 
+                       (data['has_rating'] ?? false) ||
+                       (data['rating'] != null);
+    
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: isReviewed
+            ? null
+            : () {
+                final fleet = data['fleet'];
+                final product = data['product'];
+                Get.bottomSheet(
+                  ModalReviewRating(
+                    itemName: itemName,
+                    orderId: orderId,
+                    fleetId: fleet?['id'],
+                    productId: product?['id'],
+                    onSuccess: () {
+                      // Refresh the list asynchronously without blocking
+                      Future.delayed(const Duration(milliseconds: 500), () {
+                        controller.getListKendaraan();
+                      });
+                    },
+                  ),
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                );
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isReviewed ? Colors.grey.shade300 : Colors.amber.shade600,
+          disabledBackgroundColor: Colors.grey.shade300,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: isReviewed ? 0 : 2,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isReviewed) ...[
+              const Icon(Icons.star, size: 16, color: Colors.grey),
+              const SizedBox(width: 6),
+            ],
+            poppinsText(
+              text: isReviewed ? "Sudah dirating" : "Beri Ulasan",
+              fontSize: 13,
+              textColor: isReviewed ? Colors.grey.shade700 : Colors.white,
+              fontWeight: FontWeight.w600,
             ),
           ],
         ),

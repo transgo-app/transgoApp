@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -47,20 +48,40 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  if (kIsWeb) {
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: 'AIzaSyDPZWOTBBZpDDExpo4Z4ew3oOtK6a9To7s',
-        appId: '1:1022276810838:android:13e9e87a3cc417575763f7',
-        messagingSenderId: '1022276810838',
-        projectId: 'transgo-app',
-      ),
-    );
-  } else {
-    await Firebase.initializeApp();
+  try {
+    if (kIsWeb) {
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: 'AIzaSyDPZWOTBBZpDDExpo4Z4ew3oOtK6a9To7s',
+          appId: '1:1022276810838:android:13e9e87a3cc417575763f7',
+          messagingSenderId: '1022276810838',
+          projectId: 'transgo-app',
+        ),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('Firebase initialization timeout');
+          throw TimeoutException('Firebase initialization timeout');
+        },
+      );
+    } else {
+      await Firebase.initializeApp().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('Firebase initialization timeout');
+          throw TimeoutException('Firebase initialization timeout');
+        },
+      );
+    }
+  } catch (e) {
+    debugPrint('Error initializing Firebase Core: $e');
+    // Continue even if Firebase fails
   }
 
-  await FirebaseApi().init();
+  // Initialize Firebase API in background - don't block app startup
+  FirebaseApi().init().catchError((error) {
+    debugPrint('Firebase API initialization error: $error');
+  });
 
   runApp(
     MyApp(

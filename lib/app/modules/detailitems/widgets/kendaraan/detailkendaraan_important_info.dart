@@ -16,9 +16,13 @@ class DetailKendaraanImportantInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          gabaritoText(
-            text: 'Wajib Dibaca Sebelum Lanjut',
-            textColor: textHeadline,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: gabaritoText(
+              text: 'Wajib Dibaca Sebelum Lanjut',
+              textColor: textHeadline,
+            ),
           ),
           gabaritoText(
             text: !isKendaraan
@@ -26,6 +30,8 @@ class DetailKendaraanImportantInfo extends StatelessWidget {
                 : 'Sebelum kamu booking, yuk baca info penting berikut agar proses sewa lancar!',
             textColor: textPrimary,
             fontSize: 14,
+            Maxlines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 20),
           !isKendaraan ? _peraturanProduk() : _peraturanKendaraan(),
@@ -183,6 +189,8 @@ Apabila terjadi kerusakan yang disebabkan oleh penyewa yang menyebabkan barang r
       title: gabaritoText(
         text: title,
         textColor: solidPrimary,
+        Maxlines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
       children: [
         Padding(

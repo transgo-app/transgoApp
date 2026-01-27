@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../../../widget/Card/BackgroundCard.dart';
 import '../../../../widget/widgets.dart';
 import '../../controllers/detailitems_controller.dart';
@@ -33,6 +34,8 @@ class SectionPemakaian extends StatelessWidget {
                       controller.pemakaianLuarKota.value = false;
                       controller.selectedPemakaian.value = value!;
                       controller.selectedRegion.value = {};
+                      controller.selectedRegionId.value = 0;
+                      controller.selectedRegionName.value = "";
                       controller.getDetailAPI();
                     },
                   ))
@@ -42,9 +45,36 @@ class SectionPemakaian extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              gabaritoText(
-                text: "Luar Kota",
-                textColor: textHeadline,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  gabaritoText(
+                    text: "Luar Kota",
+                    textColor: textHeadline,
+                  ),
+                  // Price alert when region is selected
+                  Obx(() {
+                    if (controller.selectedRegion.isEmpty || 
+                        controller.selectedRegionId.value == 0) {
+                      return const SizedBox.shrink();
+                    }
+                    final bool isCar =
+                        controller.detailData['item']?['type_code'] == 'car';
+                    final int selectedRate = isCar
+                        ? controller.selectedRegion['daily_rate']
+                        : controller.selectedRegion['motorcycle_daily_rate'];
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: gabaritoText(
+                        text: '+ Rp ${formatRupiah(selectedRate)} / Hari',
+                        textColor: Colors.red,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    );
+                  }),
+                ],
               ),
               Obx(() => Radio(
                     value: "Luar Kota",
@@ -54,12 +84,14 @@ class SectionPemakaian extends StatelessWidget {
                       controller.pemakaianLuarKota.value = true;
                       controller.selectedPemakaian.value = value!;
                       await controller.getOutOfTownRates();
+                      // Set default jumlah hari to full rental duration
+                      controller.selectedRegionQuantity.value = controller.selectedDurasi.value;
                     },
                   ))
             ],
           ),
           Obx(() {
-            if (!controller.pemakaianLuarKota.value) return SizedBox();
+            if (!controller.pemakaianLuarKota.value) return const SizedBox();
 
             if (controller.outOfTownRates.isEmpty) {
               return const Padding(
@@ -75,149 +107,272 @@ class SectionPemakaian extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 12),
-                gabaritoText(
-                  text: "Pilih Wilayah Luar Kota:",
-                  textColor: textHeadline,
-                  fontSize: 14,
+                const SizedBox(height: 20),
+                // Pilih Daerah Tujuan section
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      color: Colors.pink,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    gabaritoText(
+                      text: "Pilih Daerah Tujuan",
+                      textColor: textHeadline,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                ...controller.outOfTownRates.map((region) {
-                  final bool isSelected =
-                      controller.selectedRegion['region_name'] ==
-                          region['region_name'];
-                  final bool isCar =
-                      controller.detailData['item']?['type_code'] == 'car';
-                  final int selectedRate = isCar
-                      ? region['daily_rate']
-                      : region['motorcycle_daily_rate'];
-
-                  return GestureDetector(
-                    onTap: () {
-                      controller.selectedRegion.value = region;
-                      controller.selectedRegionId.value = region['id'];
-                      controller.selectedRegionName.value =
-                          region['region_name'];
-                      controller.selectedRegionQuantity.value = 1;
-                      controller.getDetailAPI();
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color:
-                              isSelected ? primaryColor : Colors.grey.shade300,
-                          width: isSelected ? 2 : 1,
+                const SizedBox(height: 6),
+                gabaritoText(
+                  text: "Pilih daerah tujuan untuk melihat tarif tambahan yang akan dikenakan",
+                  textColor: textSecondary,
+                  fontSize: 13,
+                ),
+                const SizedBox(height: 12),
+                // Region dropdown
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: Obx(() {
+                      // Use region ID as the value instead of the map object
+                      final selectedRegionId = controller.selectedRegionId.value == 0
+                          ? null
+                          : controller.selectedRegionId.value;
+                      
+                      return DropdownButton<int>(
+                        isExpanded: true,
+                        isDense: false,
+                        value: selectedRegionId,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        hint: gabaritoText(
+                          text: "Pilih daerah tujuan...",
+                          textColor: textSecondary,
+                          fontSize: 14,
                         ),
-                        color: isSelected
-                            ? primaryColor.withOpacity(0.05)
-                            : Colors.white,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          gabaritoText(
-                            text: region["region_name"],
-                            textColor: textHeadline,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          const SizedBox(height: 6),
-                          gabaritoText(
-                            text: region["description"] ?? "",
-                            textColor: Colors.grey,
-                            fontSize: 13,
-                          ),
-                          const SizedBox(height: 10),
-                          Divider(
-                            thickness: 1,
-                            color: Colors.grey.shade300,
-                          ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                gabaritoText(
-                                  text: 'Rp ${formatRupiah(selectedRate)} / hari',
-                                  textColor: solidPrimary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                if (isSelected) ...[
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                            Icons.remove_circle_outline),
-                                        color: primaryColor,
-                                        onPressed: () {
-                                          if (controller.selectedRegionQuantity
-                                                  .value >
-                                              1) {
-                                            controller
-                                                .selectedRegionQuantity.value--;
-                                            controller.getDetailAPI();
-                                          }
-                                        },
-                                      ),
-                                      Obx(() => gabaritoText(
-                                            text: controller
-                                                .selectedRegionQuantity.value
-                                                .toString(),
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            textColor: textHeadline,
-                                          )),
-                                      IconButton(
-                                        icon: const Icon(
-                                            Icons.add_circle_outline),
-                                        color: primaryColor,
-                                        onPressed: () {
-                                          if (controller.selectedRegionQuantity
-                                                  .value <
-                                              controller.selectedDurasi.value) {
-                                            controller
-                                                .selectedRegionQuantity.value++;
-                                            controller.getDetailAPI();
-                                          }
-                                        },
+                        icon: Icon(
+                          IconsaxPlusBold.arrow_circle_down,
+                          color: Colors.grey,
+                          size: 20,
+                        ),
+                        dropdownColor: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        menuMaxHeight: 400,
+                        items: controller.outOfTownRates.map((region) {
+                          return DropdownMenuItem<int>(
+                            value: region['id'],
+                            child: OverflowBox(
+                              maxHeight: 220,
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    gabaritoText(
+                                      text: region["region_name"],
+                                      textColor: textHeadline,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    if (region["description"] != null && 
+                                        region["description"].toString().isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      gabaritoText(
+                                        text: region["description"],
+                                        textColor: textSecondary,
+                                        fontSize: 12,
+                                        Maxlines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
-                                  ),
-                                ]
-                              ],
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                          );
+                        }).toList(),
+                        onChanged: (int? newRegionId) {
+                          if (newRegionId != null) {
+                            // Find the region by ID
+                            final region = controller.outOfTownRates.firstWhere(
+                              (r) => r['id'] == newRegionId,
+                            );
+                            controller.selectedRegion.value = Map<String, dynamic>.from(region);
+                            controller.selectedRegionId.value = newRegionId;
+                            controller.selectedRegionName.value = region['region_name'];
+                            // Set default jumlah hari to full rental duration when region is selected
+                            controller.selectedRegionQuantity.value = controller.selectedDurasi.value;
+                            controller.getDetailAPI();
+                          }
+                        },
+                        selectedItemBuilder: (BuildContext context) {
+                          // selectedItemBuilder must return a list with the same length as items
+                          return controller.outOfTownRates.map((region) {
+                            final isSelected = region['id'] == selectedRegionId;
+                            
+                            return Container(
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                children: [
+                                  if (isSelected) ...[
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: primaryColor,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        gabaritoText(
+                                          text: region["region_name"],
+                                          textColor: textHeadline,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        if (region["description"] != null && 
+                                            region["description"].toString().isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          gabaritoText(
+                                            text: region["description"],
+                                            textColor: textSecondary,
+                                            fontSize: 12,
+                                            Maxlines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList();
+                        },
+                      );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Jumlah Hari yang Dikenakan Charge section
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      color: primaryColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    gabaritoText(
+                      text: "Jumlah Hari yang Dikenakan Charge",
+                      textColor: textHeadline,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                gabaritoText(
+                  text: "Pilih jumlah hari yang akan dikenakan biaya tambahan luar kota",
+                  textColor: textSecondary,
+                  fontSize: 13,
+                ),
+                const SizedBox(height: 12),
+                // Jumlah hari dropdown
+                Obx(() {
+                  final rentalDuration = controller.selectedDurasi.value;
+                  
+                  if (rentalDuration <= 0) {
+                    return const SizedBox.shrink();
+                  }
+                  
+                  final List<int> dayOptions = List.generate(
+                    rentalDuration,
+                    (index) => index + 1,
+                  );
+                  
+                  // Ensure selectedRegionQuantity is within valid range
+                  final currentValue = controller.selectedRegionQuantity.value;
+                  final validValue = (currentValue > 0 && currentValue <= rentalDuration)
+                      ? currentValue
+                      : rentalDuration;
+                  
+                  // Ensure value is always in the items list
+                  final dropdownValue = dayOptions.contains(validValue) 
+                      ? validValue 
+                      : dayOptions.isNotEmpty 
+                          ? dayOptions.first 
+                          : null;
+                  
+                  // Update if needed (but avoid infinite loop)
+                  if (currentValue != validValue && validValue > 0) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (controller.selectedRegionQuantity.value != validValue) {
+                        controller.selectedRegionQuantity.value = validValue;
+                      }
+                    });
+                  }
+                  
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.grey.shade300,
+                        width: 1,
+                      ),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        isExpanded: true,
+                        value: dropdownValue,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        icon: Icon(
+                          IconsaxPlusBold.arrow_circle_down,
+                          color: Colors.grey,
+                          size: 20,
+                        ),
+                        dropdownColor: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        menuMaxHeight: 300,
+                        items: dayOptions.map((days) {
+                          return DropdownMenuItem<int>(
+                            value: days,
+                            child: gabaritoText(
+                              text: "$days hari",
+                              textColor: textHeadline,
+                              fontSize: 14,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: controller.selectedRegionId.value == 0
+                            ? null
+                            : (int? newValue) {
+                                if (newValue != null) {
+                                  controller.selectedRegionQuantity.value = newValue;
+                                  controller.getDetailAPI();
+                                }
+                              },
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
-            );
-          }),
-          Obx(() {
-            if (controller.selectedRegion.isEmpty) return const SizedBox();
-            final bool isCar =
-                controller.detailData['item']?['type_code'] == 'car';
-            final int selectedRate = isCar
-                ? controller.selectedRegion['daily_rate']
-                : controller.selectedRegion['motorcycle_daily_rate'];
-
-            return Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: gabaritoText(
-                text: 'Tarif Luar Kota Dipilih: Rp ${formatRupiah(selectedRate)} / hari',
-                textColor: solidPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
             );
           }),
         ],

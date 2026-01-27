@@ -8,6 +8,9 @@ class poppinsText extends StatelessWidget {
   final Color? textColor;
   final TextAlign? textAlign;
   final double heightText;
+  final int? maxLines;
+  final TextOverflow? overflow;
+  final bool? useFittedBox;
 
   const poppinsText(
       {Key? key,
@@ -16,15 +19,20 @@ class poppinsText extends StatelessWidget {
       this.fontWeight,
       this.textColor,
       this.textAlign,
-      this.heightText = 1.0
+      this.heightText = 1.0,
+      this.maxLines,
+      this.overflow,
+      this.useFittedBox = false
       })
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Text(
+    final textWidget = Text(
       text,
       textAlign: textAlign,
+      maxLines: maxLines,
+      overflow: overflow ?? (maxLines != null ? TextOverflow.ellipsis : null),
       style: poppinsTextStyle.copyWith(
         fontSize: fontSize ?? 11,
         fontWeight: fontWeight ?? FontWeight.w500,
@@ -32,6 +40,22 @@ class poppinsText extends StatelessWidget {
         height: heightText == 1.0 ? null : heightText
       ),
     );
+
+    if (useFittedBox == true) {
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: textAlign == null 
+            ? Alignment.centerLeft 
+            : (textAlign == TextAlign.center 
+                ? Alignment.center 
+                : (textAlign == TextAlign.right 
+                    ? Alignment.centerRight 
+                    : Alignment.centerLeft)),
+        child: textWidget,
+      );
+    }
+
+    return textWidget;
   }
 }
 
@@ -45,6 +69,7 @@ class gabaritoText extends StatelessWidget {
   final double heightText;
   final int? Maxlines;
   final TextOverflow? overflow;
+  final bool? useFittedBox;
 
   const gabaritoText(
       {Key? key,
@@ -55,18 +80,18 @@ class gabaritoText extends StatelessWidget {
       this.textAlign,
       this.heightText = 1.0,
       this.Maxlines,
-      this.overflow
+      this.overflow,
+      this.useFittedBox = false
       })
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      
+    final textWidget = Text(
       text,
       textAlign: textAlign,
       maxLines: Maxlines,
-      overflow: overflow,
+      overflow: overflow ?? (Maxlines != null ? TextOverflow.ellipsis : null),
       style: gabaritoTextStyle.copyWith(
         fontSize: fontSize ?? 15,
         fontWeight: fontWeight ?? FontWeight.w500,
@@ -74,5 +99,21 @@ class gabaritoText extends StatelessWidget {
         height: heightText == 1.0 ? null : heightText
       ),
     );
+
+    if (useFittedBox == true) {
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: textAlign == null 
+            ? Alignment.centerLeft 
+            : (textAlign == TextAlign.center 
+                ? Alignment.center 
+                : (textAlign == TextAlign.right 
+                    ? Alignment.centerRight 
+                    : Alignment.centerLeft)),
+        child: textWidget,
+      );
+    }
+
+    return textWidget;
   }
 }

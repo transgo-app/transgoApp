@@ -17,7 +17,12 @@ class BottomSheetComponent extends StatelessWidget {
                   top: Radius.circular(10),
                 ),
               ),
-              padding: EdgeInsets.all(20),
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: 20 + MediaQuery.of(context).padding.bottom,
+              ),
               child: widget
             ),
               Positioned(

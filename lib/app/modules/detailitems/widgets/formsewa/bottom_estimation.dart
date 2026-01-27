@@ -43,6 +43,46 @@ class BottomEstimation extends StatelessWidget {
           ReusableButton(
             height: 50,
             ontap: () {
+              // Validate location fields
+              if (controller.detailLokasiPengambilan.value.isEmpty) {
+                CustomSnackbar.show(
+                  title: "Terjadi Kesalahan",
+                  message: "Silahkan pilih lokasi pengambilan terlebih dahulu.",
+                  icon: Icons.location_on,
+                );
+                return;
+              }
+              
+              if (controller.detailLokasiPengembalian.value.isEmpty) {
+                CustomSnackbar.show(
+                  title: "Terjadi Kesalahan",
+                  message: "Silahkan pilih lokasi pengembalian terlebih dahulu.",
+                  icon: Icons.location_on,
+                );
+                return;
+              }
+              
+              // Validate address if not self pickup/return
+              if (!controller.pengambilanSendiri.value &&
+                  controller.lokasiPengambilanC.text.trim().isEmpty) {
+                CustomSnackbar.show(
+                  title: "Terjadi Kesalahan",
+                  message: "Silahkan isi alamat pengambilan terlebih dahulu.",
+                  icon: Icons.location_on,
+                );
+                return;
+              }
+              
+              if (!controller.pengembalianSendiri.value &&
+                  controller.lokasiPengembalianC.text.trim().isEmpty) {
+                CustomSnackbar.show(
+                  title: "Terjadi Kesalahan",
+                  message: "Silahkan isi alamat pengembalian terlebih dahulu.",
+                  icon: Icons.location_on,
+                );
+                return;
+              }
+              
               if (!controller.isKendaraan &&
                   controller.deskripsiPermintaanKhusus.text.trim().isEmpty) {
                 CustomSnackbar.show(

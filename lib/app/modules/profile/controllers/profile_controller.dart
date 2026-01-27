@@ -14,6 +14,9 @@ class ProfileController extends GetxController {
   TextEditingController nomorDaruratC = TextEditingController();
   TextEditingController jenisKelaminC = TextEditingController();
   TextEditingController tanggalLahirC = TextEditingController();
+  TextEditingController nikC = TextEditingController();
+  TextEditingController passwordC = TextEditingController();
+  TextEditingController confirmPasswordC = TextEditingController();
 
   RxString jenisKelamin = ''.obs;
   RxString tanggalLahir = ''.obs;
@@ -39,10 +42,11 @@ class ProfileController extends GetxController {
       print("INI DATA USER ${dataUser['id'].runtimeType}");
       namaUserC.text = GlobalVariables.namaUser.value;
       emailC.text = GlobalVariables.emailUser.value;
-      nomorTelpC.text = dataUser['phone_number'];
-      nomorDaruratC.text = dataUser['phone_number'];
+      nomorTelpC.text = dataUser['phone_number'] ?? '';
+      nomorDaruratC.text = dataUser['emergency_phone_number'] ?? dataUser['phone_number'] ?? '';
       jenisKelaminC.text = GlobalVariables.jenisKelamin.value;
       tanggalLahirC.text = GlobalVariables.tanggalLahir.value; 
+      nikC.text = dataUser['nik'] ?? '';
 
       GlobalVariables.additional_data_status.value = dataUser['additional_data_status'];
       GlobalVariables.statusVerificationAccount.value = dataUser['status'];

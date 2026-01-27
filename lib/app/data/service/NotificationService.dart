@@ -12,21 +12,54 @@ class FirebaseApi {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   Future<void> init() async {
-    await _firebaseMessaging.requestPermission();
-    await _initializeNotifications();
+    try {
+      // Add timeout to prevent hanging - wrap in try-catch for timeout
+      try {
+        await _firebaseMessaging.requestPermission().timeout(
+          const Duration(seconds: 10),
+        );
+      } catch (e) {
+        print('Firebase permission request timeout or error: $e');
+        // Continue even if permission request fails
+      }
+      
+      try {
+        await _initializeNotifications().timeout(
+          const Duration(seconds: 5),
+        );
+      } catch (e) {
+        print('Notification initialization timeout or error: $e');
+        // Continue even if notification initialization fails
+      }
 
-    final prefs = await SharedPreferences.getInstance();
-    final fcmToken = await _firebaseMessaging.getToken();
-    await prefs.setString('fcmToken', fcmToken ?? 'Gaada');
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Add timeout for FCM token retrieval
+      String? fcmToken;
+      try {
+        fcmToken = await _firebaseMessaging.getToken().timeout(
+          const Duration(seconds: 10),
+        );
+      } catch (e) {
+        print('FCM token retrieval timeout or error: $e');
+        fcmToken = null;
+      }
+      
+      await prefs.setString('fcmToken', fcmToken ?? 'Gaada');
 
-    print("FCM Token: $fcmToken");
-    GlobalVariables.fcmToken.value = fcmToken ?? '';
+      print("FCM Token: $fcmToken");
+      GlobalVariables.fcmToken.value = fcmToken ?? '';
 
-    _firebaseMessaging.subscribeToTopic('masyarakat');
+      // These operations are non-blocking, so they won't cause hanging
+      _firebaseMessaging.subscribeToTopic('masyarakat');
 
-    FirebaseMessaging.onMessage.listen(_handleMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      FirebaseMessaging.onMessage.listen(_handleMessage);
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    } catch (e) {
+      print('Error initializing Firebase: $e');
+      // Don't rethrow - allow app to continue even if Firebase fails
+    }
   }
 
   void _handleMessage(RemoteMessage message) {

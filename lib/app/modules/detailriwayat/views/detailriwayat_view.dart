@@ -1,17 +1,74 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_popup/flutter_popup.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import 'package:transgomobileapp/app/widget/Card/InfoCard.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBatalkanSewa.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalPenganggungJawab.dart';
+import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalReviewRating.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../controllers/detailriwayat_controller.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
+import '../../../data/theme.dart';
 
-class DetailriwayatView extends GetView<DetailriwayatController> {
+class DetailriwayatView extends StatefulWidget {
   const DetailriwayatView({super.key});
+
+  @override
+  State<DetailriwayatView> createState() => _DetailriwayatViewState();
+}
+
+class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindingObserver {
+  late DetailriwayatController controller;
+  DateTime? _lastResumeTime;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<DetailriwayatController>();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // When app comes back to foreground (resumed)
+    if (state == AppLifecycleState.resumed) {
+      final now = DateTime.now();
+      
+      // Only refresh if:
+      // 1. This is the first resume, OR
+      // 2. At least 2 seconds have passed since last resume (to avoid multiple rapid refreshes)
+      if (_lastResumeTime == null || 
+          now.difference(_lastResumeTime!).inSeconds >= 2) {
+        _lastResumeTime = now;
+        
+        // Check if payment status is still pending before refreshing
+        // Access the reactive map value correctly
+        final paymentStatus = controller.detaiItemsID.value['payment_status'];
+        if (paymentStatus == 'pending') {
+          // Refresh the data automatically when user returns from payment app
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              controller.getDataById();
+            }
+          });
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,18 +93,22 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
         if (controller.isLoading.value) {
           return Center(child: CircularProgressIndicator(color: primaryColor));
         } else if (controller.detaiItemsID.isNotEmpty) {
-          var fleet = controller.detaiItemsID['fleet'];
-          var product = controller.detaiItemsID['product'];
-          var startReq = controller.detaiItemsID['start_request'] ?? {};
-          var endReq = controller.detaiItemsID['end_request'] ?? {};
-          var insurance = controller.detaiItemsID['insurance'] ?? {};
+          // Extract data once to avoid repeated access
+          final detaiItemsID = controller.detaiItemsID.value;
+          final fleet = detaiItemsID['fleet'];
+          final product = detaiItemsID['product'];
+          final startReq = detaiItemsID['start_request'] ?? {};
+          final endReq = detaiItemsID['end_request'] ?? {};
+          final insurance = detaiItemsID['insurance'] ?? {};
           return Column(
             children: [
               Expanded(
                 child: RefreshIndicator(
                   backgroundColor: primaryColor,
                   color: Colors.white,
-                  onRefresh: () => controller.getDataById(),
+                  onRefresh: () async {
+                    await controller.getDataById();
+                  },
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Padding(
@@ -64,12 +125,24 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                 color: Colors.grey),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                fleet?['photo']?['photo'] ??
-                                    product?['photo']?['photo'] ??
-                                    '',
-                                fit: BoxFit.fill,
+                            child: CachedNetworkImage(
+                              imageUrl: fleet?['photo']?['photo'] ??
+                                  product?['photo']?['photo'] ??
+                                  '',
+                              fit: BoxFit.fill,
+                              placeholder: (context, url) => Container(
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
                               ),
+                              errorWidget: (context, url, error) => Container(
+                                color: Colors.grey.shade300,
+                                child: const Icon(Icons.broken_image, size: 50),
+                              ),
+                              memCacheWidth: 1200,
+                              memCacheHeight: 800,
+                            ),
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -83,12 +156,8 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   StatusRiwayatStyle(
-                                    orderStatus: controller
-                                            .detaiItemsID['order_status'] ??
-                                        '',
-                                    paymentStatus: controller
-                                            .detaiItemsID['payment_status'] ??
-                                        '',
+                                    orderStatus: detaiItemsID['order_status'] ?? '',
+                                    paymentStatus: detaiItemsID['payment_status'] ?? '',
                                   ),
                                 ],
                               ),
@@ -106,8 +175,8 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                           iconWithDetailSewa(
                             IconsaxPlusBold.calendar_edit,
                             formatTanggalSewa(
-                                controller.detaiItemsID['start_date'],
-                                controller.detaiItemsID['duration']),
+                                detaiItemsID['start_date'],
+                                detaiItemsID['duration']),
                           ),
                           iconWithDetailSewa(
                             (fleet?['type'] ?? 'car') == 'car'
@@ -122,6 +191,11 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                               fleet?['color'] ??
                                   product?['specifications']?['color'] ??
                                   ''),
+                          // Beri Ulasan button (only for done orders)
+                          if (detaiItemsID['order_status'] == 'done') ...[
+                            const SizedBox(height: 15),
+                            _buildReviewButton(controller, detaiItemsID),
+                          ],
                           const SizedBox(height: 15),
                           const gabaritoText(text: "Estimasi Total Pembayaran"),
                           Text(
@@ -218,9 +292,7 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   gabaritoText(
-                                    text: controller.detaiItemsID[
-                                                'is_out_of_town'] ==
-                                            false
+                                    text: detaiItemsID['is_out_of_town'] == false
                                         ? "Dalam Kota"
                                         : "Luar Kota",
                                     fontSize: 16,
@@ -332,8 +404,8 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                           ),
                           const SizedBox(height: 20),
                           // Only show button when order_status is "confirmed" or "done"
-                          if (controller.detaiItemsID['order_status'] == 'confirmed' ||
-                              controller.detaiItemsID['order_status'] == 'done')
+                          if (detaiItemsID['order_status'] == 'confirmed' ||
+                              detaiItemsID['order_status'] == 'done')
                             ReusableButton(
                               ontap: () {
                                 showModalBottomSheet(
@@ -441,10 +513,8 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          if (controller.detaiItemsID['payment_status'] ==
-                                  'pending' &&
-                              controller.dataArguments['payment_pdf_url'] !=
-                                  null)
+                          if (detaiItemsID['payment_status'] == 'pending' &&
+                              controller.dataArguments['payment_pdf_url'] != null)
                             Expanded(
                               child: ReusableButton(
                                 height: 50,
@@ -456,10 +526,8 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
                                 title: "Bayar Sekarang",
                               ),
                             ),
-                          if (controller.detaiItemsID['payment_status'] !=
-                                  'pending' ||
-                              controller.dataArguments['payment_pdf_url'] ==
-                                  null)
+                          if (detaiItemsID['payment_status'] != 'pending' ||
+                              controller.dataArguments['payment_pdf_url'] == null)
                             Expanded(
                               child: ReusableButton(
                                 height: 50,
@@ -527,6 +595,67 @@ class DetailriwayatView extends GetView<DetailriwayatController> {
         ),
         const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider()),
       ],
+    );
+  }
+
+
+  Widget _buildReviewButton(DetailriwayatController controller, Map<dynamic, dynamic> detaiItemsID) {
+    final orderId = detaiItemsID['id'];
+    final isReviewed = controller.hasRating.value ||
+                       (detaiItemsID['has_rating'] ?? false) ||
+                       (detaiItemsID['rating'] != null);
+    final fleet = detaiItemsID['fleet'];
+    final product = detaiItemsID['product'];
+    final itemName = fleet?['name'] ?? product?['name'] ?? 'Item';
+    
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: isReviewed
+            ? null
+            : () {
+                Get.bottomSheet(
+                  ModalReviewRating(
+                    itemName: itemName,
+                    orderId: orderId,
+                    fleetId: fleet?['id'],
+                    productId: product?['id'],
+                    onSuccess: () {
+                      // Refresh the detail page asynchronously without blocking
+                      Future.delayed(const Duration(milliseconds: 500), () {
+                        controller.getDataById();
+                      });
+                    },
+                  ),
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                );
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isReviewed ? Colors.grey.shade300 : Colors.amber.shade600,
+          disabledBackgroundColor: Colors.grey.shade300,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: isReviewed ? 0 : 2,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isReviewed) ...[
+              const Icon(Icons.star, size: 16, color: Colors.grey),
+              const SizedBox(width: 6),
+            ],
+            poppinsText(
+              text: isReviewed ? "Sudah dirating" : "Beri Ulasan",
+              fontSize: 14,
+              textColor: isReviewed ? Colors.grey.shade700 : Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

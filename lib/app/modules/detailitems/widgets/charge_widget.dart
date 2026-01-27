@@ -4,6 +4,102 @@ import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
 import '../controllers/detailitems_controller.dart';
 
+class WeekendAlertWidget extends StatelessWidget {
+  final DetailitemsController controller;
+
+  const WeekendAlertWidget({super.key, required this.controller});
+
+  bool _hasWeekend(DateTime startDate, DateTime endDate) {
+    DateTime current = DateTime(startDate.year, startDate.month, startDate.day);
+    final end = DateTime(endDate.year, endDate.month, endDate.day);
+    
+    // Check dates from startDate up to (but not including) endDate
+    // since rental periods are exclusive of the end date
+    while (current.isBefore(end)) {
+      // DateTime.weekday: 1=Monday, 6=Saturday, 7=Sunday
+      if (current.weekday == 6 || current.weekday == 7) {
+        return true;
+      }
+      current = current.add(const Duration(days: 1));
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      // Check if rental period includes weekend
+      final startDateStr = controller.dataClient['startDate'] as String?;
+      final endDateStr = controller.dataClient['endDate'] as String?;
+      
+      if (startDateStr == null || endDateStr == null) {
+        return const SizedBox.shrink();
+      }
+
+      try {
+        final startDate = DateTime.parse(startDateStr).toLocal();
+        final endDate = DateTime.parse(endDateStr).toLocal();
+        
+        if (!_hasWeekend(startDate, endDate)) {
+          return const SizedBox.shrink();
+        }
+
+        // Only show for cars and motorcycles
+        final isCar = controller.detailData['item']?['type_code'] == 'car';
+        final isMotorcycle = controller.detailData['item']?['type_code'] == 'motorcycle';
+        
+        if (!isCar && !isMotorcycle) {
+          return const SizedBox.shrink();
+        }
+
+        final message = 
+            'Karena sewa kamu jatuh di hari Sabtu atau Minggu, akan ada tambahan biaya weekend:\n'
+            'Rp50.000/hari untuk mobil dan Rp30.000/hari untuk motor, dihitung per 24 jam dari total durasi\n'
+            'sewa, ya!';
+
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.lightBlue.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.lightBlue.shade300, width: 1),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.teal.shade200,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.info_outline,
+                  color: Colors.teal,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: poppinsText(
+                  text: message,
+                  fontSize: 13,
+                  textColor: Colors.blue.shade900,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        return const SizedBox.shrink();
+      }
+    });
+  }
+}
+
 class DetailChargeWidget extends StatelessWidget {
   final DetailitemsController controller;
 

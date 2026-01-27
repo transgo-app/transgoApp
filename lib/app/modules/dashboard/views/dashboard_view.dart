@@ -5,8 +5,10 @@ import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
 import '../widgets/header_widget.dart';
 import '../widgets/search_card.dart';
+import '../widgets/filter_widget.dart';
 import '../widgets/results_list.dart';
 import '../widgets/charge_widget.dart';
+import '../widgets/flash_sale_widget.dart';
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({super.key});
@@ -32,6 +34,15 @@ class DashboardView extends GetView<DashboardController> {
                 await profileController.getDetailUser();
                 await profileController.getCheckAdditional();
               }
+              await controller.fetchFlashSales();
+              // Refetch high season charge settings
+              await controller.fetchChargeSettings();
+              await controller.checkChargeSettings();
+              // Only fetch TG Pay and TG Rewards if user is logged in (not guest mode)
+              if (GlobalVariables.token.value.isNotEmpty) {
+                await controller.fetchTgPayBalance();
+                await controller.fetchTgRewardTier();
+              }
             },
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -43,6 +54,7 @@ class DashboardView extends GetView<DashboardController> {
                   children: [
                     HeaderWidget(controller: controller),
                     SearchCard(controller: controller),
+                    FilterWidget(controller: controller),
                     ChargeWidget(controller: controller),
                     ResultsArea(controller: controller),
                   ],
@@ -50,12 +62,25 @@ class DashboardView extends GetView<DashboardController> {
               ),
             ),
           ),
+          // Flash sale overlay at top
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: FlashSaleWidget(controller: controller),
+            ),
+          ),
+          // WhatsApp button at bottom right
           Obx(
             () => AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOut,
-              right: 32,
-              bottom: controller.showWhatsApp.value ? 48 : -80,
+              right: MediaQuery.of(context).size.width < 360 ? 8.0 : 20.0, // Closer to right edge
+              bottom: controller.showWhatsApp.value 
+                  ? (MediaQuery.of(context).padding.bottom + 70) // Account for bottom nav bar + extra spacing
+                  : -100, // Hide completely when scrolling down
               child: GestureDetector(
                 onTap: _openWhatsAppAdmin,
                 child: Container(

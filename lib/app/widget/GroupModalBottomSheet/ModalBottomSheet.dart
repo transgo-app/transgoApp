@@ -4,6 +4,7 @@ import 'package:transgomobileapp/app/widget/Dialog/DialogBerhailSewa.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalDaftarAccount.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
 import 'package:flutter/gestures.dart';
+import 'package:intl/intl.dart';
 import '../../data/theme.dart';
 
 
@@ -32,7 +33,7 @@ class RincianOrderModal extends StatelessWidget {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + MediaQuery.of(context).padding.bottom),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -67,9 +68,7 @@ class RincianOrderModal extends StatelessWidget {
                               (controller.isKendaraan ? " / Hari" : ""),
                           'Rp ${formatRupiah(controller.isKendaraan ? controller.detailData['item']['price'] : controller.detailData['item']['price_after_discount'] ?? controller.detailData['item']['price'])}'),
 
-                      detailRincianHarga(
-                          "${controller.dataClient['duration']} Hari",
-                          'Rp. ${formatRupiah(controller.detailData['total_rent_price'])}'),
+                      _buildRentalPeriodDetail(controller),
 
                       if (controller.detailData['weekend_days'] != null &&
                           controller.detailData['weekend_days'].length > 0)
@@ -96,21 +95,13 @@ class RincianOrderModal extends StatelessWidget {
                             )
                           : const SizedBox.shrink(),
                       
-                      // High Season Charge (D-1 only)
-                      Obx(() {
-                        final alert = controller.currentChargeAlert.value;
-                        if (alert != null && alert['type'] == 'd1') {
-                          final chargeAmount = controller.getHighSeasonChargeAmount();
-                          if (chargeAmount > 0) {
-                            final chargePercent = alert['chargePercent'] ?? 0;
-                            return detailRincianHarga(
-                              "High Season Charge ($chargePercent%)",
-                              "Rp ${formatRupiah(chargeAmount)}",
-                            );
-                          }
-                        }
-                        return const SizedBox.shrink();
-                      }),
+                      // High Season Charge (Thursday Charge)
+                      if (controller.detailData['thursday_charge'] != null &&
+                          (controller.detailData['thursday_charge'] ?? 0) > 0)
+                        detailRincianHarga(
+                          "High Season Charge (${controller.detailData['thursday_charge_percentage'] ?? 0}%)",
+                          "Rp ${formatRupiah(controller.detailData['thursday_charge'])}",
+                        ),
 
                       if (controller.selectedAddons.isNotEmpty)
                         Column(
@@ -150,6 +141,91 @@ class RincianOrderModal extends StatelessWidget {
                         Padding(
                             padding: EdgeInsets.symmetric(vertical: 8),
                             child: Divider()),
+                      // TG Pay Balance Checkbox
+                      Obx(() {
+                        final grandTotal = controller.detailData['grand_total'] ?? 0;
+                        final balance = controller.tgPayBalance.value;
+                        final useBalance = controller.useTgPayBalance.value;
+                        final isSufficient = balance >= grandTotal;
+                        final balanceUsed = balance > grandTotal ? grandTotal : balance;
+                        final remaining = grandTotal - balanceUsed;
+                        
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                controller.useTgPayBalance.value = !controller.useTgPayBalance.value;
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: useBalance
+                                      ? primaryColor.withOpacity(0.1)
+                                      : Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: useBalance
+                                        ? primaryColor
+                                        : Colors.grey.shade300,
+                                    width: useBalance ? 2 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Checkbox(
+                                      activeColor: primaryColor,
+                                      value: useBalance,
+                                      onChanged: (value) {
+                                        controller.useTgPayBalance.value = value ?? false;
+                                      },
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: gabaritoText(
+                                                  text: 'Gunakan Saldo Transgo Pay',
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  textColor: textHeadline,
+                                                ),
+                                              ),
+                                              if (useBalance)
+                                                gabaritoText(
+                                                  text: 'Rp ${formatRupiah(balanceUsed.toInt())}',
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  textColor: primaryColor,
+                                                ),
+                                            ],
+                                          ),
+                                          if (useBalance) ...[
+                                            SizedBox(height: 8),
+                                            gabaritoText(
+                                              text: isSufficient
+                                                  ? 'Saldo cukup, order akan langsung lunas'
+                                                  : 'Saldo akan digunakan Rp ${formatRupiah(balanceUsed.toInt())}, sisa tagihan Rp ${formatRupiah(remaining.toInt())} akan dibayar melalui payment gateway',
+                                              fontSize: 12,
+                                              textColor: isSufficient ? Colors.green.shade700 : Colors.orange.shade700,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                          ],
+                        );
+                      }),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -277,10 +353,11 @@ class RincianOrderModal extends StatelessWidget {
                               borderSideColor: Colors.grey,
                               title: "Tutup Rincian",
                               textColor: textPrimary,
-                            )
+                            ),
+                            SizedBox(height: MediaQuery.of(context).padding.bottom),
                           ],
                         ),
-                      if (isWithButton == false) SizedBox(height: 30)
+                      if (isWithButton == false) SizedBox(height: 30 + MediaQuery.of(context).padding.bottom)
                     ],
                   ),
                 ),
@@ -301,6 +378,44 @@ class RincianOrderModal extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildRentalPeriodDetail(DetailitemsController controller) {
+    final isHighSeason = controller.detailData['high_season'] == true;
+    
+    if (isHighSeason) {
+      // Format dates as DD/MM/YYYY for high season D-Day
+      final startDateStr = controller.dataClient['startDate'] as String?;
+      final endDateStr = controller.dataClient['endDate'] as String?;
+      
+      if (startDateStr != null && endDateStr != null) {
+        try {
+          final startDate = DateTime.parse(startDateStr).toLocal();
+          final endDate = DateTime.parse(endDateStr).toLocal();
+          
+          final dateFormat = DateFormat('dd/MM/yyyy');
+          final formattedStart = dateFormat.format(startDate);
+          final formattedEnd = dateFormat.format(endDate);
+          
+          return detailRincianHarga(
+            "Harga sewa unit periode\n$formattedStart - $formattedEnd",
+            'Rp. ${formatRupiah(controller.detailData['total_rent_price'])}',
+          );
+        } catch (e) {
+          // Fallback to duration format if date parsing fails
+          return detailRincianHarga(
+            "${controller.dataClient['duration']} Hari",
+            'Rp. ${formatRupiah(controller.detailData['total_rent_price'])}',
+          );
+        }
+      }
+    }
+    
+    // Normal format for non-high season
+    return detailRincianHarga(
+      "${controller.dataClient['duration']} Hari",
+      'Rp. ${formatRupiah(controller.detailData['total_rent_price'])}',
     );
   }
 

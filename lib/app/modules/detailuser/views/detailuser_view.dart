@@ -13,8 +13,10 @@ class DetailuserView extends GetView<DetailuserController> {
   @override
   Widget build(BuildContext context) {
     final controllerProfile = Get.find<ProfileController>();
+    final detailController = Get.find<DetailuserController>();
     return Scaffold(
       backgroundColor: HexColor("#FAFAFA"),
+      resizeToAvoidBottomInset: true,
        appBar: AppBar(
           leading: Container(
             child: IconButton(
@@ -30,49 +32,143 @@ class DetailuserView extends GetView<DetailuserController> {
           surfaceTintColor: Colors.white,
           backgroundColor: HexColor("#FAFAFA"),
           title: gabaritoText(
-            text: "Data Pribadi",
+            text: controller.detailPribadi ? "Data Pribadi" : "Dokumen Pribadi",
             fontSize: 16,
             textColor: textHeadline,
           ),
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20,),
-                if(controller.detailPribadi)
-              Column(
-                children: [
-                dataPribadiTextField("Nama Lengkap", controllerProfile.namaUserC),
-                dataPribadiTextField("Email", controllerProfile.emailC),
-                dataPribadiTextField("Nomor Telepon", controllerProfile.nomorTelpC),
-                dataPribadiTextField("Nomor Darurat", controllerProfile.nomorDaruratC),
-                dataPribadiTextField("Jenis Kelamin", controllerProfile.jenisKelaminC),
-                dataPribadiTextField("Tanggal Lahir", controllerProfile.tanggalLahirC),
-                ],
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if(controller.detailPribadi)
+                        Column(
+                          children: [
+                            dataPribadiTextField("Nama Lengkap", controllerProfile.namaUserC),
+                            dataPribadiTextField("Email", controllerProfile.emailC),
+                            dataPribadiTextField("Nomor Telepon", controllerProfile.nomorTelpC),
+                            dataPribadiTextField("Nomor Darurat", controllerProfile.nomorDaruratC),
+                      jenisKelaminDropdown(detailController, controllerProfile),
+                            dataPribadiTextField("Tanggal Lahir", controllerProfile.tanggalLahirC),
+                            dataPribadiTextField("NIK", controllerProfile.nikC),
+                            const SizedBox(height: 10),
+                            dataPribadiTextField("Password Baru", controllerProfile.passwordC, obscureText: true),
+                            dataPribadiTextField("Konfirmasi Password", controllerProfile.confirmPasswordC, obscureText: true),
+                          ],
+                        ),
+                      if(!controller.detailPribadi)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for(var i=0; i<controllerProfile.idCards.length; i++)
+                              GestureDetector(
+                                onTap: () {
+                                  launchUrl(Uri.parse('${controllerProfile.idCards[i]['photo']}'));
+                                },
+                                child: dataFotoPribadi(i+1, ),
+                              ),
+                          ],
+                        )
+                    ],
+                  ),
+                ),
               ),
-                if(!controller.detailPribadi)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                for(var i=0; i<controllerProfile.idCards.length; i++)
-                 GestureDetector(
-                  onTap: () {
-                    launchUrl(Uri.parse('${controllerProfile.idCards[i]['photo']}'));
-                  },
-                  child: dataFotoPribadi(i+1, )),
-                ],
-              )
-              ],
-            ),
+              if (controller.detailPribadi)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+                  child: Obx(() {
+                    final canSave = detailController.canSave.value;
+                    final isSaving = detailController.isSaving.value;
+                    return ReusableButton(
+                      height: 50,
+                      bgColor: canSave ? solidPrimary : Colors.grey,
+                      ontap: canSave && !isSaving
+                          ? () => detailController.saveDataPribadi()
+                          : null,
+                      widget: Center(
+                        child: isSaving
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : gabaritoText(
+                                text: "Simpan",
+                                textColor: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                      ),
+                    );
+                  }),
+                ),
+            ],
           ),
         ),
     );
   }
 
-  Widget dataPribadiTextField(String title, TextEditingController controller){
+  Widget jenisKelaminDropdown(
+      DetailuserController detailController, ProfileController profileController) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          gabaritoText(text: "Jenis Kelamin", fontSize: 14),
+          const SizedBox(height: 5),
+          Obx(() {
+            final value = detailController.selectedGender.value.isEmpty
+                ? null
+                : detailController.selectedGender.value;
+            return DropdownButtonFormField<String>(
+              value: value,
+              items: const [
+                DropdownMenuItem(
+                  value: 'male',
+                  child: Text('Laki-laki'),
+                ),
+                DropdownMenuItem(
+                  value: 'female',
+                  child: Text('Perempuan'),
+                ),
+              ],
+              onChanged: (val) {
+                if (val == null) return;
+                detailController.selectedGender.value = val;
+                profileController.jenisKelaminC.text = val;
+              },
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: HexColor('#F3F3F3'),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: solidPrimary, width: 2),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget dataPribadiTextField(String title, TextEditingController controller,
+      {bool obscureText = false}){
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 5),
       child: Column(
@@ -85,7 +181,10 @@ class DetailuserView extends GetView<DetailuserController> {
           child: reusableTextField(
             controller: controller,
             title: title, 
-            backgroundColor: HexColor('#F3F3F3'),))
+            obscureText: obscureText,
+            backgroundColor: HexColor('#F3F3F3'),
+          ),
+        )
       ],
       ),
     );

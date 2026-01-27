@@ -23,6 +23,7 @@ class RiwayatpemesananController extends GetxController {
   final RxString statusFilter = ''.obs;
 
   final RxList listKendaraan = [].obs;
+  final RxMap<int, bool> orderRatingStatus = <int, bool>{}.obs; // orderId -> hasRating
 
   int currentPage = 1;
   static const int limit = 10;
@@ -61,14 +62,33 @@ class RiwayatpemesananController extends GetxController {
     }
 
     try {
+      // Build query string so that when no status filter is selected ("Semua" tab),
+      // we do NOT send an empty status parameter to the API. Some backends treat
+      // "status=" as an actual filter that returns no data.
+      final String statusQuery = statusFilter.value.isNotEmpty
+          ? '&status=${statusFilter.value}'
+          : '';
+
       final response = await APIService().get(
-        '/orders?page=$currentPage&limit=$limit&status=${statusFilter.value}',
+        '/orders?page=$currentPage&limit=$limit$statusQuery',
       );
 
       final List items = response['items'] ?? [];
 
       listKendaraan.addAll(items);
       currentPage++;
+
+      // Check rating status for each order (run in background, don't block)
+      Future.microtask(() async {
+        for (var item in items) {
+          final orderId = item['id'];
+          if (orderId != null && item['order_status'] == 'done') {
+            // Run checks sequentially with small delay to avoid overwhelming the API
+            await checkOrderRatingStatus(orderId, item);
+            await Future.delayed(const Duration(milliseconds: 100));
+          }
+        }
+      });
 
       if (items.length < limit) {
         hasMore.value = false;
@@ -91,6 +111,50 @@ class RiwayatpemesananController extends GetxController {
     indexActive.value = index;
     statusFilter.value = status;
     getListKendaraan(false);
+  }
+
+  Future<void> checkOrderRatingStatus(int orderId, Map<String, dynamic> orderData) async {
+    try {
+      // Check if order has rating field directly
+      if (orderData['has_rating'] == true || orderData['rating'] != null) {
+        orderRatingStatus[orderId] = true;
+        return;
+      }
+
+      // If not, check the fleet ratings to see if there's a rating for this order
+      final fleet = orderData['fleet'];
+      final product = orderData['product'];
+      
+      if (fleet == null && product == null) return;
+
+      final itemId = fleet?['id'] ?? product?['id'];
+      if (itemId == null) return;
+
+      final endpoint = fleet != null 
+          ? '/fleets/$itemId/ratings?page=1&limit=100'
+          : '/products/$itemId/ratings?page=1&limit=100';
+      
+      final ratingResponse = await APIService().get(endpoint);
+      final ratings = ratingResponse['items'] as List?;
+      
+      if (ratings != null) {
+        // Check if any rating has this order_id
+        final hasRating = ratings.any((rating) => 
+          rating['order']?['id'] == orderId || 
+          rating['order_id'] == orderId
+        );
+        orderRatingStatus[orderId] = hasRating;
+      } else {
+        orderRatingStatus[orderId] = false;
+      }
+    } catch (e) {
+      debugPrint('Error checking rating status: $e');
+      orderRatingStatus[orderId] = false;
+    }
+  }
+
+  bool isOrderReviewed(int orderId) {
+    return orderRatingStatus[orderId] ?? false;
   }
 
   @override
