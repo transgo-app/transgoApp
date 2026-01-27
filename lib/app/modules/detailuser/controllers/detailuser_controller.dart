@@ -62,6 +62,16 @@ class DetailuserController extends GetxController {
   Future<void> saveDataPribadi() async {
     if (!canSave.value || isSaving.value) return;
 
+    // Backend edit feature masih dalam pengembangan
+    CustomSnackbar.show(
+      title: "Fitur dalam Pengembangan",
+      message: "Fitur ini masih dalam pengembangan, coba lain kali ya!",
+      backgroundColor: Colors.orange,
+    );
+    return;
+
+    // Code below is commented out until backend is ready
+    /*
     final nik = profileController.nikC.text.trim();
     if (nik.isNotEmpty && (nik.length != 16 || int.tryParse(nik) == null)) {
       CustomSnackbar.show(
@@ -150,5 +160,6 @@ class DetailuserController extends GetxController {
     } finally {
       isSaving.value = false;
     }
+    */
   }
 }
