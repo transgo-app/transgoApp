@@ -50,8 +50,28 @@ class RiwayatpemesananController extends GetxController {
     });
   }
 
+  Future<void> refreshData() async {
+    // Clear API cache for orders endpoint to ensure fresh data
+    APIService.clearCache('/orders');
+    
+    // Force refresh by resetting all states
+    isFetching.value = false;
+    isLoading.value = true;
+    listKendaraan.clear();
+    currentPage = 1;
+    hasMore.value = true;
+    orderRatingStatus.clear();
+    
+    // Reset scroll position to top
+    if (scrollController.hasClients) {
+      scrollController.jumpTo(0);
+    }
+    
+    await getListKendaraan(false);
+  }
+
   Future<void> getListKendaraan([bool isPagination = false]) async {
-    if (isFetching.value) return;
+    if (isFetching.value && isPagination) return; // Only block pagination, not refresh
     isFetching.value = true;
 
     if (!isPagination) {
@@ -69,13 +89,20 @@ class RiwayatpemesananController extends GetxController {
           ? '&status=${statusFilter.value}'
           : '';
 
+      // Always bypass cache for orders to get fresh data
       final response = await APIService().get(
         '/orders?page=$currentPage&limit=$limit$statusQuery',
+        useCache: false, // Disable cache for orders
       );
 
       final List items = response['items'] ?? [];
 
-      listKendaraan.addAll(items);
+      if (!isPagination) {
+        // Create a new list to ensure GetX detects the change
+        listKendaraan.value = List.from(items);
+      } else {
+        listKendaraan.addAll(items); // Add for pagination
+      }
       currentPage++;
 
       // Check rating status for each order (run in background, don't block)

@@ -25,25 +25,27 @@ class HargaWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Access non-observable dataClient outside Obx
+    final startStr = controller.dataClient?['startDate'] as String?;
+    final endStr = controller.dataClient?['endDate'] as String?;
+
+    DateTime startDate = _parseOrNow(startStr).toLocal();
+    DateTime endDate =
+        _parseOrNow(endStr, startDate.add(const Duration(days: 1))).toLocal();
+
+    if (endDate.isBefore(startDate)) {
+      endDate = startDate.add(const Duration(days: 1));
+    }
+
+    int durasiRaw = endDate.difference(startDate).inDays;
+    final durasi = _normalizeDurasi(durasiRaw);
+
+    final tanggalText = DateFormat('dd MMM yyyy').format(startDate);
+    final waktuText = DateFormat('HH:mm').format(startDate);
+
+    // Only wrap observable parts in Obx
     return Obx(() {
-      final startStr = controller.dataClient?['startDate'] as String?;
-      final endStr = controller.dataClient?['endDate'] as String?;
-
-      DateTime startDate = _parseOrNow(startStr).toLocal();
-      DateTime endDate =
-          _parseOrNow(endStr, startDate.add(const Duration(days: 1))).toLocal();
-
-      if (endDate.isBefore(startDate)) {
-        endDate = startDate.add(const Duration(days: 1));
-      }
-
-      int durasiRaw = endDate.difference(startDate).inDays;
-      final durasi = _normalizeDurasi(durasiRaw);
-
       controller.updateTotalHarga();
-
-      final tanggalText = DateFormat('dd MMM yyyy').format(startDate);
-      final waktuText = DateFormat('HH:mm').format(startDate);
 
       final dynamic product = controller.detailData['product'];
       final int hargaOriginal = controller.isKendaraan

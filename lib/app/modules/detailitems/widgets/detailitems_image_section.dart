@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/detailitems_controller.dart';
 
@@ -26,7 +27,7 @@ class DetailitemsImageSection extends StatelessWidget {
 
     return "";
   }
-  String getImageUrl(Map detailData) {
+  String getImageUrl(RxMap detailData) {
     final fleet = detailData['fleet'];
     final product = detailData['product'];
 
@@ -41,42 +42,44 @@ class DetailitemsImageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imgUrl = getImageUrl(controller.detailData);
-    final screenWidth = MediaQuery.of(context).size.width;
+    return Obx(() {
+      final imgUrl = getImageUrl(controller.detailData);
+      final screenWidth = MediaQuery.of(context).size.width;
 
-    return Container(
-      width: screenWidth,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.grey.shade200,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: AspectRatio(
-          aspectRatio: 1.0, // 1:1 aspect ratio
-          child: CachedNetworkImage(
-            imageUrl: imgUrl,
-            fit: BoxFit.cover, // Crop to fill, maintaining aspect ratio
-            placeholder: (context, url) => Container(
-              color: Colors.grey.shade200,
-              child: const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
+      return Container(
+        width: screenWidth,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: Colors.grey.shade200,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: AspectRatio(
+            aspectRatio: 1.0, // 1:1 aspect ratio
+            child: CachedNetworkImage(
+              imageUrl: imgUrl,
+              fit: BoxFit.cover, // Crop to fill, maintaining aspect ratio
+              placeholder: (context, url) => Container(
+                color: Colors.grey.shade200,
+                child: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
               ),
+              errorWidget: (context, url, error) =>
+                  const Icon(Icons.broken_image, size: 60),
+              // Optimized for low-end devices: 1:1 ratio cache
+              memCacheWidth: (screenWidth * 
+                              MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
+              memCacheHeight: (screenWidth * 
+                               MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
+              maxWidthDiskCache: 1200,
+              maxHeightDiskCache: 1200,
+              fadeInDuration: const Duration(milliseconds: 200),
+              filterQuality: FilterQuality.medium,
             ),
-            errorWidget: (context, url, error) =>
-                const Icon(Icons.broken_image, size: 60),
-            // Optimized for low-end devices: 1:1 ratio cache
-            memCacheWidth: (screenWidth * 
-                            MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
-            memCacheHeight: (screenWidth * 
-                             MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
-            maxWidthDiskCache: 1200,
-            maxHeightDiskCache: 1200,
-            fadeInDuration: const Duration(milliseconds: 200),
-            filterQuality: FilterQuality.medium,
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

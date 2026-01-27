@@ -13,12 +13,6 @@ class DetailitemsBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double rentPrice =
-        (controller.detailData['rent_price'] ?? 0).toDouble();
-    final double discount =
-        (controller.detailData['discount_percentage'] ?? 0).toDouble();
-    final double finalPrice = rentPrice - (rentPrice * discount / 100);
-
     return SafeArea(
       top: false,
       child: Container(
@@ -42,48 +36,56 @@ class DetailitemsBottomSheet extends StatelessWidget {
               ? 10 
               : 10, // Keep padding even if no system bar
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              gabaritoText(
-                text: "Harga Mulai",
-                fontSize: 14,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: gabaritoText(
-                  text:
-                      "Rp ${NumberFormat.decimalPattern('id').format(finalPrice)} / Hari",
-                  fontSize: 16,
-                  textColor: primaryColor,
+        child: Obx(() {
+          final double rentPrice =
+              (controller.detailData['rent_price'] ?? 0).toDouble();
+          final double discount =
+              (controller.detailData['discount_percentage'] ?? 0).toDouble();
+          final double finalPrice = rentPrice - (rentPrice * discount / 100);
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                gabaritoText(
+                  text: "Harga Mulai",
+                  fontSize: 14,
                 ),
-              ),
-              if (discount > 0)
-                Text(
-                  "Rp ${formatRupiah(rentPrice)}",
-                  style: gabaritoTextStyle.copyWith(
-                    fontSize: 14,
-                    decoration: TextDecoration.lineThrough,
-                    decorationThickness: 0.8,
-                    color: textSecondary,
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: gabaritoText(
+                    text:
+                        "Rp ${NumberFormat.decimalPattern('id').format(finalPrice)} / Hari",
+                    fontSize: 16,
+                    textColor: primaryColor,
                   ),
                 ),
+                if (discount > 0)
+                  Text(
+                    "Rp ${formatRupiah(rentPrice)}",
+                    style: gabaritoTextStyle.copyWith(
+                      fontSize: 14,
+                      decoration: TextDecoration.lineThrough,
+                      decorationThickness: 0.8,
+                      color: textSecondary,
+                    ),
+                  ),
 
-              const SizedBox(height: 10),
-              ReusableButton(
-                height: 50,
-                ontap: () {
-                  Get.to(DetailFormSewa());
-                },
-                bgColor: solidPrimary,
-                title: "Lanjut Ke Form Sewa",
-              ),
+                const SizedBox(height: 10),
+                ReusableButton(
+                  height: 50,
+                  ontap: () {
+                    Get.to(DetailFormSewa());
+                  },
+                  bgColor: solidPrimary,
+                  title: "Lanjut Ke Form Sewa",
+                ),
 
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        }),
       ),
     );
   }

@@ -60,27 +60,40 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
         body: RefreshIndicator(
           backgroundColor: primaryColor,
           color: Colors.white,
-          // Enable pull-to-refresh for the whole history list
-          onRefresh: () => controller.getListKendaraan(),
+          onRefresh: () async {
+            await controller.refreshData();
+          },
           child: Obx(() {
             if (controller.isLoading.value) {
-              return const Center(
-                child: CircularProgressIndicator(),
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.8,
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
               );
             }
 
             if (controller.listKendaraan.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset('assets/nodata.jpg', scale: 10),
-                    poppinsText(
-                      text: 'Data Tidak Ditemukan.',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.8,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset('assets/nodata.jpg', scale: 10),
+                        poppinsText(
+                          text: 'Data Tidak Ditemukan.',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               );
             }
@@ -88,71 +101,75 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
             return SingleChildScrollView(
               controller: controller.scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  Obx(() {
-                    final itemCount = controller.listKendaraan.length +
-                        (controller.hasMore.value ? 1 : 0);
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      cacheExtent: 250, // Optimized for low-end devices
-                      itemCount: itemCount,
-                      itemBuilder: (context, index) {
-                        if (index == controller.listKendaraan.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            child: Center(
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    Obx(() {
+                      final itemCount = controller.listKendaraan.length +
+                          (controller.hasMore.value ? 1 : 0);
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        cacheExtent: 250, // Optimized for low-end devices
+                        itemCount: itemCount,
+                        itemBuilder: (context, index) {
+                          if (index == controller.listKendaraan.length) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                            );
+                          }
+
+                          // Access data reactively from the list
+                          final data = controller.listKendaraan[index];
+                          final fleet = data['fleet'];
+                          final product = data['product'];
+
+                          final imagePath = fleet != null
+                              ? (fleet['photo']?['photo'] ?? '')
+                              : (product?['photo']?['photo'] ?? '');
+
+                          final location = limitText(
+                            fleet != null
+                                ? (fleet['location']?['name'] ?? '')
+                                : (product?['location']?['name'] ?? '-'),
+                          );
+
+                          final typeLabel = fleet != null
+                              ? fleet['type_label'] ?? ''
+                              : product?['category_label'] ?? '';
+
+                          final itemName = fleet != null
+                              ? fleet['name'] ?? ''
+                              : product?['name'] ?? '';
+
+                          return RepaintBoundary(
+                            key: ValueKey('riwayat_${data['id']}_${data['order_status']}_${data['payment_status']}'),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: _customCard(
+                                index,
+                                data,
+                                imagePath,
+                                itemName,
+                                location,
+                                typeLabel,
                               ),
                             ),
                           );
-                        }
-
-                        final data = controller.listKendaraan[index];
-                        final fleet = data['fleet'];
-                        final product = data['product'];
-
-                        final imagePath = fleet != null
-                            ? (fleet['photo']?['photo'] ?? '')
-                            : (product?['photo']?['photo'] ?? '');
-
-                        final location = limitText(
-                          fleet != null
-                              ? (fleet['location']?['name'] ?? '')
-                              : (product?['location']?['name'] ?? '-'),
-                        );
-
-                        final typeLabel = fleet != null
-                            ? fleet['type_label'] ?? ''
-                            : product?['category_label'] ?? '';
-
-                        final itemName = fleet != null
-                            ? fleet['name'] ?? ''
-                            : product?['name'] ?? '';
-
-                        return RepaintBoundary(
-                          key: ValueKey('riwayat_${data['id']}'),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: _customCard(
-                              data,
-                              imagePath,
-                              itemName,
-                              location,
-                              typeLabel,
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  }),
-                ],
+                        },
+                      );
+                    }),
+                  ],
+                ),
               ),
             );
           }),
@@ -162,6 +179,7 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
   }
 
   Widget _customCard(
+    int index,
     dynamic data,
     String imagePath,
     String itemName,
@@ -294,10 +312,16 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Flexible(
-                  child: StatusRiwayatStyle(
-                    orderStatus: data['order_status'],
-                    paymentStatus: data['payment_status'],
-                  ),
+                  child: Obx(() {
+                    // Access the current data from the reactive list
+                    final currentData = index < controller.listKendaraan.length
+                        ? controller.listKendaraan[index]
+                        : data;
+                    return StatusRiwayatStyle(
+                      orderStatus: currentData['order_status'],
+                      paymentStatus: currentData['payment_status'],
+                    );
+                  }),
                 ),
                 const SizedBox(width: 8),
                 Flexible(

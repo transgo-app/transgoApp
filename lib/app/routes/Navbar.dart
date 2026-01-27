@@ -67,7 +67,7 @@ class _NavigationPageState extends State<NavigationPage> {
         }
         break;
       case 1:
-        Get.find<RiwayatpemesananController>().onInit();
+        await Get.find<RiwayatpemesananController>().refreshData();
         break;
       case 2:
         Get.find<TransGoRewardController>().onInit(); // Refresh reward

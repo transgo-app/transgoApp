@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../../widget/widgets.dart';
 import '../controllers/detailitems_controller.dart';
@@ -10,15 +11,15 @@ class DetailitemsInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = controller.detailData;
+    return Obx(() {
+      if (controller.detailData.isEmpty) {
+        return const Text("Tidak ada data.");
+      }
 
-    if (data.isEmpty) {
-      return const Text("Tidak ada data.");
-    }
-
-    return _buildUnifiedInfo(data);
+      return _buildUnifiedInfo(controller.detailData);
+    });
   }
-  Widget _buildUnifiedInfo(Map data) {
+  Widget _buildUnifiedInfo(RxMap data) {
     final item = data['item'] ?? {};
     final title = item['name'] ?? '-';
     final location = item['location'] ?? '-';

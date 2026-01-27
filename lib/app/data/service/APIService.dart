@@ -35,8 +35,11 @@ class APIService {
     // Don't cache auth endpoints, orders, or dynamic endpoints
     final noCacheEndpoints = [
       '/auth/',
-      '/orders/',
+      '/auth', // Also match without trailing slash
+      '/orders/', // Match with trailing slash
+      '/orders', // Match without trailing slash (e.g., /orders?page=1)
       '/topup/',
+      '/topup', // Also match without trailing slash
       '/flash-sales', // Flash sales change frequently
     ];
     return !noCacheEndpoints.any((pattern) => endpoint.contains(pattern));

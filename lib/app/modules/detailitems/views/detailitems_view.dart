@@ -33,22 +33,18 @@ class DetailitemsView extends GetView<DetailitemsController> {
         ),
         centerTitle: false,
       ),
-      body: Obx(() {
-        if (controller.isLoadinggetdetailkendaraan.value) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        } else {
-          return Column(
-            children: [
-              Expanded(
-                child: DetailitemsContent(controller: controller),
-              ),
-              DetailitemsBottomSheet(controller: controller),
-            ],
-          );
-        }
-      }),
+      body: Obx(() => controller.isLoadinggetdetailkendaraan.value
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : Column(
+              children: [
+                Expanded(
+                  child: DetailitemsContent(controller: controller),
+                ),
+                DetailitemsBottomSheet(controller: controller),
+              ],
+            )),
     );
   }
 }

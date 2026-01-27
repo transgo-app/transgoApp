@@ -27,23 +27,24 @@ class WeekendAlertWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      // Check if rental period includes weekend
-      final startDateStr = controller.dataClient['startDate'] as String?;
-      final endDateStr = controller.dataClient['endDate'] as String?;
+    // Access non-observable dataClient outside Obx
+    final startDateStr = controller.dataClient['startDate'] as String?;
+    final endDateStr = controller.dataClient['endDate'] as String?;
+    
+    if (startDateStr == null || endDateStr == null) {
+      return const SizedBox.shrink();
+    }
+
+    try {
+      final startDate = DateTime.parse(startDateStr).toLocal();
+      final endDate = DateTime.parse(endDateStr).toLocal();
       
-      if (startDateStr == null || endDateStr == null) {
+      if (!_hasWeekend(startDate, endDate)) {
         return const SizedBox.shrink();
       }
 
-      try {
-        final startDate = DateTime.parse(startDateStr).toLocal();
-        final endDate = DateTime.parse(endDateStr).toLocal();
-        
-        if (!_hasWeekend(startDate, endDate)) {
-          return const SizedBox.shrink();
-        }
-
+      // Only wrap the observable part in Obx
+      return Obx(() {
         // Only show for cars and motorcycles
         final isCar = controller.detailData['item']?['type_code'] == 'car';
         final isMotorcycle = controller.detailData['item']?['type_code'] == 'motorcycle';
@@ -93,10 +94,10 @@ class WeekendAlertWidget extends StatelessWidget {
             ],
           ),
         );
-      } catch (e) {
-        return const SizedBox.shrink();
-      }
-    });
+      });
+    } catch (e) {
+      return const SizedBox.shrink();
+    }
   }
 }
 
