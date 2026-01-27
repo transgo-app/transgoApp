@@ -125,6 +125,27 @@ class APIService {
       );
     }
 
+    // Handle 422 Unprocessable Entity errors
+    if (response.statusCode == 422) {
+      final message = decodedBody['message'] ?? 'Data tidak valid';
+      if (message.toString().toLowerCase().contains('customer')) {
+        CustomSnackbar.show(
+          title: "Terjadi Kesalahan",
+          message: "Akun Anda belum terdaftar sebagai customer. Silakan lengkapi profil Anda terlebih dahulu atau hubungi admin.",
+          icon: Icons.person_2,
+          backgroundColor: Colors.red,
+        );
+      } else {
+        CustomSnackbar.show(
+          title: "Terjadi Kesalahan",
+          message: message.toString(),
+          icon: Icons.error,
+          backgroundColor: Colors.red,
+        );
+      }
+      throw Exception(message);
+    }
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {

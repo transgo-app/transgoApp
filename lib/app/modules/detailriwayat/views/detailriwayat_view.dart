@@ -118,31 +118,40 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            constraints: const BoxConstraints(minHeight: 200),
                             width: MediaQuery.of(context).size.width,
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
                                 color: Colors.grey),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                            child: CachedNetworkImage(
-                              imageUrl: fleet?['photo']?['photo'] ??
-                                  product?['photo']?['photo'] ??
-                                  '',
-                              fit: BoxFit.fill,
-                              placeholder: (context, url) => Container(
-                                color: Colors.grey.shade200,
-                                child: const Center(
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                              child: AspectRatio(
+                                aspectRatio: 1.0, // 1:1 aspect ratio
+                                child: CachedNetworkImage(
+                                  imageUrl: fleet?['photo']?['photo'] ??
+                                      product?['photo']?['photo'] ??
+                                      '',
+                                  fit: BoxFit.cover, // Crop to fill, maintaining aspect ratio
+                                  placeholder: (context, url) => Container(
+                                    color: Colors.grey.shade200,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
+                                    color: Colors.grey.shade300,
+                                    child: const Icon(Icons.broken_image, size: 50),
+                                  ),
+                                  // Optimized for 1:1 ratio cache
+                                  memCacheWidth: (MediaQuery.of(context).size.width * 
+                                      MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
+                                  memCacheHeight: (MediaQuery.of(context).size.width * 
+                                      MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
+                                  maxWidthDiskCache: 1200,
+                                  maxHeightDiskCache: 1200,
+                                  fadeInDuration: const Duration(milliseconds: 200),
+                                  filterQuality: FilterQuality.medium,
                                 ),
                               ),
-                              errorWidget: (context, url, error) => Container(
-                                color: Colors.grey.shade300,
-                                child: const Icon(Icons.broken_image, size: 50),
-                              ),
-                              memCacheWidth: 1200,
-                              memCacheHeight: 800,
-                            ),
                             ),
                           ),
                           const SizedBox(height: 15),

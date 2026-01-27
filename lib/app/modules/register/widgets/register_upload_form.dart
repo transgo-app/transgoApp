@@ -98,7 +98,7 @@ class RegisterUploadForm extends StatelessWidget {
                     )
                   : gabaritoText(
                       text:
-                          "${controller.dataArgumentsDetailKendaraan.isEmpty ? "Daftar Sekarang" : "Daftar & Sewa"}",
+                          "${controller.dataArgumentsDetailKendaraan == null || controller.dataArgumentsDetailKendaraan.isEmpty ? "Daftar Sekarang" : "Daftar & Sewa"}",
                       textColor: Colors.white,
                     ),
             ),
