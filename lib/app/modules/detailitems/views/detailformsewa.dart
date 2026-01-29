@@ -97,15 +97,16 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                                   fontWeight: FontWeight.w500,
                                 ),
                                 const SizedBox(height: 5),
-                                iconWithDetailSewa(
+                                Obx(() => iconWithDetailSewa(
                                   IconsaxPlusBold.calendar_edit,
                                   formatTanggalSewa(
                                     controller.dataClient['date'],
                                     int.tryParse(
                                             "${controller.dataClient['duration']}") ??
                                         0,
+                                    isHighSeason: controller.rentalCrossesHighSeason.value,
                                   ),
-                                ),
+                                )),
                                 if (controller.isKendaraan)
                                   Obx(() => iconWithDetailSewa(
                                         IconsaxPlusBold.user_tag,

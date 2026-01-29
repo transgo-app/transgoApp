@@ -16,6 +16,23 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
     return '${text.substring(0, limit)}...';
   }
 
+  String _formatRentalPeriod(String startDateStr, int duration, bool isHighSeason) {
+    try {
+      return formatTanggalSewa(startDateStr, duration, isHighSeason: isHighSeason);
+    } catch (e) {
+      // Fallback to simple date format if parsing fails
+      try {
+        final start = DateTime.parse(startDateStr);
+        final end = isHighSeason 
+            ? DateTime(start.year, start.month, start.day + duration - 1, 23, 59)
+            : start.add(Duration(days: duration));
+        return '${DateFormat('dd/MM/yyyy HH:mm').format(start)} - ${DateFormat('dd/MM/yyyy HH:mm').format(end)}';
+      } catch (e2) {
+        return '$startDateStr - $duration hari';
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -271,11 +288,17 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: poppinsText(
-                              text:
-                                  '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['start_date']))} - '
-                                  '${DateFormat('dd/MM/yyyy').format(DateTime.parse(data['end_date']))}',
+                              text: _formatRentalPeriod(
+                                data['start_date'],
+                                data['duration'] ?? 1,
+                                controller.rentalCrossesHighSeason(
+                                  data['start_date'],
+                                  data['duration'] ?? 1,
+                                  data,
+                                ),
+                              ),
                               fontSize: 12,
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),

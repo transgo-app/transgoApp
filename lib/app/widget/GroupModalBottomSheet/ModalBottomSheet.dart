@@ -382,24 +382,24 @@ class RincianOrderModal extends StatelessWidget {
   }
 
   Widget _buildRentalPeriodDetail(DetailitemsController controller) {
-    final isHighSeason = controller.detailData['high_season'] == true;
+    // Rental crosses high season (any day in period in high season range)
+    final isHighSeason = controller.rentalCrossesHighSeason.value;
     
     if (isHighSeason) {
-      // Format dates as DD/MM/YYYY for high season D-Day
+      // Format dates with times for high season per-date calculation
       final startDateStr = controller.dataClient['startDate'] as String?;
-      final endDateStr = controller.dataClient['endDate'] as String?;
+      final duration = int.tryParse("${controller.dataClient['duration']}") ?? 1;
       
-      if (startDateStr != null && endDateStr != null) {
+      if (startDateStr != null) {
         try {
-          final startDate = DateTime.parse(startDateStr).toLocal();
-          final endDate = DateTime.parse(endDateStr).toLocal();
-          
-          final dateFormat = DateFormat('dd/MM/yyyy');
-          final formattedStart = dateFormat.format(startDate);
-          final formattedEnd = dateFormat.format(endDate);
+          final periodText = formatTanggalSewa(
+            controller.dataClient['date'] ?? startDateStr,
+            duration,
+            isHighSeason: true,
+          );
           
           return detailRincianHarga(
-            "Harga sewa unit periode\n$formattedStart - $formattedEnd",
+            "Harga sewa unit periode\n$periodText",
             'Rp. ${formatRupiah(controller.detailData['total_rent_price'])}',
           );
         } catch (e) {

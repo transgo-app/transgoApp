@@ -544,11 +544,13 @@ void _openDatePicker(
               allowViewNavigation: false,
               showNavigationArrow: true,
               onSelectionChanged:
-                  (DateRangePickerSelectionChangedArgs args) {
+                  (DateRangePickerSelectionChangedArgs args) async {
                 if (args.value is DateTime) {
                   controller.pickedDate.value =
                       args.value.toIso8601String().split('T').first;
                   Navigator.pop(context);
+                  // Check high season and update time accordingly
+                  await controller.onDatePicked();
                 }
               },
             ),
@@ -630,9 +632,9 @@ class _BottomTimePicker extends StatefulWidget {
 }
 
 class _BottomTimePickerState extends State<_BottomTimePicker> {
-  static const int minHourLimit = 7;
   static const int maxHourLimit = 23;
 
+  late int minHourLimit;
   late int hour;
   late int minute;
   late FixedExtentScrollController hourController;
@@ -642,6 +644,12 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
   @override
   void initState() {
     super.initState();
+
+    // Check if this date is within a D-DAY high season range (or crosses high season)
+    final alert = widget.controller.currentChargeAlert.value;
+    final isHighSeason = alert != null && alert['type'] == 'dday';
+    // Only D-DAY (start date in high season) gets 05:00; crosses still uses 07:00
+    minHourLimit = isHighSeason ? 5 : 7;
 
     DateTime now = DateTime.now();
     DateTime pickedDate = widget.controller.pickedDate.value.isNotEmpty

@@ -51,9 +51,23 @@ class DashboardController extends GetxController
   }
 
   void setDefaultTime() {
-    DateTime now = DateTime.now();
-    DateTime defaultTime = now.add(const Duration(minutes: 120));
-    pickedTime.value = DateFormat('HH:mm').format(defaultTime);
+    // Set default time based on high season status:
+    // - D-DAY high season: 05:00
+    // - Otherwise: 07:00
+    final alert = currentChargeAlert.value;
+    final isHighSeason = alert != null && alert['type'] == 'dday';
+    pickedTime.value = isHighSeason ? '05:00' : '07:00';
+  }
+
+  /// Called when user picks a date - checks charge settings, updates time, and refreshes list.
+  Future<void> onDatePicked() async {
+    await checkChargeSettings();
+    // Update time to default based on high season status
+    final alert = currentChargeAlert.value;
+    final isHighSeason = alert != null && alert['type'] == 'dday';
+    pickedTime.value = isHighSeason ? '05:00' : '07:00';
+    // Refresh vehicle list with new date
+    await getList();
   }
 
   String getGreetingText() {
@@ -111,7 +125,6 @@ class DashboardController extends GetxController
     GlobalVariables.initializeData();
     
     _setDefaultDate();
-    setDefaultTime();
     
     // Load data in parallel for better performance
     _initializeData();
@@ -123,6 +136,11 @@ class DashboardController extends GetxController
   Future<void> _initializeData() async {
     // Load role first as it affects other operations
     await loadRole();
+    
+    // Check charge settings to determine if default date is high season
+    await checkChargeSettings();
+    // Set default time based on high season status (05:00 for D-DAY, 07:00 otherwise)
+    setDefaultTime();
     
     // Parallel API calls for independent data
     await Future.wait([
@@ -961,6 +979,48 @@ class DashboardController extends GetxController
             }
           }
         }
+      }
+
+      // Check if rental period crosses high season (any day in [start, start+duration-1] in any range)
+      final duration = int.tryParse(selectedDurasiSewa.value) ?? 1;
+      final rentalStartDate = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+      );
+      for (var range in calendarRanges) {
+        final fleets = range['fleets'] as List?;
+        if (fleets == null || fleets.isEmpty || !fleets.contains(selectedKategori.value)) continue;
+        final startDateStr = range['start_date'] as String?;
+        final endDateStr = range['end_date'] as String?;
+        if (startDateStr == null || endDateStr == null) continue;
+        final startDateMatch = RegExp(r'(\d{4})-(\d{2})-(\d{2})').firstMatch(startDateStr);
+        final endDateMatch = RegExp(r'(\d{4})-(\d{2})-(\d{2})').firstMatch(endDateStr);
+        if (startDateMatch == null || endDateMatch == null) continue;
+        final startDays = int.parse(startDateMatch.group(1)!) * 10000 +
+            int.parse(startDateMatch.group(2)!) * 100 +
+            int.parse(startDateMatch.group(3)!);
+        final endDays = int.parse(endDateMatch.group(1)!) * 10000 +
+            int.parse(endDateMatch.group(2)!) * 100 +
+            int.parse(endDateMatch.group(3)!);
+        for (int i = 0; i < duration; i++) {
+          final rentalDay = rentalStartDate.add(Duration(days: i));
+          final rentalDays = rentalDay.year * 10000 + rentalDay.month * 100 + rentalDay.day;
+          if (rentalDays >= startDays && rentalDays <= endDays) {
+            if (mostRelevantAlert == null) {
+              mostRelevantAlert = {
+                'type': 'crosses',
+                'name': range['name'] ?? '',
+                'formatted_start_date': range['formatted_start_date'] ?? '',
+                'formatted_end_date': range['formatted_end_date'] ?? '',
+                'fleets': formatFleetNames(fleets),
+                'range': range,
+              };
+            }
+            break;
+          }
+        }
+        if (mostRelevantAlert != null && mostRelevantAlert!['type'] == 'crosses') break;
       }
 
       currentChargeAlert.value = mostRelevantAlert;

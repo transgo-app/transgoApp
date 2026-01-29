@@ -5,6 +5,7 @@ class DetailriwayatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    fetchChargeSettings();
     getDataInsurance();
     isLoading.value = true;
     getDataById().then((value) {
@@ -12,6 +13,29 @@ class DetailriwayatController extends GetxController {
     });
     permintaanKhususC.text = dataArguments['description'] ?? 'Tidak Ada';
     fetchTgPayBalance();
+  }
+
+  Future<void> fetchChargeSettings() async {
+    try {
+      final data = await APIService().get('/order-calculation-settings');
+      chargeSettings.value = data ?? {};
+    } catch (e) {
+      chargeSettings.value = {};
+    }
+  }
+
+  /// True if rental period [startDate, startDate + duration - 1] crosses any high season range.
+  bool rentalCrossesHighSeason(String startDateStr, int duration, dynamic orderData) {
+    final ranges = chargeSettings['calendar_dates_ranges'] as List?;
+    final fleet = orderData['fleet'];
+    final product = orderData['product'];
+    final categoryType = fleet != null ? fleet['type'] : product?['category'];
+    return rentalPeriodCrossesHighSeason(
+      startDateStr,
+      duration,
+      categoryType?.toString(),
+      ranges,
+    );
   }
 
   var dataArguments = Get.arguments;
@@ -23,6 +47,9 @@ class DetailriwayatController extends GetxController {
   RxMap detailKendaraan = {}.obs;
   RxMap detaiItemsID = {}.obs;
   RxList riwayatAsuransi = [].obs;
+
+  /// Charge settings for high season crossing check (order-calculation-settings).
+  final RxMap chargeSettings = {}.obs;
   RxString googleMapEmbed = ''.obs;
   RxBool isCancelOrderDisabled = false.obs;
   RxBool isLoadingCancelTicket = false.obs;

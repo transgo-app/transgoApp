@@ -185,7 +185,12 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                             IconsaxPlusBold.calendar_edit,
                             formatTanggalSewa(
                                 detaiItemsID['start_date'],
-                                detaiItemsID['duration']),
+                                detaiItemsID['duration'] ?? 1,
+                                isHighSeason: controller.rentalCrossesHighSeason(
+                                  detaiItemsID['start_date'],
+                                  detaiItemsID['duration'] ?? 1,
+                                  detaiItemsID,
+                                )),
                           ),
                           iconWithDetailSewa(
                             (fleet?['type'] ?? 'car') == 'car'

@@ -25,6 +25,9 @@ class RiwayatpemesananController extends GetxController {
   final RxList listKendaraan = [].obs;
   final RxMap<int, bool> orderRatingStatus = <int, bool>{}.obs; // orderId -> hasRating
 
+  /// Charge settings for high season crossing check (order-calculation-settings).
+  final RxMap chargeSettings = {}.obs;
+
   int currentPage = 1;
   static const int limit = 10;
 
@@ -39,6 +42,7 @@ class RiwayatpemesananController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    fetchChargeSettings();
     getListKendaraan();
 
     scrollController.addListener(() {
@@ -48,6 +52,29 @@ class RiwayatpemesananController extends GetxController {
         getListKendaraan(true);
       }
     });
+  }
+
+  Future<void> fetchChargeSettings() async {
+    try {
+      final data = await APIService().get('/order-calculation-settings');
+      chargeSettings.value = data ?? {};
+    } catch (e) {
+      chargeSettings.value = {};
+    }
+  }
+
+  /// True if rental period [startDate, startDate + duration - 1] crosses any high season range.
+  bool rentalCrossesHighSeason(String startDateStr, int duration, dynamic orderData) {
+    final ranges = chargeSettings['calendar_dates_ranges'] as List?;
+    final fleet = orderData['fleet'];
+    final product = orderData['product'];
+    final categoryType = fleet != null ? fleet['type'] : product?['category'];
+    return rentalPeriodCrossesHighSeason(
+      startDateStr,
+      duration,
+      categoryType?.toString(),
+      ranges,
+    );
   }
 
   Future<void> refreshData() async {

@@ -40,9 +40,6 @@ class HargaWidget extends StatelessWidget {
     int durasiRaw = endDate.difference(startDate).inDays;
     final durasi = _normalizeDurasi(durasiRaw);
 
-    final tanggalText = DateFormat('dd MMM yyyy').format(startDate);
-    final waktuText = DateFormat('HH:mm').format(startDate);
-
     // Only wrap observable parts in Obx
     return Obx(() {
       controller.updateTotalHarga();
@@ -56,6 +53,23 @@ class HargaWidget extends StatelessWidget {
 
       final int hargaOriginalTotal = hargaOriginal * durasi;
       final int diskon = hargaOriginalTotal - controller.totalHarga.value;
+
+      // Use hybrid high season: rental crosses high season → end 23:59 last day
+      final isHighSeason = controller.rentalCrossesHighSeason.value;
+      String dateRangeText;
+      
+      if (isHighSeason) {
+        // Per-date calculation: show full period with end time at 23:59
+        final endDateForDisplay = startDate.add(Duration(days: durasi - 1));
+        final endTime = DateTime(endDateForDisplay.year, endDateForDisplay.month, 
+            endDateForDisplay.day, 23, 59);
+        dateRangeText = "${DateFormat('dd MMM yyyy HH:mm').format(startDate)} - ${DateFormat('dd MMM yyyy HH:mm').format(endTime)}";
+      } else {
+        // Per-day calculation: show start date/time only (end calculated as 24h later)
+        final tanggalText = DateFormat('dd MMM yyyy').format(startDate);
+        final waktuText = DateFormat('HH:mm').format(startDate);
+        dateRangeText = "$tanggalText $waktuText";
+      }
 
       return GestureDetector(
         onTap: () => _showCustomPopup(context),
@@ -118,22 +132,29 @@ class HargaWidget extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(IconsaxPlusBold.calendar,
-                            color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text(
-                          "$tanggalText $waktuText",
-                          style: gabaritoTextStyle.copyWith(
-                            fontSize: 14,
-                            color: Colors.white,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Icon(IconsaxPlusBold.calendar,
+                              color: Colors.white),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              dateRangeText,
+                              style: gabaritoTextStyle.copyWith(
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
+                              maxLines: isHighSeason ? 2 : 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const Icon(Icons.arrow_forward_ios,
-                        color: Colors.white, size: 16),
+                    if (!isHighSeason)
+                      const Icon(Icons.arrow_forward_ios,
+                          color: Colors.white, size: 16),
                   ],
                 ),
               ],
@@ -170,10 +191,9 @@ class HargaWidget extends StatelessWidget {
             );
 
             controller.dataClient['startDate'] = updated.toIso8601String();
+            controller.dataClient['date'] = updated.toIso8601String();
 
-            final durasi = controller.selectedDurasi.value;
-            controller.dataClient['endDate'] =
-                updated.add(Duration(days: durasi)).toIso8601String();
+            await controller.checkChargeSettings();
 
             controller.updateTotalHarga();
             refreshPopup();
@@ -256,6 +276,7 @@ class HargaWidget extends StatelessWidget {
                         controller.dataClient['duration'] = durasi.toString();
                         controller.dataClient['date'] = start.toIso8601String();
 
+                        await controller.checkChargeSettings();
                         controller.updateTotalHarga();
                         await controller.getDetailAPI(false);
                         setState(() {});
@@ -319,9 +340,9 @@ class _BottomTimePickerHarga extends StatefulWidget {
 }
 
 class _BottomTimePickerHargaState extends State<_BottomTimePickerHarga> {
-  static const int minHour = 7;
   static const int maxHour = 23;
 
+  late int minHour;
   late int hour;
   late int minute;
 
@@ -332,12 +353,23 @@ class _BottomTimePickerHargaState extends State<_BottomTimePickerHarga> {
   void initState() {
     super.initState();
 
+    // Determine high season D-DAY based on charge settings alert
+    final alert = widget.controller.currentChargeAlert.value;
+    final isHighSeason = alert != null && alert['type'] == 'dday';
+    minHour = isHighSeason ? 5 : 7;
+
     final base =
         DateTime.tryParse(widget.controller.dataClient['startDate'] ?? '') ??
             DateTime.now();
 
-    hour = base.hour.clamp(minHour, maxHour);
-    minute = base.minute;
+    // If high season and no time set yet (or time is before 5:00), default to 5:00
+    if (isHighSeason && (base.hour < 5 || widget.controller.dataClient['startDate'] == null)) {
+      hour = 5;
+      minute = 0;
+    } else {
+      hour = base.hour.clamp(minHour, maxHour);
+      minute = base.minute;
+    }
 
     hourController = FixedExtentScrollController(initialItem: hour - minHour);
     minuteController = FixedExtentScrollController(initialItem: minute);

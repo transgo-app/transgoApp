@@ -83,6 +83,8 @@ class DetailitemsController extends GetxController {
   // Charge settings
   RxMap chargeSettings = {}.obs;
   Rxn<Map<String, dynamic>> currentChargeAlert = Rxn<Map<String, dynamic>>();
+  /// True when rental period [start, start+duration-1] overlaps any high season range.
+  RxBool rentalCrossesHighSeason = false.obs;
 
   // Ratings
   RxList ratings = [].obs;
@@ -520,18 +522,21 @@ class DetailitemsController extends GetxController {
   Future<void> checkChargeSettings() async {
     if (!isKendaraan) {
       currentChargeAlert.value = null;
+      rentalCrossesHighSeason.value = false;
       return;
     }
 
     final dateStr = dataClient['date'];
     if (dateStr == null || dateStr.isEmpty) {
       currentChargeAlert.value = null;
+      rentalCrossesHighSeason.value = false;
       return;
     }
 
     final categoryType = detailData['item']?['type_code'] as String?;
     if (categoryType != 'car' && categoryType != 'motorcycle') {
       currentChargeAlert.value = null;
+      rentalCrossesHighSeason.value = false;
       return;
     }
 
@@ -543,6 +548,7 @@ class DetailitemsController extends GetxController {
     final calendarRanges = chargeSettings['calendar_dates_ranges'] as List?;
     if (calendarRanges == null || calendarRanges.isEmpty) {
       currentChargeAlert.value = null;
+      rentalCrossesHighSeason.value = false;
       return;
     }
 
@@ -648,10 +654,95 @@ class DetailitemsController extends GetxController {
         }
       }
 
+      // Check if rental period crosses high season (any day in [start, start+duration-1] in any range)
+      final duration = int.tryParse(dataClient['duration']?.toString() ?? '1') ?? 1;
+      bool crosses = false;
+      for (var range in calendarRanges) {
+        final fleets = range['fleets'] as List?;
+        if (fleets == null || fleets.isEmpty || !fleets.contains(categoryType)) continue;
+        final startDateStr = range['start_date'] as String?;
+        final endDateStr = range['end_date'] as String?;
+        if (startDateStr == null || endDateStr == null) continue;
+        final startDateMatch = RegExp(r'(\d{4})-(\d{2})-(\d{2})').firstMatch(startDateStr);
+        final endDateMatch = RegExp(r'(\d{4})-(\d{2})-(\d{2})').firstMatch(endDateStr);
+        if (startDateMatch == null || endDateMatch == null) continue;
+        final startDays = int.parse(startDateMatch.group(1)!) * 10000 +
+            int.parse(startDateMatch.group(2)!) * 100 +
+            int.parse(startDateMatch.group(3)!);
+        final endDays = int.parse(endDateMatch.group(1)!) * 10000 +
+            int.parse(endDateMatch.group(2)!) * 100 +
+            int.parse(endDateMatch.group(3)!);
+        for (int i = 0; i < duration; i++) {
+          final rentalDay = selectedDate.add(Duration(days: i));
+          final rentalDays = rentalDay.year * 10000 + rentalDay.month * 100 + rentalDay.day;
+          if (rentalDays >= startDays && rentalDays <= endDays) {
+            crosses = true;
+            if (mostRelevantAlert == null) {
+              mostRelevantAlert = {
+                'type': 'crosses',
+                'name': range['name'] ?? '',
+                'formatted_start_date': range['formatted_start_date'] ?? '',
+                'formatted_end_date': range['formatted_end_date'] ?? '',
+                'fleets': formatFleetNames(fleets),
+                'range': range,
+              };
+            }
+            break;
+          }
+        }
+        if (crosses) break;
+      }
+      rentalCrossesHighSeason.value = crosses;
+
       currentChargeAlert.value = mostRelevantAlert;
+
+      // Normalize default time and end date based on high season rules.
+      _adjustDefaultTimeForHighSeason();
     } catch (e) {
       print("Error checking charge settings: $e");
       currentChargeAlert.value = null;
+      rentalCrossesHighSeason.value = false;
+    }
+  }
+
+  /// Normalize default start/end time based on high season rules.
+  /// - If currentChargeAlert.type == 'dday' → minimum start at 05:00; else 07:00.
+  /// - If rental crosses high season → end at 23:59 of last calendar day; else start + duration (24h).
+  void _adjustDefaultTimeForHighSeason() {
+    final rawDate = dataClient['date'];
+    if (rawDate == null || rawDate.toString().isEmpty) return;
+
+    DateTime base = DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
+
+    final alert = currentChargeAlert.value;
+    final bool isDdayHighSeason =
+        alert != null && alert['type']?.toString() == 'dday';
+
+    final int minHour = isDdayHighSeason ? 5 : 7;
+
+    if (base.hour < minHour) {
+      base = DateTime(base.year, base.month, base.day, minHour, 0);
+    }
+
+    dataClient['date'] = base.toIso8601String();
+    dataClient['startDate'] = base.toIso8601String();
+
+    final durationStr = dataClient['duration']?.toString();
+    final duration = int.tryParse(durationStr ?? '1') ?? 1;
+
+    if (rentalCrossesHighSeason.value) {
+      // Hybrid: end at 23:59 of last calendar day
+      final lastDay = base.add(Duration(days: duration - 1));
+      dataClient['endDate'] = DateTime(
+        lastDay.year,
+        lastDay.month,
+        lastDay.day,
+        23,
+        59,
+      ).toIso8601String();
+    } else {
+      dataClient['endDate'] =
+          base.add(Duration(days: duration)).toIso8601String();
     }
   }
 

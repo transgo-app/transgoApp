@@ -120,6 +120,8 @@ class DetailChargeWidget extends StatelessWidget {
         return _buildD1Alert(alert);
       } else if (alertType == 'dday') {
         return _buildDDayAlert(alert);
+      } else if (alertType == 'crosses') {
+        return _buildCrossesAlert(alert);
       }
 
       return const SizedBox.shrink();
@@ -165,6 +167,53 @@ class DetailChargeWidget extends StatelessWidget {
               text: message,
               fontSize: 13,
               textColor: Colors.orange.shade900,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCrossesAlert(Map<String, dynamic> alert) {
+    final name = alert['name'] ?? '';
+    final formattedStartDate = alert['formatted_start_date'] ?? '';
+    final formattedEndDate = alert['formatted_end_date'] ?? '';
+    final fleets = alert['fleets'] ?? '';
+
+    final message =
+        'Periode sewa Anda memasuki masa high season ($name, $formattedStartDate - $formattedEndDate). Berlaku untuk $fleets. Hari yang masuk dalam periode high season akan dihitung per tanggal (hingga 23:59).';
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade300, width: 1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade200,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.info_outline,
+              color: Colors.blue,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: poppinsText(
+              text: message,
+              fontSize: 13,
+              textColor: Colors.blue.shade900,
               fontWeight: FontWeight.w500,
             ),
           ),
