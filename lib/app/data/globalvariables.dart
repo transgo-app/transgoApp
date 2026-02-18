@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
+import 'package:transgomobileapp/app/data/service/LocationTrackingService.dart';
 
 class GlobalVariables {
   static RxString userId = 'Selamat Datang'.obs;
@@ -42,6 +43,11 @@ class GlobalVariables {
   }
 
   static Future<void> resetData() async {
+    // Stop customer location tracking when user logs out
+    try {
+      LocationTrackingService.instance.stop();
+    } catch (_) {}
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     await prefs.remove('namaUser');

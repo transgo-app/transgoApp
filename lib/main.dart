@@ -8,9 +8,14 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:upgrader/upgrader.dart';
 import 'package:get/get.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'app/routes/app_pages.dart';
 import 'app/data/data.dart';
+import 'app/data/service/LocationTrackingTaskHandler.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -34,6 +39,9 @@ final Upgrader upgrader = Upgrader(
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
 
   tz.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
@@ -83,11 +91,70 @@ void main() async {
     debugPrint('Firebase API initialization error: $error');
   });
 
+  // Initialize foreground task for background location (Android)
+  if (!kIsWeb) {
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'transgo_location_channel',
+        channelName: 'Lokasi Transgo',
+        channelDescription: 'Mengirim lokasi untuk peta dashboard',
+      ),
+      iosNotificationOptions: IOSNotificationOptions(
+        showNotification: true,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.repeat(45000), // 45 seconds
+      ),
+    );
+    FlutterForegroundTask.setTaskHandler(LocationTrackingTaskHandler());
+    FlutterForegroundTask.initCommunicationPort();
+  }
+
   runApp(
-    MyApp(
+    LocationTrackingAppWrapper(
       initialRoute: loggedIn ? AppPages.DEFAULT : AppPages.INITIAL,
     ),
   );
+}
+
+/// Wraps the app and starts location tracking when app resumes (e.g. from background)
+/// so the 45s interval runs whenever the app is open or user returns to it.
+class LocationTrackingAppWrapper extends StatefulWidget {
+  final String initialRoute;
+
+  const LocationTrackingAppWrapper({super.key, required this.initialRoute});
+
+  @override
+  State<LocationTrackingAppWrapper> createState() => _LocationTrackingAppWrapperState();
+}
+
+class _LocationTrackingAppWrapperState extends State<LocationTrackingAppWrapper>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        GlobalVariables.token.value.isNotEmpty) {
+      LocationTrackingService.instance.start();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MyApp(initialRoute: widget.initialRoute);
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -97,7 +164,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    final app = GetMaterialApp(
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       locale: const Locale('id', 'ID'),
@@ -120,5 +187,6 @@ class MyApp extends StatelessWidget {
         );
       },
     );
+    return kIsWeb ? app : WithForegroundTask(child: app);
   }
 }

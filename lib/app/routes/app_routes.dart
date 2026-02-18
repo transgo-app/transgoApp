@@ -18,6 +18,7 @@ abstract class Routes {
   static const SYARATKETENTUAN = _Paths.SYARATKETENTUAN;
   static const REVIEWS = _Paths.REVIEWS;
   static const TGPAY = _Paths.TGPAY;
+  static const FLEETRANKING = _Paths.FLEETRANKING;
 }
 
 abstract class _Paths {
@@ -37,4 +38,5 @@ abstract class _Paths {
   static const SYARATKETENTUAN = '/syaratdanketentuan';
   static const REVIEWS = '/reviews';
   static const TGPAY = '/tgpay';
+  static const FLEETRANKING = '/fleet-ranking';
 }

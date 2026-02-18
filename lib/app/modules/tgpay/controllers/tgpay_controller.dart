@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import '../../../data/data.dart';
+import '../../../data/helper/VerificationHelper.dart';
 import '../../../widget/widgets.dart';
 
 class TgPayController extends GetxController {
@@ -71,6 +72,16 @@ class TgPayController extends GetxController {
   @override
   void onReady() {
     super.onReady();
+    
+    // Check account verification before allowing access
+    if (!VerificationHelper.checkVerificationAndShowMessage()) {
+      // User not verified, go back
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Get.back();
+      });
+      return;
+    }
+    
     // Panggil network request setelah first frame selesai dirender
     // untuk menghindari error "setState() called during build"
     fetchUserId();

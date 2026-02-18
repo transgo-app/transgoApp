@@ -11,6 +11,7 @@ const username = 'LINhzGdEo9';
 const password = 'l5vEiYS7HO';
 String whatsAppNumberAdmin = '6281389292879';
 
+
 /// Cache entry for HTTP responses
 class _CacheEntry {
   final dynamic data;
@@ -27,6 +28,9 @@ class _CacheEntry {
 }
 
 class APIService {
+  /// Base URL for API (used by background location task).
+  static String get apiBaseUrl => baseUrl;
+
   // HTTP response cache
   static final Map<String, _CacheEntry> _cache = {};
   

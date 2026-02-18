@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:transgomobileapp/app/data/data.dart';
 import 'package:transgomobileapp/app/widget/General/text.dart';
+import 'package:transgomobileapp/app/widget/widgets.dart';
 
 class CustomDropdown extends StatelessWidget {
   final String? hintText;
@@ -97,12 +99,14 @@ class DurationDropdown extends StatefulWidget {
   final String startDate; 
   final String time;
   final Function(DurationOption)? onSelectionChanged;
+  final int? minimumDuration; // Minimum duration for high season (null means no minimum)
 
   const DurationDropdown({
     Key? key,
     required this.startDate,
     required this.time,
     this.onSelectionChanged,
+    this.minimumDuration,
   }) : super(key: key);
 
   @override
@@ -116,14 +120,45 @@ class _DurationDropdownState extends State<DurationDropdown> {
   void initState() {
     super.initState();
     options = _generateDurationOptions();
-    selectedOption = options.first;
+    // Set default to minimum duration if provided, otherwise first option
+    if (widget.minimumDuration != null && widget.minimumDuration! > 0) {
+      final minOption = options.firstWhere(
+        (opt) => opt.days >= widget.minimumDuration!,
+        orElse: () => options.first,
+      );
+      selectedOption = minOption;
+    } else {
+      selectedOption = options.first;
+    }
+  }
+
+  @override
+  void didUpdateWidget(DurationDropdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update options and selection when minimumDuration changes
+    if (oldWidget.minimumDuration != widget.minimumDuration) {
+      options = _generateDurationOptions();
+      if (widget.minimumDuration != null && widget.minimumDuration! > 0) {
+        final minOption = options.firstWhere(
+          (opt) => opt.days >= widget.minimumDuration!,
+          orElse: () => options.first,
+        );
+        if (selectedOption == null || selectedOption!.days < widget.minimumDuration!) {
+          selectedOption = minOption;
+          if (widget.onSelectionChanged != null) {
+            widget.onSelectionChanged!(minOption);
+          }
+        }
+      }
+    }
   }
 
   List<DurationOption> _generateDurationOptions() {
     List<DurationOption> result = [];
     DateTime startDate = _parseDate(widget.startDate);
+    final minDays = widget.minimumDuration ?? 1;
     
-    for (int i = 1; i <= 30; i++) {
+    for (int i = minDays; i <= 30; i++) {
       DateTime endDate = startDate.add(Duration(days: i));
       result.add(DurationOption(
         days: i,
@@ -212,8 +247,22 @@ class _DurationDropdownState extends State<DurationDropdown> {
                   );
                 }).toList(),
                 onChanged: (DurationOption? newValue) {
+                  if (newValue == null) return;
+                  
+                  // Validate minimum duration
+                  if (widget.minimumDuration != null && 
+                      widget.minimumDuration! > 0 && 
+                      newValue.days < widget.minimumDuration!) {
+                    CustomSnackbar.show(
+                      title: "Terjadi Kesalahan",
+                      message: "Kamu tidak bisa memilih di bawah ${widget.minimumDuration} hari saat ini!",
+                      icon: Icons.error_outline,
+                    );
+                    return;
+                  }
+                  
                   setState(() => selectedOption = newValue);
-                  if (widget.onSelectionChanged != null && newValue != null) {
+                  if (widget.onSelectionChanged != null) {
                     widget.onSelectionChanged!(newValue);
                   }
                 },

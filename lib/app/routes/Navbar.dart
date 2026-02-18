@@ -1,6 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transgomobileapp/app/data/data.dart';
+import 'package:transgomobileapp/app/data/helper/VerificationHelper.dart';
 import 'package:transgomobileapp/app/modules/dashboard/controllers/dashboard_controller.dart';
 import 'package:transgomobileapp/app/modules/dashboard/views/dashboard_view.dart';
 import 'package:transgomobileapp/app/modules/profile/controllers/profile_controller.dart';
@@ -42,6 +45,46 @@ class _NavigationPageState extends State<NavigationPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       bottomNavigationController.changeIndex(widget.selectedIndex);
     });
+
+    // Start customer location tracking for dashboard map (when logged in)
+    if (GlobalVariables.token.value.isNotEmpty) {
+      _maybeShowLocationRationaleAndStart();
+    }
+  }
+
+  static const _locationRationaleKey = 'location_rationale_shown';
+
+  Future<void> _maybeShowLocationRationaleAndStart() async {
+    final prefs = await SharedPreferences.getInstance();
+    final shown = prefs.getBool(_locationRationaleKey) ?? false;
+    if (!shown && mounted) {
+      final start = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Lokasi untuk Keamanan'),
+          content: const Text(
+            'Transgo menggunakan lokasi Anda untuk keamanan dan agar tim kami dapat melihat posisi Anda di peta saat layanan berlangsung.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Nanti'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Izinkan'),
+            ),
+          ],
+        ),
+      );
+      await prefs.setBool(_locationRationaleKey, true);
+      if (start == true) {
+        LocationTrackingService.instance.start();
+      }
+    } else {
+      LocationTrackingService.instance.start();
+    }
   }
 
   void initControllers() async {
@@ -115,6 +158,14 @@ class _NavigationPageState extends State<NavigationPage> {
           selectedFontSize: 12,
           unselectedFontSize: 12,
           onTap: (index) {
+            // Check verification for TG Rewards tab (index 2)
+            if (index == 2) {
+              if (!VerificationHelper.isAccountVerified()) {
+                VerificationHelper.checkVerificationAndShowMessage();
+                return; // Don't switch to rewards tab
+              }
+            }
+            
             if (index == bottomNavigationController.selectedIndex.value) {
               if (!isRefreshing) {
                 refreshPage(index); 

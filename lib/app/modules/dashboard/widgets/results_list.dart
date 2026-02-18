@@ -6,6 +6,7 @@ import '../controllers/dashboard_controller.dart';
 import 'empty_state/empty_state_section.dart';
 import '../../../widget/widgets.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
+import 'fleet_recommendation_widget.dart';
 
 class ResultsArea extends StatelessWidget {
   final DashboardController controller;
@@ -64,6 +65,12 @@ class KendaraanList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Fleet Recommendations Section
+          Obx(() => FleetRecommendationWidget(
+            data: controller.fleetRecommendations.value,
+            isLoading: controller.isLoadingRecommendations.value,
+            selectedType: controller.selectedKategori.value,
+          )),
           Obx(() => Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: gabaritoText(
@@ -104,6 +111,8 @@ class KendaraanList extends StatelessWidget {
                       data: data,
                       isKendaraan: true,
                       onTap: () {
+                        // Ensure pickedDateTimeISO is up-to-date before navigation
+                        controller.pickedDateAndTime();
                         Get.toNamed('/detailkendaraan', arguments: {
                           'isKendaraan': true,
                           'dataClient': {
@@ -161,6 +170,8 @@ class ProdukList extends StatelessWidget {
                       data: data,
                       isKendaraan: false,
                       onTap: () {
+                        // Ensure pickedDateTimeISO is up-to-date before navigation
+                        controller.pickedDateAndTime();
                         Get.toNamed('/detailkendaraan', arguments: {
                           'isKendaraan': false,
                           'dataClient': {

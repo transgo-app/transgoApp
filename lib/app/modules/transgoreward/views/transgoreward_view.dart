@@ -3,6 +3,7 @@ import '../widgets/benefit.dart';
 import '../widgets/referral.dart';
 import 'package:transgomobileapp/app/widget/General/text.dart';
 import '../../../data/data.dart';
+import '../../../data/helper/VerificationHelper.dart';
 import '../../../widget/widgets.dart';
 
 class TransGoRewardView extends GetView<TransGoRewardController> {
@@ -12,7 +13,13 @@ class TransGoRewardView extends GetView<TransGoRewardController> {
   Widget build(BuildContext context) {
     final controller = Get.put(TransGoRewardController(), permanent: false);
 
+    // Check verification before loading data
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!VerificationHelper.isAccountVerified()) {
+        VerificationHelper.checkVerificationAndShowMessage();
+        Get.back();
+        return;
+      }
       controller.fetchRewards();
       controller.fetchReferralProgress();
       controller.fetchReferralInfo();

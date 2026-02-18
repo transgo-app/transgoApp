@@ -6,6 +6,7 @@ import '../../controllers/detailitems_controller.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalPengambilanPengembalian.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
+import 'package:transgomobileapp/app/data/service/LocationPermissionHelper.dart';
 
 class SectionLokasi extends StatelessWidget {
   final DetailitemsController controller;
@@ -30,29 +31,33 @@ class SectionLokasi extends StatelessWidget {
           textColor: textPrimary,
         ),
         BackgroundCard(
-          ontap: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              builder: (context) {
-                return Padding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
-                  ),
-                  child: SingleChildScrollView(
-                    child: Wrap(
-                      children: [
-                        ModalPengambilanPengembalianKendaraan(
-                          labelTitle: "Pilih Lokasi Pengambilan",
-                          tempatAsal: lokasiAsal,
-                          controllerView: controller.lokasiPengambilanC,
-                        ),
-                      ],
+          ontap: () async {
+            final granted = await LocationPermissionHelper.ensureLocationForForm(context);
+            if (!context.mounted) return;
+            if (granted) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (context) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
                     ),
-                  ),
-                );
-              },
-            );
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        children: [
+                          ModalPengambilanPengembalianKendaraan(
+                            labelTitle: "Pilih Lokasi Pengambilan",
+                            tempatAsal: lokasiAsal,
+                            controllerView: controller.lokasiPengambilanC,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            }
           },
           borderRadius: 8,
           height: 50,
@@ -103,31 +108,35 @@ class SectionLokasi extends StatelessWidget {
             }
 
             return GestureDetector(
-              onTap: () {
-                controller.isPengembalianManual.value = true;
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (context) {
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).viewInsets.bottom,
-                      ),
-                      child: SingleChildScrollView(
-                        child: Wrap(
-                          children: [
-                            ModalPengambilanPengembalianKendaraan(
-                              isPengambilan: false,
-                              labelTitle: "Pilih Lokasi Pengembalian",
-                              tempatAsal: lokasiAsal,
-                              controllerView: controller.lokasiPengembalianC,
-                            ),
-                          ],
+              onTap: () async {
+                final granted = await LocationPermissionHelper.ensureLocationForForm(context);
+                if (!context.mounted) return;
+                if (granted) {
+                  controller.isPengembalianManual.value = true;
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (context) {
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).viewInsets.bottom,
                         ),
-                      ),
-                    );
-                  },
-                );
+                        child: SingleChildScrollView(
+                          child: Wrap(
+                            children: [
+                              ModalPengambilanPengembalianKendaraan(
+                                isPengambilan: false,
+                                labelTitle: "Pilih Lokasi Pengembalian",
+                                tempatAsal: lokasiAsal,
+                                controllerView: controller.lokasiPengembalianC,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
               },
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),

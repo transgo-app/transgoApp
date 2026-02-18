@@ -31,8 +31,13 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>location</string>
 		<string>remote-notification</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Transgo menggunakan lokasi Anda untuk keamanan dan agar tim kami dapat melihat posisi Anda di peta saat layanan berlangsung.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Transgo menggunakan lokasi Anda untuk keamanan dan agar tim kami dapat melihat posisi Anda di peta saat layanan berlangsung.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

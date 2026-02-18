@@ -4,6 +4,7 @@ export 'helper/FormatTanggal.dart';
 export 'globalvariables.dart';
 export 'service/NotificationService.dart';
 export 'service/WhatsAppLinksService.dart';
+export 'service/LocationTrackingService.dart';
 export 'webViewGmaps.dart';
 export 'package:get/get.dart';
 export 'package:flutter/material.dart';

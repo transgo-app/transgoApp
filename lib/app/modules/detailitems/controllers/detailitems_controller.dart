@@ -10,11 +10,27 @@ class DetailitemsController extends GetxController {
     super.onInit();
     isKendaraan = Get.arguments['isKendaraan'] ?? true;
 
-    final dateStr = dataClient['date'];
-    final durationStr = dataClient['duration'];
+    final dateStr = dataClient?['date'];
+    final durationStr = dataClient?['duration'];
 
-    DateTime startDate = DateTime.tryParse(dateStr ?? '') ?? DateTime.now();
+    // Parse date - handle both ISO string and empty string cases
+    DateTime startDate;
+    if (dateStr != null && dateStr.toString().isNotEmpty) {
+      startDate = DateTime.tryParse(dateStr.toString()) ?? DateTime.now();
+    } else {
+      startDate = DateTime.now();
+    }
+    
+    // Parse duration - ensure it's at least 1
     int duration = int.tryParse(durationStr?.toString() ?? '1') ?? 1;
+    if (duration < 1) duration = 1;
+
+    // Ensure dataClient is a mutable map
+    if (dataClient == null) {
+      dataClient = <String, dynamic>{};
+    } else if (dataClient is Map) {
+      dataClient = Map<String, dynamic>.from(dataClient);
+    }
 
     dataClient['startDate'] = startDate.toIso8601String();
     dataClient['endDate'] =

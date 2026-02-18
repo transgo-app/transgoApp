@@ -28,6 +28,8 @@ import '../modules/reviews/bindings/reviews_binding.dart';
 import '../modules/reviews/views/reviews_view.dart';
 import '../modules/tgpay/bindings/tgpay_binding.dart';
 import '../modules/tgpay/views/tgpay_view.dart';
+import '../modules/fleet_ranking/bindings/fleet_ranking_binding.dart';
+import '../modules/fleet_ranking/views/fleet_ranking_view.dart';
 
 
 part 'app_routes.dart';
@@ -119,6 +121,11 @@ class AppPages {
       name: Routes.TGPAY,
       page: () => const TgPayView(),
       binding: TgPayBinding(),
+    ),
+    GetPage(
+      name: Routes.FLEETRANKING,
+      page: () => const FleetRankingView(),
+      binding: FleetRankingBinding(),
     ),
   ];
 }

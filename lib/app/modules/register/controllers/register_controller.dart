@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:transgomobileapp/app/data/helper/Storage_helper.dart';
 import 'package:transgomobileapp/app/widget/Dialog/DialogSuccessUploadRegister.dart';
+import 'package:transgomobileapp/app/widget/Dialog/CaptchaModal.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBerhasilDaftar.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
@@ -32,6 +34,11 @@ class RegisterController extends GetxController {
   RxString progressValue = '0'.obs;
   RxString selectedRole = 'customer'.obs;
   RxString errorTextReferral = ''.obs;
+  String? captchaToken;
+  
+  // Get Cloudflare Turnstile Site Key from environment
+  String get cloudflareTurnstileSiteKey => 
+      dotenv.env['CLOUDFLARE_TURNSTILE_SITE_KEY'] ?? '0x4AAAAAACYUGnQEAnrH8TdA';
 
   var isPasswordVisible = false.obs;
   var isConfirmPasswordVisible = false.obs;
@@ -276,6 +283,36 @@ class RegisterController extends GetxController {
     });
   }
 
+  Future<void> showCaptchaModal() async {
+    final token = await showDialog<String>(
+      context: Get.context!,
+      barrierDismissible: false,
+      builder: (context) => CaptchaModal(
+        siteKey: cloudflareTurnstileSiteKey,
+        onSuccess: (token) {
+          // Token is already popped in CaptchaModal
+        },
+        onError: () {
+          CustomSnackbar.show(
+            title: "Verifikasi Gagal",
+            message: "Gagal memuat verifikasi captcha. Silakan coba lagi.",
+            backgroundColor: Colors.red,
+          );
+        },
+        onCancel: () {
+          // User cancelled
+        },
+      ),
+    );
+    
+    if (token != null && token.isNotEmpty) {
+      captchaToken = token;
+      return;
+    }
+    
+    throw Exception('Captcha verification cancelled or failed');
+  }
+
   Future<void> daftarAccount() async {
     isLoading.value = true;
 
@@ -286,7 +323,16 @@ class RegisterController extends GetxController {
           message: "Silahkan lengkapi formulir registrasi",
           icon: Icons.edit_document,
         );
+        isLoading.value = false;
         return;
+      }
+
+      // Show captcha modal before registration
+      try {
+        await showCaptchaModal();
+      } catch (e) {
+        isLoading.value = false;
+        return; // User cancelled or captcha failed
       }
 
       final files = pickedImages.values.whereType<XFile>().toList();
@@ -369,6 +415,7 @@ class RegisterController extends GetxController {
           "role": selectedRole.value,
           "referral_code":
               referralCodeC.text.isEmpty ? null : referralCodeC.text,
+          "captchaToken": captchaToken,
         };
       } else {
         Map<String, String> uploadedFileUrls = {};
@@ -402,6 +449,7 @@ class RegisterController extends GetxController {
             "role": selectedRole.value,
             "referral_code":
                 referralCodeC.text.isEmpty ? null : referralCodeC.text,
+            "captchaToken": captchaToken,
           },
         };
       }

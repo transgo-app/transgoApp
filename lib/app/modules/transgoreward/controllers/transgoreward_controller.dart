@@ -1,6 +1,7 @@
 // controllers/transgoreward_controller.dart
 import 'package:get/get.dart';
 import '../../../data/data.dart'; // pastikan APIService ada di sini
+import '../../../data/helper/VerificationHelper.dart';
 
 class Benefit {
   final int id;
@@ -79,6 +80,16 @@ class TransGoRewardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    
+    // Check account verification before allowing access
+    if (!VerificationHelper.checkVerificationAndShowMessage()) {
+      // User not verified, go back after showing message
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Get.back();
+      });
+      return;
+    }
+    
     fetchRewards();
     fetchReferralProgress();
     fetchReferralInfo();

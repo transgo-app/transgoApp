@@ -1,9 +1,11 @@
 export 'DialogBatalkanOrder.dart';
 export 'DialogDetailPenanggungJawab.dart';
 export 'DialogKonfirmasiLokasi.dart';
+export 'MandatoryLocationDialog.dart';
 export '../GroupModalBottomSheet/BottomSheetKonfirmasiPesanan.dart';
 export 'DialogLogin.dart';
 export 'DialogBerhasilDaftar.dart';
 export 'DialogHapusAkun.dart';
 export 'DialogMaintenance.dart';
 export 'TNCDialog.dart';
+export 'CaptchaModal.dart';

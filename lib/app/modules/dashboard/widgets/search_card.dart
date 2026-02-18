@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../data/data.dart';
+import '../../../data/helper/VerificationHelper.dart';
 import '../../../widget/widgets.dart';
 import '../../../routes/Navbar.dart';
 import '../controllers/dashboard_controller.dart';
@@ -184,6 +185,12 @@ class _SearchCardState extends State<SearchCard> {
                 return;
               }
 
+              // Check verification before navigating
+              if (!VerificationHelper.isAccountVerified()) {
+                VerificationHelper.checkVerificationAndShowMessage();
+                return;
+              }
+
               // Navigate to native TG Pay page
               Get.toNamed(Routes.TGPAY);
             },
@@ -277,6 +284,12 @@ class _SearchCardState extends State<SearchCard> {
           ),
           child: TextButton(
             onPressed: () {
+              // Check verification before navigating
+              if (!VerificationHelper.isAccountVerified()) {
+                VerificationHelper.checkVerificationAndShowMessage();
+                return;
+              }
+
               // Navigate to TransGo Reward page via bottom navigation
               Get.offAll(() => NavigationPage(selectedIndex: 2));
             },
@@ -407,12 +420,22 @@ class _SearchCardState extends State<SearchCard> {
     return Obx(
       () => DurationDropdown(
         key: ValueKey(
-          '${controller.pickedDate.value}_${controller.pickedTime.value}',
+          '${controller.pickedDate.value}_${controller.pickedTime.value}_${controller.minimumDuration.value}',
         ),
         startDate: convertDateFormat(controller.pickedDate.value),
         time: controller.pickedTime.value,
+        minimumDuration: controller.minimumDuration.value > 0 
+            ? controller.minimumDuration.value 
+            : null,
         onSelectionChanged: (option) {
           controller.selectedDurasiSewa.value = option.days.toString();
+          // Update pickedDateTimeISO when duration changes
+          controller.pickedDateAndTime();
+          // Refresh list if category is selected to apply new duration immediately
+          // This ensures form sewa gets updated values without needing to tap "Terapkan"
+          if (controller.selectedKategori.value.isNotEmpty) {
+            controller.getList();
+          }
         },
       ),
     );
@@ -463,6 +486,8 @@ class _SearchCardState extends State<SearchCard> {
           controller.resetFilters();
           controller.isFilterExpanded.value = false;
           await controller.getKotaKendaraan();
+          // Recheck charge settings (including minimum duration) when category changes
+          await controller.checkChargeSettings();
           controller.getList();
         },
       );
@@ -791,6 +816,8 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
             ontap: () {
               widget.controller.pickedTime.value =
                   "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}";
+              // Update pickedDateTimeISO when time changes
+              widget.controller.pickedDateAndTime();
               Navigator.pop(context);
             },
             widget: gabaritoText(

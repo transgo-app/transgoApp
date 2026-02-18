@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
 import '../../../data/data.dart';
+import '../../../data/models/fleet_recommendation_model.dart';
 
 class DashboardController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -37,6 +38,10 @@ class DashboardController extends GetxController
   RxString tgRewardTier = 'STARTER'.obs;
   RxBool isLoadingTgReward = false.obs;
 
+  // Fleet recommendations
+  Rxn<FleetRecommendationResponse> fleetRecommendations = Rxn<FleetRecommendationResponse>();
+  RxBool isLoadingRecommendations = false.obs;
+
   void _setDefaultDate() {
     DateTime now = DateTime.now();
     DateTime defaultDate;
@@ -51,23 +56,45 @@ class DashboardController extends GetxController
   }
 
   void setDefaultTime() {
-    // Set default time based on high season status:
-    // - D-DAY high season: 05:00
-    // - Otherwise: 07:00
+    // Behave like time search: for today use current hour + 2; for other days use 05:00/07:00.
     final alert = currentChargeAlert.value;
     final isHighSeason = alert != null && alert['type'] == 'dday';
-    pickedTime.value = isHighSeason ? '05:00' : '07:00';
+    final minHourLimit = isHighSeason ? 5 : 7;
+
+    final now = DateTime.now();
+    final defaultDate = pickedDate.value.isNotEmpty
+        ? DateTime.tryParse(pickedDate.value)
+        : null;
+    final isToday = defaultDate != null &&
+        defaultDate.year == now.year &&
+        defaultDate.month == now.month &&
+        defaultDate.day == now.day;
+
+    if (isToday) {
+      final twoHoursLater = now.add(const Duration(hours: 2));
+      int hour = twoHoursLater.hour;
+      if (hour < minHourLimit) hour = minHourLimit;
+      if (hour > 23) hour = 23;
+      pickedTime.value = '${hour.toString().padLeft(2, '0')}:00';
+    } else {
+      pickedTime.value = isHighSeason ? '05:00' : '07:00';
+    }
+    // Update pickedDateTimeISO after setting default time
+    pickedDateAndTime();
   }
 
   /// Called when user picks a date - checks charge settings, updates time, and refreshes list.
   Future<void> onDatePicked() async {
     await checkChargeSettings();
-    // Update time to default based on high season status
-    final alert = currentChargeAlert.value;
-    final isHighSeason = alert != null && alert['type'] == 'dday';
-    pickedTime.value = isHighSeason ? '05:00' : '07:00';
-    // Refresh vehicle list with new date
-    await getList();
+    // Use same default time logic as on open (today = now+2h, other days = 05:00/07:00)
+    setDefaultTime();
+    // Update pickedDateTimeISO when date/time changes
+    pickedDateAndTime();
+    // Refresh vehicle list with new date and duration (including auto-set minimum duration)
+    // This ensures the form sewa gets the updated values immediately
+    if (selectedKategori.value.isNotEmpty) {
+      await getList();
+    }
   }
 
   String getGreetingText() {
@@ -139,7 +166,7 @@ class DashboardController extends GetxController
     
     // Check charge settings to determine if default date is high season
     await checkChargeSettings();
-    // Set default time based on high season status (05:00 for D-DAY, 07:00 otherwise)
+    // Set default time like time search: today = current hour + 2, other days = 05:00/07:00
     setDefaultTime();
     
     // Parallel API calls for independent data
@@ -181,6 +208,7 @@ class DashboardController extends GetxController
   RxString pickedTime = ''.obs;
   var selectedOption = ''.obs;
   RxString searchQuery = ''.obs;
+  RxInt minimumDuration = 0.obs; // Minimum duration for high season (0 means no minimum)
 
   RxString pickedDateTimeISO = ''.obs;
 
@@ -479,12 +507,54 @@ class DashboardController extends GetxController
       showDataMobil.value = true;
       // Check charge settings after search
       await checkChargeSettings();
+      // Fetch recommendations if date is set
+      if (pickedDate.value.isNotEmpty && 
+          (selectedKategori.value == 'car' || selectedKategori.value == 'motorcycle')) {
+        await fetchRecommendations();
+      }
     }
   }
 
   void checkDataWhenHaveList() {
     if (showDataMobil.value) {
       getList();
+    }
+  }
+
+  /// Fetch fleet recommendations based on current search parameters
+  Future<void> fetchRecommendations() async {
+    // Only fetch for car/motorcycle
+    if (selectedKategori.value != 'car' && selectedKategori.value != 'motorcycle') {
+      fleetRecommendations.value = null;
+      return;
+    }
+
+    if (pickedDate.value.isEmpty) {
+      fleetRecommendations.value = null;
+      return;
+    }
+
+    isLoadingRecommendations.value = true;
+
+    try {
+      final locationId = selectedLokasiKendaraan.value.isNotEmpty 
+          ? selectedLokasiKendaraan.value 
+          : '0';
+      final duration = selectedDurasiSewa.value.isNotEmpty 
+          ? selectedDurasiSewa.value 
+          : '1';
+      
+      final endpoint = '/fleets/recommendations?location_id=$locationId&date=${pickedDate.value}&duration=$duration';
+      final response = await APIService().get(endpoint, useCache: false);
+
+      if (response != null) {
+        fleetRecommendations.value = FleetRecommendationResponse.fromJson(response);
+      }
+    } catch (e) {
+      print('Error fetching recommendations: $e');
+      fleetRecommendations.value = null;
+    } finally {
+      isLoadingRecommendations.value = false;
     }
   }
 
@@ -961,6 +1031,7 @@ class DashboardController extends GetxController
           // Check if selected date is within the period (inclusive)
           if (selectedDays >= startDays && selectedDays <= endDays) {
             final fleetNames = formatFleetNames(fleets);
+            final minDuration = range['minimum_duration'] as int?;
             
             final alert = {
               'type': 'dday',
@@ -968,6 +1039,7 @@ class DashboardController extends GetxController
               'formatted_start_date': range['formatted_start_date'] ?? '',
               'formatted_end_date': range['formatted_end_date'] ?? '',
               'fleets': fleetNames,
+              'minimum_duration': minDuration,
               'range': range,
             };
 
@@ -1024,8 +1096,27 @@ class DashboardController extends GetxController
       }
 
       currentChargeAlert.value = mostRelevantAlert;
+      
+      // Update minimum duration based on current alert
+      if (mostRelevantAlert != null && mostRelevantAlert!['type'] == 'dday') {
+        final minDuration = mostRelevantAlert!['minimum_duration'] as int?;
+        minimumDuration.value = (minDuration != null && minDuration > 0) ? minDuration : 0;
+        
+        // Auto-set duration if current duration is below minimum
+        final currentDuration = int.tryParse(selectedDurasiSewa.value) ?? 1;
+        if (minimumDuration.value > 0 && currentDuration < minimumDuration.value) {
+          selectedDurasiSewa.value = minimumDuration.value.toString();
+          // Update pickedDateTimeISO when duration changes
+          pickedDateAndTime();
+          // Note: getList() will be called by onDatePicked() after checkChargeSettings() completes
+          // So we don't need to call it here to avoid double calls
+        }
+      } else {
+        minimumDuration.value = 0;
+      }
     } catch (e) {
       currentChargeAlert.value = null;
+      minimumDuration.value = 0;
     }
   }
 

@@ -88,9 +88,16 @@ class ChargeWidget extends StatelessWidget {
     final formattedStartDate = alert['formatted_start_date'] ?? '';
     final formattedEndDate = alert['formatted_end_date'] ?? '';
     final fleets = alert['fleets'] ?? '';
+    final minimumDuration = alert['minimum_duration'] as int?;
 
-    final message = 
-        'Kami informasikan bahwa pada periode $formattedStartDate sampai $formattedEndDate yang bertepatan dengan hari $name, sistem penyewaan diubah menjadi per tanggal (harian). Berlaku untuk Pemesanan $fleets.\n\nContoh: Penyewaan tanggal 1–3 akan dihitung sebagai 3 hari. Perhitungan Waktu dari Pukul 00.00 WIB - 23.59 WIB';
+    String message = 
+        'Kami informasikan bahwa pada periode $formattedStartDate sampai $formattedEndDate yang bertepatan dengan hari $name, sistem penyewaan diubah menjadi per tanggal (harian)';
+    
+    if (minimumDuration != null && minimumDuration > 0) {
+      message += ', dan minimal penyewaan $minimumDuration Hari';
+    }
+    
+    message += '. Berlaku untuk Pemesanan $fleets.\n\nContoh: Penyewaan tanggal 1–3 akan dihitung sebagai 3 hari. Perhitungan Waktu dari Pukul 00.00 WIB - 23.59 WIB';
 
     return Transform.translate(
       offset: const Offset(0, -70),
@@ -120,12 +127,63 @@ class ChargeWidget extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: poppinsText(
-                text: message,
-                fontSize: 13,
-                textColor: Colors.blue.shade900,
-                fontWeight: FontWeight.w500,
-              ),
+              child: minimumDuration != null && minimumDuration > 0
+                  ? RichText(
+                      text: TextSpan(
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.blue.shade900,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Poppins',
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Kami informasikan bahwa pada periode ',
+                          ),
+                          TextSpan(
+                            text: formattedStartDate,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: ' sampai ',
+                          ),
+                          TextSpan(
+                            text: formattedEndDate,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: ' yang bertepatan dengan hari ',
+                          ),
+                          TextSpan(
+                            text: name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: ', sistem penyewaan diubah menjadi per tanggal (harian), dan ',
+                          ),
+                          TextSpan(
+                            text: 'minimal penyewaan $minimumDuration Hari',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: '. Berlaku untuk Pemesanan ',
+                          ),
+                          TextSpan(
+                            text: fleets,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: '.\n\nContoh: Penyewaan tanggal 1–3 akan dihitung sebagai 3 hari. Perhitungan Waktu dari Pukul 00.00 WIB - 23.59 WIB',
+                          ),
+                        ],
+                      ),
+                    )
+                  : poppinsText(
+                      text: message,
+                      fontSize: 13,
+                      textColor: Colors.blue.shade900,
+                      fontWeight: FontWeight.w500,
+                    ),
             ),
           ],
         ),
