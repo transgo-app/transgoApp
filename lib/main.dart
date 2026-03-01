@@ -19,12 +19,20 @@ import 'app/data/service/LocationTrackingTaskHandler.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+Widget _wrapWithForegroundTaskIfAndroid(Widget child) {
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return WithForegroundTask(child: child);
+  }
+  return child;
+}
+
 final Upgrader upgrader = Upgrader(
   debugLogging: true,
   debugDisplayAlways: false,
   durationUntilAlertAgain: Duration.zero,
   storeController: UpgraderStoreController(
     onAndroid: () => UpgraderPlayStore(),
+    onIOS: () => UpgraderAppStore(),
   ),
   willDisplayUpgrade: ({
     required bool display,
@@ -187,6 +195,8 @@ class MyApp extends StatelessWidget {
         );
       },
     );
-    return kIsWeb ? app : WithForegroundTask(child: app);
+    // WithForegroundTask is Android-only for background location; skip on iOS/web
+    if (kIsWeb) return app;
+    return _wrapWithForegroundTaskIfAndroid(app);
   }
 }

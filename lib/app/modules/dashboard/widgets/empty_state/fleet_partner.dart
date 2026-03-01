@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transgomobileapp/app/widget/General/text.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:transgomobileapp/app/utils/url_launcher_helper.dart';
 
 class FleetPartnerSection extends StatelessWidget {
   const FleetPartnerSection({super.key});
@@ -81,9 +81,8 @@ class FleetPartnerSection extends StatelessWidget {
                 ),
               ),
               onPressed: () async {
-                await launchUrl(
+                await launchExternalUrl(
                   Uri.parse('https://sewamotormobilojol.com/'),
-                  mode: LaunchMode.externalApplication,
                 );
               },
               child: gabaritoText(

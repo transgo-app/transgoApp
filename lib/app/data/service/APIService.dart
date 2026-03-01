@@ -73,6 +73,7 @@ class APIService {
     final authEndpoints = [
       '/auth/login',
       '/auth/register',
+      '/auth/register-partner',
       '/auth/password/forgot',
       '/auth/password/reset',
     ];

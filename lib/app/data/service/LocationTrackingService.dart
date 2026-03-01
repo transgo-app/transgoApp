@@ -45,8 +45,9 @@ class LocationTrackingService {
       return false;
     }
 
-    // Prefer "always" so location can be used when app is in background
-    if (permission == LocationPermission.whileInUse) {
+    // On Android, optionally prompt for "always" for background. On iOS we use
+    // foreground-only (Option A), so "while in use" is sufficient.
+    if (!Platform.isIOS && permission == LocationPermission.whileInUse) {
       permission = await Geolocator.requestPermission();
     }
     return permission == LocationPermission.whileInUse ||

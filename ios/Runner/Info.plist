@@ -70,6 +70,17 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Aplikasi membutuhkan izin untuk menyimpan gambar hasil editan atau tangkapan layar ke galeri Anda.</string>
 
+	<!-- URL schemes for url_launcher (required for canLaunchUrl/launchUrl on iOS) -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+		<string>mailto</string>
+		<string>tel</string>
+		<string>sms</string>
+		<string>whatsapp</string>
+	</array>
+
 	<!-- Google Sign In URL Scheme -->
 	<key>CFBundleURLTypes</key>
 	<array>

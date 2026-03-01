@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:transgomobileapp/app/data/data.dart';
@@ -119,10 +118,8 @@ class AdditionaldataController extends GetxController {
           username: username,
           password: password);
 
-      final fileList = files.map((xfile) => File(xfile.path)).toList();
-
       final uploadedUrls = await uploadImages(
-        pickedImages: fileList,
+        pickedImages: files,
         presignData: presignData,
         onProgress: (progress) {
           print('Upload progress: ${progress.toStringAsFixed(1)}%');

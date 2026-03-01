@@ -1,7 +1,7 @@
 import '../../../data/data.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:transgomobileapp/app/utils/url_launcher_helper.dart';
 import '../../../widget/widgets.dart';
 
 class ChatbotController extends GetxController {
@@ -111,9 +111,7 @@ class CmsController extends GetxController {
 
   Future<void> openCms(String slug) async {
     final Uri url = Uri.parse('https://transgo.com/$slug');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    if (!await launchExternalUrl(url)) {
       CustomSnackbar.show(
         title: "Terjadi Kesalahan",
         message: "Tidak bisa membuka link",

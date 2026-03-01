@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:transgomobileapp/app/data/helper/Storage_helper.dart';
 import 'package:transgomobileapp/app/widget/Dialog/DialogSuccessUploadRegister.dart';
-import 'package:transgomobileapp/app/widget/Dialog/CaptchaModal.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBerhasilDaftar.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
@@ -34,11 +32,6 @@ class RegisterController extends GetxController {
   RxString progressValue = '0'.obs;
   RxString selectedRole = 'customer'.obs;
   RxString errorTextReferral = ''.obs;
-  String? captchaToken;
-  
-  // Get Cloudflare Turnstile Site Key from environment
-  String get cloudflareTurnstileSiteKey => 
-      dotenv.env['CLOUDFLARE_TURNSTILE_SITE_KEY'] ?? '0x4AAAAAACYUGnQEAnrH8TdA';
 
   var isPasswordVisible = false.obs;
   var isConfirmPasswordVisible = false.obs;
@@ -283,36 +276,6 @@ class RegisterController extends GetxController {
     });
   }
 
-  Future<void> showCaptchaModal() async {
-    final token = await showDialog<String>(
-      context: Get.context!,
-      barrierDismissible: false,
-      builder: (context) => CaptchaModal(
-        siteKey: cloudflareTurnstileSiteKey,
-        onSuccess: (token) {
-          // Token is already popped in CaptchaModal
-        },
-        onError: () {
-          CustomSnackbar.show(
-            title: "Verifikasi Gagal",
-            message: "Gagal memuat verifikasi captcha. Silakan coba lagi.",
-            backgroundColor: Colors.red,
-          );
-        },
-        onCancel: () {
-          // User cancelled
-        },
-      ),
-    );
-    
-    if (token != null && token.isNotEmpty) {
-      captchaToken = token;
-      return;
-    }
-    
-    throw Exception('Captcha verification cancelled or failed');
-  }
-
   Future<void> daftarAccount() async {
     isLoading.value = true;
 
@@ -327,14 +290,7 @@ class RegisterController extends GetxController {
         return;
       }
 
-      // Show captcha modal before registration
-      try {
-        await showCaptchaModal();
-      } catch (e) {
-        isLoading.value = false;
-        return; // User cancelled or captcha failed
-      }
-
+      // transgoApp uses register-partner endpoint (no captcha required)
       final files = pickedImages.values.whereType<XFile>().toList();
       List<String> uploadedUrls = [];
 
@@ -350,7 +306,7 @@ class RegisterController extends GetxController {
 
         uploadedUrls = await uploadImages(
           presignData: presignData,
-          pickedImages: files.map((xfile) => File(xfile.path)).toList(),
+          pickedImages: files,
           onProgress: (progress) {
             progressValue.value = progress.toString();
           },
@@ -415,7 +371,6 @@ class RegisterController extends GetxController {
           "role": selectedRole.value,
           "referral_code":
               referralCodeC.text.isEmpty ? null : referralCodeC.text,
-          "captchaToken": captchaToken,
         };
       } else {
         Map<String, String> uploadedFileUrls = {};
@@ -449,13 +404,12 @@ class RegisterController extends GetxController {
             "role": selectedRole.value,
             "referral_code":
                 referralCodeC.text.isEmpty ? null : referralCodeC.text,
-            "captchaToken": captchaToken,
           },
         };
       }
 
       var response = await APIService().post(
-          "${dataArgumentsParamPost.isEmpty ? '/auth/register' : '/orders/customer'}",
+          "${dataArgumentsParamPost.isEmpty ? '/auth/register-partner' : '/orders/customer'}",
           paramPost);
 
       if (response != null) {
@@ -579,12 +533,10 @@ Future<void> compressAndAddImage({
   int minWidth = 100,
 }) async {
   try {
-    final File originalFile = File(file.path);
-    int originalSize = await originalFile.length();
+    Uint8List imageBytes = await file.readAsBytes();
+    int originalSize = imageBytes.length;
     print(
         "Ukuran sebelum kompresi: ${(originalSize / (1024 * 1024)).toStringAsFixed(2)} MB");
-
-    Uint8List imageBytes = await originalFile.readAsBytes();
     img.Image? decodedImage = img.decodeImage(imageBytes);
     if (decodedImage == null) {
       print("Gagal mendekode gambar.");

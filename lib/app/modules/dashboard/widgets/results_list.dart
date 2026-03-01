@@ -242,12 +242,12 @@ class ItemCard extends StatelessWidget {
         : (data['specifications']?['color'] ?? ''),
     capacity = data['specifications']?['size'] ?? '',
     price = (data['price'] ?? 0).round(),
-    discount = data['discount'] ?? 0,
-    priceAfter = ((data['price'] ?? 0).round() - ((data['price'] ?? 0).round() * (data['discount'] ?? 0) / 100)).round(),
+    discount = ((data['discount'] ?? 0) as num).toInt(),
+    priceAfter = ((data['price'] ?? 0).round() - ((data['price'] ?? 0).round() * ((data['discount'] ?? 0) as num).toInt() / 100)).round(),
     weekly = (data['weekly_price'] ?? 0).round(),
     monthly = (data['monthly_price'] ?? 0).round(),
     averageRating = (data['average_rating'] ?? 0).toDouble(),
-    ratingCount = (data['rating_count'] ?? 0).toInt(),
+    ratingCount = ((data['rating_count'] ?? 0) as num).toInt(),
     tier = isKendaraan ? (data['tier']?.toString().toLowerCase() ?? '') : '';
 
   static String _mapVehicleType(dynamic type) {

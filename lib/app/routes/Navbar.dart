@@ -62,9 +62,9 @@ class _NavigationPageState extends State<NavigationPage> {
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          title: const Text('Lokasi untuk Keamanan'),
+          title: const Text('Aktifkan Lokasi Anda'),
           content: const Text(
-            'Transgo menggunakan lokasi Anda untuk keamanan dan agar tim kami dapat melihat posisi Anda di peta saat layanan berlangsung.',
+            'Bantu kami carikan cabang Transgo terbaik di sekitar Anda untuk kemudahan akses layanan.',
           ),
           actions: [
             TextButton(

@@ -1,4 +1,4 @@
-import 'package:url_launcher/url_launcher.dart';
+import 'package:transgomobileapp/app/utils/url_launcher_helper.dart';
 import 'package:transgomobileapp/app/modules/profile/controllers/profile_controller.dart';
 import 'package:transgomobileapp/app/data/data.dart';
 import 'package:get/get.dart';
@@ -16,7 +16,7 @@ class DashboardView extends GetView<DashboardController> {
   Future<void> _openWhatsAppAdmin() async {
     final apiService = APIService();
     final uri = Uri.parse(apiService.getWhatsAppAdminUrl());
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    await launchExternalUrl(uri);
   }
 
   @override

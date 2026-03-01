@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 Future<List<dynamic>> getPresignedUrls({
   required List<String> fileNames,
@@ -30,7 +30,7 @@ Future<List<dynamic>> getPresignedUrls({
 
 Future<List<String>> uploadImages({
   required List<dynamic> presignData,
-  required List<File> pickedImages,
+  required List<XFile> pickedImages,
   required void Function(int progress) onProgress,
 }) async {
   List<String> uploadedUrls = [];
@@ -40,18 +40,18 @@ Future<List<String>> uploadImages({
     var uploadUrl = presignData[i]['upload_url'];
     var downloadUrl = presignData[i]['download_url'];
 
-     var uploadResponse = await http.put(
-        Uri.parse(uploadUrl),
-        headers: {'Content-Type': 'image/jpeg'},
-        body: await image.readAsBytes(),
-      );
+    var uploadResponse = await http.put(
+      Uri.parse(uploadUrl),
+      headers: {'Content-Type': 'image/jpeg'},
+      body: await image.readAsBytes(),
+    );
 
-      if (uploadResponse.statusCode == 200 || uploadResponse.statusCode == 201) {
-        int progress = ((i + 1) / pickedImages.length * 100).floor();
-        onProgress(progress);
-      } else {
-        throw Exception("Failed to upload image: ${image.path}. Status: ${uploadResponse.statusCode}");
-      }
+    if (uploadResponse.statusCode == 200 || uploadResponse.statusCode == 201) {
+      int progress = ((i + 1) / pickedImages.length * 100).floor();
+      onProgress(progress);
+    } else {
+      throw Exception("Failed to upload image at index $i. Status: ${uploadResponse.statusCode}");
+    }
 
     uploadedUrls.add(downloadUrl);
   }

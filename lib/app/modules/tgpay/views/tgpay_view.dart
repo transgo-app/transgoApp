@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:transgomobileapp/app/utils/url_launcher_helper.dart';
 import '../../../data/data.dart';
 import '../../../data/theme.dart';
 import '../../../widget/widgets.dart';
@@ -264,9 +264,7 @@ class _TgPayViewState extends State<TgPayView> {
                     onPressed: () async {
                       try {
                         final uri = Uri.parse(qrUrl);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        } else {
+                        if (!await launchExternalUrl(uri)) {
                           CustomSnackbar.show(
                             title: 'Gagal',
                             message: 'Tidak dapat membuka URL QR',

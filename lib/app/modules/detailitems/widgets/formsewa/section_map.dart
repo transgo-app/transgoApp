@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:transgomobileapp/app/utils/url_launcher_helper.dart';
 import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import '../../../../widget/widgets.dart';
 import '../../controllers/detailitems_controller.dart';
@@ -58,9 +58,7 @@ class SectionMaps extends StatelessWidget {
                 GestureDetector(
                   onTap: () async {
                     final uri = Uri.parse(redirectUrl);
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } else {
+                    if (!await launchExternalUrl(uri)) {
                       print("Tidak bisa membuka URL: $redirectUrl");
                     }
                   },

@@ -74,7 +74,11 @@ class FirebaseApi {
 
   Future<void> _initializeNotifications() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    final iOSSettings = DarwinInitializationSettings();
+    final iOSSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
     final settings = InitializationSettings(
       android: androidSettings,
@@ -119,7 +123,11 @@ class NotificationService {
 
     final notificationDetails = NotificationDetails(
       android: androidDetails,
-      iOS: DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
     );
 
     await flutterLocalNotificationsPlugin.show(
