@@ -1,5 +1,5 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
+import 'package:transgomobileapp/app/data/helper/AppPrefs.dart';
 import 'package:transgomobileapp/app/data/service/LocationTrackingService.dart';
 
 class GlobalVariables {
@@ -23,7 +23,7 @@ class GlobalVariables {
   static RxString additional_data_status = ''.obs;
 
   static Future<void> initializeData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await getAppPrefs();
     namaUser.value = prefs.getString('namaUser') ?? 'Selamat Datang';
     emailUser.value = prefs.getString('emailUser') ??
         'Kami menawarkan berbagai layanan sewa mobil & motor yang fleksibel dan nyaman, siap memenuhi kebutuhan perjalanan Anda.';
@@ -36,7 +36,7 @@ class GlobalVariables {
   }
 
   Future<bool> isLoggedIn() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await getAppPrefs();
     String? token = prefs.getString('accessToken');
 
     return token != null && token.isNotEmpty;
@@ -48,7 +48,7 @@ class GlobalVariables {
       LocationTrackingService.instance.stop();
     } catch (_) {}
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await getAppPrefs();
 
     await prefs.remove('namaUser');
     await prefs.remove('emailUser');

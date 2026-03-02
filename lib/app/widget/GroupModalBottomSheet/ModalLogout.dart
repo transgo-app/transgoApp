@@ -1,8 +1,8 @@
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transgomobileapp/app/data/data.dart';
+import 'package:transgomobileapp/app/data/helper/AppPrefs.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ParentModal.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ModalLogout extends StatelessWidget {
   const ModalLogout({super.key});
@@ -59,7 +59,7 @@ class ModalLogout extends StatelessWidget {
 
               GlobalVariables.resetData();
 
-              final prefs = await SharedPreferences.getInstance();
+              final prefs = await getAppPrefs();
               await prefs.remove('role');
 
               Get.offAllNamed('/login');

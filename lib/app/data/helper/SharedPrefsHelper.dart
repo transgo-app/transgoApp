@@ -1,13 +1,13 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transgomobileapp/app/data/data.dart';
+import 'package:transgomobileapp/app/data/helper/AppPrefs.dart';
 
 Future<void> saveUserDataToPrefs(
   Map<String, dynamic> dataUser,
   Map<String, dynamic> user, {
   required String tokenKey,
 }) async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final prefs = await getAppPrefs();
 
   final String token = getValueFromKeyPath(user, tokenKey);
 

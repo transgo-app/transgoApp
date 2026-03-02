@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:transgomobileapp/app/data/helper/AppPrefs.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
 import '../../../data/data.dart';
 import '../../../data/models/fleet_recommendation_model.dart';
@@ -306,7 +306,7 @@ class DashboardController extends GetxController
   }
 
   Future<void> loadRole() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await getAppPrefs();
     String savedRole = prefs.getString('role') ?? '';
 
     if (savedRole != 'customer' && savedRole != 'product_customer') {

@@ -1,8 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transgomobileapp/app/data/data.dart';
+import 'package:transgomobileapp/app/data/helper/AppPrefs.dart';
 import 'package:transgomobileapp/app/data/globalvariables.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -32,8 +32,8 @@ class FirebaseApi {
         // Continue even if notification initialization fails
       }
 
-      final prefs = await SharedPreferences.getInstance();
-      
+      final prefs = await getAppPrefs();
+
       // Add timeout for FCM token retrieval
       String? fcmToken;
       try {
