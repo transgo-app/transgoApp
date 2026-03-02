@@ -32,7 +32,7 @@ final Upgrader upgrader = Upgrader(
   durationUntilAlertAgain: Duration.zero,
   storeController: UpgraderStoreController(
     onAndroid: () => UpgraderPlayStore(),
-    onIOS: () => UpgraderAppStore(),
+    oniOS: () => UpgraderAppStore(),
   ),
   willDisplayUpgrade: ({
     required bool display,
@@ -126,42 +126,16 @@ void main() async {
   );
 }
 
-/// Wraps the app and starts location tracking when app resumes (e.g. from background)
-/// so the 45s interval runs whenever the app is open or user returns to it.
-class LocationTrackingAppWrapper extends StatefulWidget {
+/// Wraps the app (e.g. for future location/foreground task setup).
+/// Location permission is only requested when the user is renting (form sewa / pick location).
+class LocationTrackingAppWrapper extends StatelessWidget {
   final String initialRoute;
 
   const LocationTrackingAppWrapper({super.key, required this.initialRoute});
 
   @override
-  State<LocationTrackingAppWrapper> createState() => _LocationTrackingAppWrapperState();
-}
-
-class _LocationTrackingAppWrapperState extends State<LocationTrackingAppWrapper>
-    with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        GlobalVariables.token.value.isNotEmpty) {
-      LocationTrackingService.instance.start();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return MyApp(initialRoute: widget.initialRoute);
+    return MyApp(initialRoute: initialRoute);
   }
 }
 

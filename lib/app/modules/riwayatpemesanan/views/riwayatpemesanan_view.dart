@@ -318,8 +318,9 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                           ),
                         ],
                       ),
-                      // Beri Ulasan button (only for done orders)
-                      if (data['order_status'] == 'done') ...[
+                      // Beri Ulasan button only for "Telah Selesai" (done & paid); never for Dibatalkan
+                      if (data['order_status'] == 'done' &&
+                          (data['payment_status']?.toString().toLowerCase() ?? '') == 'done') ...[
                         const SizedBox(height: 8),
                         Obx(() => _buildReviewButton(data, itemName)),
                       ],

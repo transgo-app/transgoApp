@@ -6,6 +6,7 @@ import '../widgets/formsewa/detailsewa_utils.dart';
 import '../widgets/formsewa/section_map.dart';
 import '../widgets/formsewa/section_pemakaian.dart';
 import '../widgets/formsewa/section_lokasi.dart';
+import '../widgets/formsewa/section_tujuan_pemakaian.dart';
 import '../widgets/formsewa/section_asuransi.dart';
 import '../widgets/formsewa/bottom_estimation.dart';
 import '../widgets/formsewa/harga_widget.dart';
@@ -142,9 +143,13 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                           SectionMaps(controller: controller),
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 10),
-                            child: Divider(),
                           ),
                           if (isKendaraan) ...[
+                            SectionTujuanPemakaian(controller: controller),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 10),
+                              child: Divider(),
+                            ),
                             const gabaritoText(text: "Pemakaian"),
                             gabaritoText(
                               text:

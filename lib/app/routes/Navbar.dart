@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transgomobileapp/app/data/data.dart';
 import 'package:transgomobileapp/app/data/helper/VerificationHelper.dart';
 import 'package:transgomobileapp/app/modules/dashboard/controllers/dashboard_controller.dart';
@@ -45,46 +44,6 @@ class _NavigationPageState extends State<NavigationPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       bottomNavigationController.changeIndex(widget.selectedIndex);
     });
-
-    // Start customer location tracking for dashboard map (when logged in)
-    if (GlobalVariables.token.value.isNotEmpty) {
-      _maybeShowLocationRationaleAndStart();
-    }
-  }
-
-  static const _locationRationaleKey = 'location_rationale_shown';
-
-  Future<void> _maybeShowLocationRationaleAndStart() async {
-    final prefs = await SharedPreferences.getInstance();
-    final shown = prefs.getBool(_locationRationaleKey) ?? false;
-    if (!shown && mounted) {
-      final start = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Aktifkan Lokasi Anda'),
-          content: const Text(
-            'Bantu kami carikan cabang Transgo terbaik di sekitar Anda untuk kemudahan akses layanan.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Nanti'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Izinkan'),
-            ),
-          ],
-        ),
-      );
-      await prefs.setBool(_locationRationaleKey, true);
-      if (start == true) {
-        LocationTrackingService.instance.start();
-      }
-    } else {
-      LocationTrackingService.instance.start();
-    }
   }
 
   void initControllers() async {

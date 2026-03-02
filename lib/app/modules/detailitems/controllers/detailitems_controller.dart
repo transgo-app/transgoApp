@@ -112,6 +112,9 @@ class DetailitemsController extends GetxController {
   RxMap selectedVoucher = {}.obs;
   RxBool isLoadingVoucher = false.obs;
 
+  /// Tujuan pemakaian (intended use): recreation | business | family | everyday. Empty = not selected.
+  RxString selectedIntendedUse = ''.obs;
+
   RxBool pengambilanSendiri = true.obs;
   RxBool pengembalianSendiri = true.obs;
   RxBool isLoadinggetdetailkendaraan = false.obs;
@@ -285,6 +288,9 @@ class DetailitemsController extends GetxController {
     paramPost = {
       isKendaraan ? "fleet_id" : "product_id": dataServer['id'],
       "description": deskripsiPermintaanKhusus.text,
+      if (isKendaraan &&
+          selectedIntendedUse.value.isNotEmpty)
+        "intended_use": selectedIntendedUse.value,
       "is_out_of_town": isKendaraan ? pemakaianLuarKota.value : false,
       if (pemakaianLuarKota.value) ...{
         "region_id": selectedRegionId.value,
