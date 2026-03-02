@@ -30,7 +30,6 @@ environment:
 dependencies:
   adoptive_calendar: ^0.2.0
   cupertino_icons: ^1.0.6
-  flutter_dotenv: ^5.1.0
   firebase_core: ^3.10.0
   firebase_messaging: ^15.2.1
   flutter:
@@ -102,7 +101,6 @@ flutter:
     - assets/dashboard/
     - assets/panduan/
     - assets/tg_pay/
-    - .env
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
   # For details regarding adding assets from package dependencies, see

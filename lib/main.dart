@@ -8,7 +8,6 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:upgrader/upgrader.dart';
 import 'package:get/get.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -47,9 +46,6 @@ final Upgrader upgrader = Upgrader(
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
 
   tz.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));

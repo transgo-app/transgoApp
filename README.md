@@ -71,17 +71,13 @@ cd transgoApp
 flutter pub get
 ```
 
-### 2. Environment
-
-The app loads `.env` via `flutter_dotenv`. Create a `.env` file in the project root with any required keys (e.g. API base URL overrides if used). The `.env` path is listed under `flutter.assets` in `pubspec.yaml`.
-
-### 3. Firebase (optional but recommended)
+### 2. Firebase (optional but recommended)
 
 - Create a Firebase project and add Android/iOS apps.
 - Place `google-services.json` in `android/app/` and `GoogleService-Info.plist` in `ios/Runner/`.
 - For web, Firebase options are set in `main.dart`; update if using a different project.
 
-### 4. Run
+### 3. Run
 
 ```bash
 # Debug
