@@ -100,15 +100,21 @@ flutter run --release
 
 If you get **PhaseScriptExecution failed** when pressing Cmd+R in Xcode:
 
-1. In Terminal, from the **project root** (`transgoApp/`), run:
+1. **See the actual error:** In Xcode, open the **Report navigator** (⌘9), click the failed build, then expand the **"Run Script"** or **"Thin Binary"** step. The log will show either a FLUTTER_ROOT message, a CocoaPods "Run pod install" message, or "xcode_backend.sh failed with exit code N".
+
+2. **From Terminal** (project root `transgoApp/`), run:
    ```bash
    flutter pub get
    cd ios && pod install && cd ..
    ```
-2. Open the **workspace** (not the project): `ios/Runner.xcworkspace` in Xcode.
-3. Select your iPhone as the run destination and press Cmd+R.
+3. Open **`ios/Runner.xcworkspace`** in Xcode (not the `.xcodeproj`), select your device, and press Cmd+R.
 
-This ensures `FLUTTER_ROOT` is set via `ios/Flutter/Generated.xcconfig` and CocoaPods are in sync.
+4. **If it still fails,** build and run from the command line so Flutter sets up the iOS build correctly, then try Xcode again:
+   ```bash
+   cd /path/to/transgoApp
+   flutter run
+   ```
+   (Choose your iPhone when prompted.) After a successful `flutter run`, building from Xcode (Cmd+R) often works for subsequent runs.
 
 ## Configuration
 
