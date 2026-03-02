@@ -161,10 +161,6 @@ class MyApp extends StatelessWidget {
       initialRoute: initialRoute,
       getPages: AppPages.routes,
       builder: (context, child) {
-        // Skip Upgrader on iOS to avoid cold-start crash when app is reopened from icon (no debugger).
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          return child ?? const SizedBox.shrink();
-        }
         return UpgradeAlert(
           upgrader: upgrader,
           navigatorKey: navigatorKey,
