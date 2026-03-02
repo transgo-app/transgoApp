@@ -61,29 +61,32 @@ void main() async {
   ]);
 
   try {
-    if (kIsWeb) {
-      await Firebase.initializeApp(
-        options: const FirebaseOptions(
-          apiKey: 'AIzaSyDPZWOTBBZpDDExpo4Z4ew3oOtK6a9To7s',
-          appId: '1:1022276810838:android:13e9e87a3cc417575763f7',
-          messagingSenderId: '1022276810838',
-          projectId: 'transgo-app',
-        ),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('Firebase initialization timeout');
-          throw TimeoutException('Firebase initialization timeout');
-        },
-      );
-    } else {
-      await Firebase.initializeApp().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('Firebase initialization timeout');
-          throw TimeoutException('Firebase initialization timeout');
-        },
-      );
+    // Only initialize once (avoids crash on app reopen when Firebase may already be initialized)
+    if (Firebase.apps.isEmpty) {
+      if (kIsWeb) {
+        await Firebase.initializeApp(
+          options: const FirebaseOptions(
+            apiKey: 'AIzaSyDPZWOTBBZpDDExpo4Z4ew3oOtK6a9To7s',
+            appId: '1:1022276810838:android:13e9e87a3cc417575763f7',
+            messagingSenderId: '1022276810838',
+            projectId: 'transgo-app',
+          ),
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('Firebase initialization timeout');
+            throw TimeoutException('Firebase initialization timeout');
+          },
+        );
+      } else {
+        await Firebase.initializeApp().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('Firebase initialization timeout');
+            throw TimeoutException('Firebase initialization timeout');
+          },
+        );
+      }
     }
   } catch (e) {
     debugPrint('Error initializing Firebase Core: $e');
