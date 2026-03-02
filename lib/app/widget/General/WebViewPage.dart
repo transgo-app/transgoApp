@@ -1,7 +1,7 @@
+import 'dart:io';
 
-
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-import 'package:transgomobileapp/app/data/data.dart';
+import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class WebViewPage extends StatefulWidget {
   final String pdfUrl;
@@ -13,8 +13,48 @@ class WebViewPage extends StatefulWidget {
 }
 
 class _WebViewPageState extends State<WebViewPage> {
-  final GlobalKey<SfPdfViewerState> _pdfViewerKey = GlobalKey();
+  late final WebViewController _controller;
   bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final fullUrl = "https://${widget.pdfUrl}";
+
+    // On Android, use Google Docs viewer for reliable PDF rendering.
+    // On iOS, WKWebView renders PDFs natively.
+    final viewUrl = Platform.isAndroid
+        ? "https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(fullUrl)}"
+        : fullUrl;
+
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) {
+            if (mounted) {
+              setState(() {
+                isLoading = false;
+              });
+            }
+          },
+          onWebResourceError: (error) {
+            if (mounted) {
+              setState(() {
+                isLoading = false;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('Gagal memuat PDF: ${error.description}')),
+              );
+            }
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(viewUrl));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,27 +66,16 @@ class _WebViewPageState extends State<WebViewPage> {
           widget.invoice,
           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _controller.reload(),
+          ),
+        ],
       ),
       body: Stack(
         children: [
-          SfPdfViewer.network(
-            "https://${widget.pdfUrl}",
-            key: _pdfViewerKey,
-            onDocumentLoaded: (details) {
-              setState(() {
-                isLoading = false;
-              });
-            },
-            onDocumentLoadFailed: (error) {
-              setState(() {
-                isLoading = false;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text('Gagal memuat PDF: ${error.description}')),
-              );
-            },
-          ),
+          WebViewWidget(controller: _controller),
           if (isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
