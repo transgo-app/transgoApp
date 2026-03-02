@@ -120,7 +120,7 @@ If you get **PhaseScriptExecution failed** when pressing Cmd+R in Xcode:
    ```
    (Do not commit `Generated.xcconfig`; it’s in `ios/.gitignore` and is regenerated per machine.)
 
-6. **iOS crash on reopen (EXC_BAD_ACCESS in flutter_foreground_task)** — The `flutter_foreground_task` plugin’s native iOS code crashes when the app is launched cold. The app does not use it on iOS in Dart. A **Run Script** build phase “Patch flutter_foreground_task on iOS” runs before compile and comments out that plugin’s registration in `GeneratedPluginRegistrant.m` so the fix survives `flutter pub get` / regeneration. No manual re-patch needed.
+6. **iOS crash on reopen (EXC_BAD_ACCESS in flutter_foreground_task)** — The `flutter_foreground_task` plugin’s native iOS code crashes when the app is launched cold. The app skips using it on iOS in Dart; to avoid the crash entirely, `ios/Runner/GeneratedPluginRegistrant.m` must not register that plugin (the import and `[FlutterForegroundTaskPlugin registerWithRegistrar:...]` line are commented out). If you run `flutter pub get` and that file is regenerated, re-apply the same change (comment out the FlutterForegroundTask import and registration).
 
 ## Configuration
 
