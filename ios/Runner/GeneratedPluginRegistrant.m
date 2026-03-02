@@ -24,13 +24,11 @@
 @import firebase_messaging;
 #endif
 
-// FlutterForegroundTaskPlugin disabled on iOS: plugin crashes on cold start (EXC_BAD_ACCESS in register(with:)).
-// Re-apply this removal if GeneratedPluginRegistrant.m is regenerated (e.g. after flutter pub get).
-// #if __has_include(<flutter_foreground_task/FlutterForegroundTaskPlugin.h>)
-// #import <flutter_foreground_task/FlutterForegroundTaskPlugin.h>
-// #else
-// @import flutter_foreground_task;
-// #endif
+#if __has_include(<flutter_foreground_task/FlutterForegroundTaskPlugin.h>)
+#import <flutter_foreground_task/FlutterForegroundTaskPlugin.h>
+#else
+@import flutter_foreground_task;
+#endif
 
 #if __has_include(<flutter_image_compress_common/ImageCompressPlugin.h>)
 #import <flutter_image_compress_common/ImageCompressPlugin.h>
@@ -134,7 +132,7 @@
   [FPPDeviceInfoPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"FPPDeviceInfoPlusPlugin"]];
   [FLTFirebaseCorePlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTFirebaseCorePlugin"]];
   [FLTFirebaseMessagingPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTFirebaseMessagingPlugin"]];
-  // [FlutterForegroundTaskPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterForegroundTaskPlugin"]]; // Disabled on iOS (crashes on cold start)
+  [FlutterForegroundTaskPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterForegroundTaskPlugin"]];
   [ImageCompressPlugin registerWithRegistrar:[registry registrarForPlugin:@"ImageCompressPlugin"]];
   [FlutterLocalNotificationsPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterLocalNotificationsPlugin"]];
   [FlutterNativeSplashPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterNativeSplashPlugin"]];
