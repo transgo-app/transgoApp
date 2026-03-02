@@ -95,8 +95,8 @@ void main() async {
     debugPrint('Firebase API initialization error: $error');
   });
 
-  // Initialize foreground task for background location (Android)
-  if (!kIsWeb) {
+  // Initialize foreground task for background location (Android only; skip on iOS to avoid startup hang)
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'transgo_location_channel',
