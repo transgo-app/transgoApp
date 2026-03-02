@@ -116,6 +116,14 @@ If you get **PhaseScriptExecution failed** when pressing Cmd+R in Xcode:
    ```
    (Choose your iPhone when prompted.) After a successful `flutter run`, building from Xcode (Cmd+R) often works for subsequent runs.
 
+5. **"xcode_backend.sh build failed with exit code 255"** — This usually means `ios/Flutter/Generated.xcconfig` has paths for a different OS (e.g. Windows paths on a Mac). Fix: delete that file and regenerate it on the machine you’re building on:
+   ```bash
+   rm -f ios/Flutter/Generated.xcconfig
+   flutter pub get
+   flutter run
+   ```
+   (Do not commit `Generated.xcconfig`; it’s in `ios/.gitignore` and is regenerated per machine.)
+
 ## Configuration
 
 - **Locale:** Default is Indonesian (`id_ID`); `en_US` is supported.
