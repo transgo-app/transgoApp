@@ -22,8 +22,6 @@ class _WebViewPageState extends State<WebViewPage> {
 
     final fullUrl = "https://${widget.pdfUrl}";
 
-    // On Android, use Google Docs viewer for reliable PDF rendering.
-    // On iOS, WKWebView renders PDFs natively.
     final viewUrl = Platform.isAndroid
         ? "https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(fullUrl)}"
         : fullUrl;
