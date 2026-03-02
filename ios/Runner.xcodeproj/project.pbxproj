@@ -197,6 +197,7 @@
 			buildPhases = (
 				5A98BEC2DDACC3784AFCBC0D /* [CP] Check Pods Manifest.lock */,
 				9740EEB61CF901F6004384FC /* Run Script */,
+				E5F6A1B2C3D44E5F6A7B8C9D /* Patch GeneratedPluginRegistrant (disable FlutterForegroundTask on iOS) */,
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
@@ -384,6 +385,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "set -e\nif [ -z \"$FLUTTER_ROOT\" ] && [ -f \"${SRCROOT}/Flutter/Generated.xcconfig\" ]; then\n  . \"${SRCROOT}/Flutter/Generated.xcconfig\"\nfi\nif [ -z \"$FLUTTER_ROOT\" ]; then\n  echo \"error: FLUTTER_ROOT is not set. Run 'flutter pub get' in the project root (e.g. from transgoApp/), then build again.\" >&2\n  exit 1\nfi\n/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build || { echo \"error: Flutter Run Script (xcode_backend.sh build) failed with exit code $?\" >&2; exit 1; }";
+		};
+		E5F6A1B2C3D44E5F6A7B8C9D /* Patch GeneratedPluginRegistrant (disable FlutterForegroundTask on iOS) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Patch GeneratedPluginRegistrant (disable FlutterForegroundTask on iOS)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "FILE=\"${SRCROOT}/Runner/GeneratedPluginRegistrant.m\"\nif [ -f \"$FILE\" ] && grep -q '^  \\[FlutterForegroundTaskPlugin registerWithRegistrar:' \"$FILE\" 2>/dev/null; then\n  sed -i '' '/^  \\[FlutterForegroundTaskPlugin registerWithRegistrar:/s/^  /  \\/\\/ /' \"$FILE\"\n  echo \"Patched GeneratedPluginRegistrant.m: disabled FlutterForegroundTaskPlugin on iOS\"\nfi\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
