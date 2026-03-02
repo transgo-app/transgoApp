@@ -388,6 +388,7 @@
 		};
 			E1F2A3B4C5D6789012345678 /* Patch flutter_foreground_task on iOS */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
