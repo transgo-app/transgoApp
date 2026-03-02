@@ -96,6 +96,20 @@ flutter run --release
 - **Android:** `flutter build apk` or `flutter build appbundle`
 - **iOS:** `flutter build ios` (then archive in Xcode)
 
+### iOS: building from Xcode (e.g. Run on device)
+
+If you get **PhaseScriptExecution failed** when pressing Cmd+R in Xcode:
+
+1. In Terminal, from the **project root** (`transgoApp/`), run:
+   ```bash
+   flutter pub get
+   cd ios && pod install && cd ..
+   ```
+2. Open the **workspace** (not the project): `ios/Runner.xcworkspace` in Xcode.
+3. Select your iPhone as the run destination and press Cmd+R.
+
+This ensures `FLUTTER_ROOT` is set via `ios/Flutter/Generated.xcconfig` and CocoaPods are in sync.
+
 ## Configuration
 
 - **Locale:** Default is Indonesian (`id_ID`); `en_US` is supported.

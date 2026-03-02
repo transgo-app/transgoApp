@@ -290,7 +290,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
+			shellScript = "if [ -z \"$FLUTTER_ROOT\" ] && [ -f \"${SRCROOT}/Flutter/Generated.xcconfig\" ]; then\n  . \"${SRCROOT}/Flutter/Generated.xcconfig\"\nfi\nif [ -z \"$FLUTTER_ROOT\" ]; then\n  echo \"error: FLUTTER_ROOT is not set. Run 'flutter pub get' in the project root (e.g. from transgoApp/), then build again.\" >&2\n  exit 1\nfi\n/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
 		};
 		5A98BEC2DDACC3784AFCBC0D /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -383,7 +383,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+			shellScript = "if [ -z \"$FLUTTER_ROOT\" ] && [ -f \"${SRCROOT}/Flutter/Generated.xcconfig\" ]; then\n  . \"${SRCROOT}/Flutter/Generated.xcconfig\"\nfi\nif [ -z \"$FLUTTER_ROOT\" ]; then\n  echo \"error: FLUTTER_ROOT is not set. Run 'flutter pub get' in the project root (e.g. from transgoApp/), then build again.\" >&2\n  exit 1\nfi\n/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
 		};
 /* End PBXShellScriptBuildPhase section */
 
