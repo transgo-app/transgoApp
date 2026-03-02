@@ -120,7 +120,7 @@ If you get **PhaseScriptExecution failed** when pressing Cmd+R in Xcode:
    ```
    (Do not commit `Generated.xcconfig`; it’s in `ios/.gitignore` and is regenerated per machine.)
 
-6. **iOS crash on reopen (EXC_BAD_ACCESS in plugin registration)** — The native iOS code of `flutter_foreground_task` and `map_launcher` can crash on cold start (null dereference in `register(with:)`). A Run Script build phase "Patch GeneratedPluginRegistrant (disable crashy plugins on iOS)" in the Runner target comments out their registration lines in `GeneratedPluginRegistrant.m` before compile. If that file is regenerated (e.g. after `flutter pub get`), the script re-applies the patch on the next build. The app does not use these plugins on iOS (foreground task is Android-only; map_launcher is unused in lib).
+6. **iOS crash on reopen (EXC_BAD_ACCESS in plugin registration)** — The native iOS code of `flutter_foreground_task`, `map_launcher`, and `path_provider_foundation` can crash on cold start (null dereference in `register(with:)`). A Run Script build phase "Patch GeneratedPluginRegistrant (disable crashy plugins on iOS)" in the Runner target comments out their registration lines in `GeneratedPluginRegistrant.m` before compile. If that file is regenerated (e.g. after `flutter pub get`), the script re-applies the patch on the next build. Foreground task is Android-only; map_launcher is unused in lib. For `path_provider`, the only usage (register flow temp dir) falls back to `Directory.systemTemp` on iOS when the plugin is not registered.
 
 ## Configuration
 

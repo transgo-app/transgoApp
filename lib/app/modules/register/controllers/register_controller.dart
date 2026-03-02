@@ -565,7 +565,12 @@ Future<void> compressAndAddImage({
           Uint8List.fromList(img.encodeJpg(resizedImage, quality: quality));
     }
 
-    final Directory tempDir = await getTemporaryDirectory();
+    Directory tempDir;
+    try {
+      tempDir = await getTemporaryDirectory();
+    } catch (_) {
+      tempDir = Directory.systemTemp;
+    }
     final File compressedFile = File("${tempDir.path}/${file.name}");
     await compressedFile.writeAsBytes(compressedBytes);
 
