@@ -77,13 +77,32 @@ flutter pub get
 - Place `google-services.json` in `android/app/` and `GoogleService-Info.plist` in `ios/Runner/`.
 - For web, Firebase options are set in `main.dart`; update if using a different project.
 
-### 3. Run
+### 3. Google Sign-In on Android (release builds)
+
+If **Google Sign-In works in debug but does nothing after choosing an account in release** (`flutter run --release` or release APK/AAB), add your **release keystore SHA-1** to the Google Cloud / Firebase project:
+
+1. **Get your release keystore SHA-1** (from project root, with `key.properties` and keystore set up):
+   ```bash
+   cd transgoApp/android
+   ./gradlew signingReport   # Windows: gradlew.bat signingReport
+   ```
+   Under `Variant: release`, copy the **SHA-1** (and optionally SHA-256).
+
+2. **Add the fingerprint in Google Cloud Console:**
+   - Open [Google Cloud Console](https://console.cloud.google.com/) → your project → **APIs & Services** → **Credentials**.
+   - Edit your **Android** OAuth 2.0 Client ID (the one used by the app).
+   - Add the release SHA-1 (and SHA-256 if you want) under **Restrictions** → **Android apps**.
+   - Or in [Firebase Console](https://console.firebase.google.com/) → Project settings → Your apps → Android app → **Add fingerprint**, then paste the SHA-1.
+
+3. Wait a few minutes for changes to propagate, then try release Google Sign-In again.
+
+### 4. Run
 
 ```bash
 # Debug
 flutter run
 
-# Release
+# Release (ensure release SHA-1 is in Google Cloud if using Google Sign-In)
 flutter run --release
 ```
 
