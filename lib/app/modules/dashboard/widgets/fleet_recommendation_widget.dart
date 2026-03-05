@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/fleet_recommendation_model.dart';
 import '../../../data/data.dart';
+import '../controllers/dashboard_controller.dart';
 
 /// Fleet Recommendation Widget displayed in dashboard after search
 class FleetRecommendationWidget extends StatelessWidget {
@@ -282,6 +283,8 @@ class FleetRecommendationWidget extends StatelessWidget {
         statsText = 'Disewa ${item.orderCount}x';
     }
 
+    final dashboardController = Get.find<DashboardController>();
+
     return GestureDetector(
       onTap: () {
         // Navigate to fleet detail with the item data
@@ -289,9 +292,10 @@ class FleetRecommendationWidget extends StatelessWidget {
         Get.toNamed('/detailkendaraan', arguments: {
           'isKendaraan': true,
           'dataClient': {
-            'is_with_driver': false,
-            'date': DateTime.now().toIso8601String(),
-            'duration': '1',
+            'is_with_driver':
+                dashboardController.jenisSewa.value == 1 ? false : true,
+            'date': dashboardController.pickedDateTimeISO.value,
+            'duration': dashboardController.selectedDurasiSewa.value,
           },
           'dataServer': {
             'id': item.id,

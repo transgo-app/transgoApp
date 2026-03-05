@@ -220,6 +220,60 @@ class DashboardController extends GetxController
     pickedDateTimeISO.value = dateTime.toUtc().toIso8601String();
   }
 
+  /// Minimum rental start: current time + 2 hours (user cannot order for past or too soon).
+  static const Duration minimumRentalLeadTime = Duration(hours: 2);
+  /// Minute granularity for minimum start time (00/30).
+  static const int minimumRentalStepMinutes = 30;
+
+  DateTime _ceilToMinuteStep(DateTime dt, int stepMinutes) {
+    // Round up to the next [stepMinutes] boundary (based on local clock time).
+    final minutes = dt.hour * 60 + dt.minute;
+    final hasRemainder = (minutes % stepMinutes) != 0 ||
+        dt.second != 0 ||
+        dt.millisecond != 0 ||
+        dt.microsecond != 0;
+
+    final roundedMinutes = hasRemainder
+        ? ((minutes ~/ stepMinutes) + 1) * stepMinutes
+        : minutes;
+
+    if (roundedMinutes >= 24 * 60) {
+      final nextDay = DateTime(dt.year, dt.month, dt.day).add(const Duration(days: 1));
+      final minsInDay = roundedMinutes - (24 * 60);
+      return DateTime(nextDay.year, nextDay.month, nextDay.day, minsInDay ~/ 60, minsInDay % 60);
+    }
+
+    return DateTime(dt.year, dt.month, dt.day, roundedMinutes ~/ 60, roundedMinutes % 60);
+  }
+
+  DateTime get minimumRentalStartTime {
+    final raw = DateTime.now().add(minimumRentalLeadTime);
+    return _ceilToMinuteStep(raw, minimumRentalStepMinutes);
+  }
+
+  /// True if picked date+time is at least 2 hours from now (rounded up to 30-min blocks).
+  bool get isPickedDateTimeValidForRental {
+    if (pickedDate.value.isEmpty || pickedTime.value.isEmpty) return false;
+    final picked = DateTime.tryParse("${pickedDate.value}T${pickedTime.value}");
+    if (picked == null) return false;
+    final minimumStart = minimumRentalStartTime;
+    return !picked.isBefore(minimumStart);
+  }
+
+  /// If picked date+time is before minimumStart, adjust and update pickedDate/pickedTime.
+  void ensurePickedDateTimeAtLeastTwoHoursFromNow() {
+    if (pickedDate.value.isEmpty || pickedTime.value.isEmpty) return;
+    final picked = DateTime.tryParse("${pickedDate.value}T${pickedTime.value}");
+    if (picked == null) return;
+    final minimumStart = minimumRentalStartTime;
+    if (picked.isBefore(minimumStart)) {
+      pickedDate.value = DateFormat('yyyy-MM-dd').format(minimumStart);
+      pickedTime.value =
+          '${minimumStart.hour.toString().padLeft(2, '0')}:${minimumStart.minute.toString().padLeft(2, '0')}';
+      pickedDateAndTime();
+    }
+  }
+
   TextEditingController querySearch = TextEditingController();
   FocusNode focusNode = FocusNode();
 
@@ -361,6 +415,19 @@ class DashboardController extends GetxController
         title: "Terjadi Kesalahan",
         message: "Silahkan pilih kategori terlebih dahulu",
         icon: Icons.category,
+      );
+      return;
+    }
+
+    if (!isPagination && !isPickedDateTimeValidForRental) {
+      final minimumStart = minimumRentalStartTime;
+      final formattedMinimumStart =
+          DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(minimumStart);
+      CustomSnackbar.show(
+        title: "Waktu sewa tidak valid",
+        message:
+            "Waktu mulai sewa minimal pada $formattedMinimumStart. Silakan atur waktu mulai ke jam tersebut atau setelahnya.",
+        icon: Icons.schedule,
       );
       return;
     }

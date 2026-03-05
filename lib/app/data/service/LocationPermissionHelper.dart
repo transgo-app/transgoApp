@@ -31,9 +31,9 @@ class LocationPermissionHelper {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Untuk membuat pengalaman sewa lebih aman dan lancar, Transgo menggunakan lokasi Anda selama masa sewa aktif, '
-                'Informasi lokasi ini membantu menampilkan posisi Anda di peta bagi tim Transgo dan mendukung keamanan kendaraan bila dibutuhkan bantuan. '
-                'Data lokasi tidak digunakan untuk keperluan iklan atau dijual ke pihak lain.',
+                'Untuk membuat pengalaman sewa lebih aman dan mencegah pencurian, Transgo menggunakan lokasi Anda selama masa sewa aktif, bahkan saat aplikasi ditutup atau tidak digunakan. '
+                'Informasi lokasi ini membantu menampilkan posisi Anda di peta bagi tim Transgo untuk mendukung keamanan kendaraan dan mencegah penipuan. '
+                'Data lokasi tidak digunakan untuk iklan atau dijual ke pihak lain.',
               ),
             ],
           ),

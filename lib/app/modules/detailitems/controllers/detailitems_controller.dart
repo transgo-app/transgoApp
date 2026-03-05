@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:geocoding/geocoding.dart';
+import 'package:flutter/material.dart';
 import '../../../data/data.dart';
+import '../../../widget/widgets.dart';
 
 class DetailitemsController extends GetxController {
   late bool isKendaraan;
@@ -25,16 +27,20 @@ class DetailitemsController extends GetxController {
     int duration = int.tryParse(durationStr?.toString() ?? '1') ?? 1;
     if (duration < 1) duration = 1;
 
-    // Ensure dataClient is a mutable map
+    // Ensure dataClient is a mutable map and normalize core fields
     if (dataClient == null) {
       dataClient = <String, dynamic>{};
     } else if (dataClient is Map) {
       dataClient = Map<String, dynamic>.from(dataClient);
     }
 
-    dataClient['startDate'] = startDate.toIso8601String();
+    // Always keep a single source of truth for start time in form sewa
+    final normalizedStartIso = startDate.toIso8601String();
+    dataClient['date'] = normalizedStartIso;
+    dataClient['startDate'] = normalizedStartIso;
     dataClient['endDate'] =
         startDate.add(Duration(days: duration)).toIso8601String();
+    dataClient['duration'] = duration.toString();
     selectedDurasi.value = duration;
     if (isLoggedIn) {
       getMyVouchers();
@@ -185,6 +191,50 @@ class DetailitemsController extends GetxController {
   late Map<String, dynamic> paramPost;
   var selectedDurasi = 1.obs;
 
+  /// Validates that the selected rental start time is at least
+  /// 2 hours from now (rounded up to the nearest 30 minutes).
+  /// Returns true if valid, otherwise shows an error snackbar and returns false.
+  bool validateRentTime() {
+    DateTime ceilTo30Min(DateTime dt) {
+      const stepMinutes = 30;
+      final minutes = dt.hour * 60 + dt.minute;
+      final hasRemainder = (minutes % stepMinutes) != 0 ||
+          dt.second != 0 ||
+          dt.millisecond != 0 ||
+          dt.microsecond != 0;
+      final roundedMinutes =
+          hasRemainder ? ((minutes ~/ stepMinutes) + 1) * stepMinutes : minutes;
+      if (roundedMinutes >= 24 * 60) {
+        final nextDay =
+            DateTime(dt.year, dt.month, dt.day).add(const Duration(days: 1));
+        final minsInDay = roundedMinutes - (24 * 60);
+        return DateTime(nextDay.year, nextDay.month, nextDay.day,
+            minsInDay ~/ 60, minsInDay % 60);
+      }
+      return DateTime(dt.year, dt.month, dt.day, roundedMinutes ~/ 60,
+          roundedMinutes % 60);
+    }
+
+    final dateStr = dataClient['date'];
+    if (dateStr != null && dateStr.toString().isNotEmpty) {
+      final start = DateTime.tryParse(dateStr.toString())?.toLocal();
+      if (start != null) {
+        const minLead = Duration(hours: 2);
+        final minimumStart = ceilTo30Min(DateTime.now().add(minLead));
+        if (start.isBefore(minimumStart)) {
+          CustomSnackbar.show(
+            title: "Waktu sewa tidak valid",
+            message:
+                "Waktu mulai sewa minimal 2 jam dari sekarang. Silakan kembali dan pilih waktu yang sesuai.",
+            icon: Icons.schedule,
+          );
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   void updateTotalHarga() {
     final harga = isKendaraan
         ? (detailData['rent_price'] ?? 0) -
@@ -279,6 +329,14 @@ class DetailitemsController extends GetxController {
 
   Future getDetailAPI([bool needLoading = false, bool? isOrder = false]) async {
     _apiDebounce?.cancel();
+
+    // Block order submit if rental start is before now + 2 hours
+    if (isOrder == true) {
+      if (!validateRentTime()) {
+        return;
+      }
+    }
+
     if (needLoading) {
       isLoadinggetdetailkendaraan.value = true;
     } else {

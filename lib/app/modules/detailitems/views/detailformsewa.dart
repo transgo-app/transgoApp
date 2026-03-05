@@ -98,16 +98,28 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                                   fontWeight: FontWeight.w500,
                                 ),
                                 const SizedBox(height: 5),
-                                Obx(() => iconWithDetailSewa(
-                                  IconsaxPlusBold.calendar_edit,
-                                  formatTanggalSewa(
-                                    controller.dataClient['date'],
-                                    int.tryParse(
-                                            "${controller.dataClient['duration']}") ??
-                                        0,
-                                    isHighSeason: controller.rentalCrossesHighSeason.value,
-                                  ),
-                                )),
+                                Obx(() {
+                                  final rawStart = controller.dataClient['startDate'] ??
+                                      controller.dataClient['date'];
+                                  final startIso = rawStart?.toString() ?? '';
+                                  final durasi = int.tryParse(
+                                          "${controller.dataClient['duration']}") ??
+                                      0;
+
+                                  final label = startIso.isEmpty
+                                      ? "Waktu sewa belum diatur"
+                                      : formatTanggalSewa(
+                                          startIso,
+                                          durasi,
+                                          isHighSeason: controller
+                                              .rentalCrossesHighSeason.value,
+                                        );
+
+                                  return iconWithDetailSewa(
+                                    IconsaxPlusBold.calendar_edit,
+                                    label,
+                                  );
+                                }),
                                 if (controller.isKendaraan)
                                   Obx(() => iconWithDetailSewa(
                                         IconsaxPlusBold.user_tag,

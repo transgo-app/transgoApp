@@ -111,8 +111,19 @@ class KendaraanList extends StatelessWidget {
                       data: data,
                       isKendaraan: true,
                       onTap: () {
-                        // Ensure pickedDateTimeISO is up-to-date before navigation
                         controller.pickedDateAndTime();
+                        if (!controller.isPickedDateTimeValidForRental) {
+                          final minimumStart = controller.minimumRentalStartTime;
+                          final formattedMinimumStart = DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
+                              .format(minimumStart);
+                          CustomSnackbar.show(
+                            title: "Waktu sewa tidak valid",
+                            message:
+                                "Waktu mulai sewa minimal pada $formattedMinimumStart. Silakan atur waktu mulai ke jam tersebut atau setelahnya.",
+                            icon: Icons.schedule,
+                          );
+                          return;
+                        }
                         Get.toNamed('/detailkendaraan', arguments: {
                           'isKendaraan': true,
                           'dataClient': {
@@ -170,8 +181,19 @@ class ProdukList extends StatelessWidget {
                       data: data,
                       isKendaraan: false,
                       onTap: () {
-                        // Ensure pickedDateTimeISO is up-to-date before navigation
                         controller.pickedDateAndTime();
+                        if (!controller.isPickedDateTimeValidForRental) {
+                          final minimumStart = controller.minimumRentalStartTime;
+                          final formattedMinimumStart = DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
+                              .format(minimumStart);
+                          CustomSnackbar.show(
+                            title: "Waktu sewa tidak valid",
+                            message:
+                                "Waktu mulai sewa minimal pada $formattedMinimumStart. Silakan atur waktu mulai ke jam tersebut atau setelahnya.",
+                            icon: Icons.schedule,
+                          );
+                          return;
+                        }
                         Get.toNamed('/detailkendaraan', arguments: {
                           'isKendaraan': false,
                           'dataClient': {
