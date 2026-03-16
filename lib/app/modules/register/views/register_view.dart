@@ -50,6 +50,46 @@ class RegisterView extends GetView<RegisterController> {
                       fontSize: 14,
                       textColor: textSecondary,
                     ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.shield_outlined, size: 16, color: Colors.blue.shade700),
+                              const SizedBox(width: 6),
+                              gabaritoText(
+                                text: 'Keamanan Data Pribadi',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                textColor: Colors.blue.shade700,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          gabaritoText(
+                            text:
+                                'Data Anda terlindungi sepenuhnya berdasarkan UU No. 27 Tahun 2022 tentang Perlindungan Data Pribadi (PDP).',
+                            fontSize: 12,
+                            textColor: Colors.blue.shade700,
+                          ),
+                          const SizedBox(height: 8),
+                          gabaritoText(
+                            text:
+                                'Lengkapi data di bawah untuk melanjutkan proses sewa. Pengisian cukup dilakukan satu kali saja untuk transaksi pertama Anda.',
+                            fontSize: 12,
+                            textColor: Colors.blue.shade700,
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),

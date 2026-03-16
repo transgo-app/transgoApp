@@ -29,6 +29,13 @@
             {
               "client_id": "1022276810838-c7s6hdn8sirt5gl4tppkhrdk1g0lr40j.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "1022276810838-1ir96jl6p6c7188a7ujc1pov7rkg6b3v.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.transgoapp.transgomobileapp"
+              }
             }
           ]
         }
@@ -51,6 +58,14 @@
           }
         },
         {
+          "client_id": "1022276810838-jps78c6bd19069l3sldu1qga82oquggn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.transgoapp.transgomobileapp",
+            "certificate_hash": "8176a47a13c42ba51cc4a7b17372feb936a38414"
+          }
+        },
+        {
           "client_id": "1022276810838-c7s6hdn8sirt5gl4tppkhrdk1g0lr40j.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -66,6 +81,13 @@
             {
               "client_id": "1022276810838-c7s6hdn8sirt5gl4tppkhrdk1g0lr40j.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "1022276810838-1ir96jl6p6c7188a7ujc1pov7rkg6b3v.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.transgoapp.transgomobileapp"
+              }
             }
           ]
         }

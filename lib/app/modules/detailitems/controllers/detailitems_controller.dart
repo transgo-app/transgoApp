@@ -792,7 +792,7 @@ class DetailitemsController extends GetxController {
     final rawDate = dataClient['date'];
     if (rawDate == null || rawDate.toString().isEmpty) return;
 
-    DateTime base = DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
+    DateTime base = (DateTime.tryParse(rawDate.toString()) ?? DateTime.now()).toLocal();
 
     final alert = currentChargeAlert.value;
     final bool isDdayHighSeason =

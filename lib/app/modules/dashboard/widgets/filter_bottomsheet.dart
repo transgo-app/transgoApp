@@ -80,20 +80,31 @@ class FilterBottomSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 40),
-            ReusableButton(
+            Obx(() => ReusableButton(
               bgColor: Colors.blue,
               height: 55,
-              ontap: () {
-                controller.getList();
-                Navigator.pop(context);
-              },
-              widget: poppinsText(
-                text: "Terapkan",
-                textColor: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+              ontap: controller.isLoading.value
+                  ? null
+                  : () async {
+                      await controller.getList();
+                      if (context.mounted) Navigator.pop(context);
+                    },
+              widget: controller.isLoading.value
+                  ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const poppinsText(
+                      text: "Terapkan Filter",
+                      textColor: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+            )),
             const SizedBox(height: 10),
           ],
         ),

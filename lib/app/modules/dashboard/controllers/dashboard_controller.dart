@@ -220,35 +220,14 @@ class DashboardController extends GetxController
     pickedDateTimeISO.value = dateTime.toUtc().toIso8601String();
   }
 
-  /// Minimum rental start: current time + 2 hours (user cannot order for past or too soon).
-  static const Duration minimumRentalLeadTime = Duration(hours: 2);
-  /// Minute granularity for minimum start time (00/30).
-  static const int minimumRentalStepMinutes = 30;
-
-  DateTime _ceilToMinuteStep(DateTime dt, int stepMinutes) {
-    // Round up to the next [stepMinutes] boundary (based on local clock time).
-    final minutes = dt.hour * 60 + dt.minute;
-    final hasRemainder = (minutes % stepMinutes) != 0 ||
-        dt.second != 0 ||
-        dt.millisecond != 0 ||
-        dt.microsecond != 0;
-
-    final roundedMinutes = hasRemainder
-        ? ((minutes ~/ stepMinutes) + 1) * stepMinutes
-        : minutes;
-
-    if (roundedMinutes >= 24 * 60) {
-      final nextDay = DateTime(dt.year, dt.month, dt.day).add(const Duration(days: 1));
-      final minsInDay = roundedMinutes - (24 * 60);
-      return DateTime(nextDay.year, nextDay.month, nextDay.day, minsInDay ~/ 60, minsInDay % 60);
-    }
-
-    return DateTime(dt.year, dt.month, dt.day, roundedMinutes ~/ 60, roundedMinutes % 60);
-  }
-
   DateTime get minimumRentalStartTime {
-    final raw = DateTime.now().add(minimumRentalLeadTime);
-    return _ceilToMinuteStep(raw, minimumRentalStepMinutes);
+    final now = DateTime.now();
+    final minHour = now.hour + 2;
+    if (minHour >= 24) {
+      final nextDay = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+      return DateTime(nextDay.year, nextDay.month, nextDay.day, minHour - 24);
+    }
+    return DateTime(now.year, now.month, now.day, minHour);
   }
 
   /// True if picked date+time is at least 2 hours from now (rounded up to 30-min blocks).

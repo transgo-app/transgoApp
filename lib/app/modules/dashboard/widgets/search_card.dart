@@ -495,16 +495,25 @@ class _SearchCardState extends State<SearchCard> {
   }
 
   Widget _buildSubmit(DashboardController controller) {
-    return ReusableButton(
+    return Obx(() => ReusableButton(
       bgColor: solidPrimary,
       height: 50,
-      ontap: controller.getList,
-      widget: const gabaritoText(
-        text: 'Terapkan',
-        fontSize: 14,
-        textColor: Colors.white,
-      ),
-    );
+      ontap: controller.isLoading.value ? null : controller.getList,
+      widget: controller.isLoading.value
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+          : const gabaritoText(
+              text: 'Terapkan',
+              fontSize: 14,
+              textColor: Colors.white,
+            ),
+    ));
   }
 
   List _filteredKategori(DashboardController controller) {
@@ -684,7 +693,7 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
     minTime = (pickedDate.year == now.year &&
             pickedDate.month == now.month &&
             pickedDate.day == now.day)
-        ? now.add(const Duration(minutes: 120))
+        ? DateTime(now.year, now.month, now.day, now.hour + 2)
         : DateTime(
             pickedDate.year, pickedDate.month, pickedDate.day, minHourLimit);
 

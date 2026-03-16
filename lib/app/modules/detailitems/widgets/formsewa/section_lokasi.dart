@@ -32,8 +32,11 @@ class SectionLokasi extends StatelessWidget {
         ),
         BackgroundCard(
           ontap: () async {
-            final granted = await LocationPermissionHelper.ensureLocationForForm(context);
-            if (!context.mounted) return;
+            bool granted = true;
+            if (controller.isLoggedIn) {
+              granted = await LocationPermissionHelper.ensureLocationForForm(context);
+              if (!context.mounted) return;
+            }
             if (granted) {
               showModalBottomSheet(
                 context: context,
@@ -109,8 +112,11 @@ class SectionLokasi extends StatelessWidget {
 
             return GestureDetector(
               onTap: () async {
-                final granted = await LocationPermissionHelper.ensureLocationForForm(context);
-                if (!context.mounted) return;
+                bool granted = true;
+                if (controller.isLoggedIn) {
+                  granted = await LocationPermissionHelper.ensureLocationForForm(context);
+                  if (!context.mounted) return;
+                }
                 if (granted) {
                   controller.isPengembalianManual.value = true;
                   showModalBottomSheet(
