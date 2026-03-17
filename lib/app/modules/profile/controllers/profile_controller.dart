@@ -1,6 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:transgomobileapp/app/data/helper/SharedPrefsHelper.dart';
+import 'package:transgomobileapp/app/data/helper/AppPrefs.dart';
+import 'package:transgomobileapp/app/data/service/NotificationService.dart';
 import '../../../data/data.dart';
+import '../../../widget/widgets.dart';
 
 class ProfileController extends GetxController {
   final count = 0.obs;
@@ -17,6 +22,14 @@ class ProfileController extends GetxController {
   TextEditingController nikC = TextEditingController();
   TextEditingController passwordC = TextEditingController();
   TextEditingController confirmPasswordC = TextEditingController();
+
+  /// OTP verification
+  final TextEditingController otpController = TextEditingController();
+  final RxInt resendCooldownSec = 0.obs;
+  final RxBool isSendingOtp = false.obs;
+  final RxBool isVerifyingOtp = false.obs;
+  Timer? _cooldownTimer;
+  static const int _resendCooldownSeconds = 90;
 
   RxString jenisKelamin = ''.obs;
   RxString tanggalLahir = ''.obs;
@@ -50,7 +63,11 @@ class ProfileController extends GetxController {
 
       GlobalVariables.additional_data_status.value = dataUser['additional_data_status'];
       GlobalVariables.statusVerificationAccount.value = dataUser['status'];
-      
+      GlobalVariables.isEmailVerified.value = dataUser['email_verified'] == true;
+      if (!GlobalVariables.isEmailVerified.value) {
+        _maybeScheduleEmailVerificationReminder();
+      }
+
       if (GlobalVariables.idCards.isNotEmpty) {
         idCards.value = jsonDecode(GlobalVariables.idCards.value);
       }
@@ -74,7 +91,113 @@ class ProfileController extends GetxController {
       print('Error: $e');
   } finally {}
   }
-  
+
+  /// Schedules a local "email belum diverifikasi" reminder at a long interval (e.g. 24h).
+  /// Only schedules if last schedule was long ago to avoid spam.
+  Future<void> _maybeScheduleEmailVerificationReminder() async {
+    try {
+      final prefs = await getAppPrefs();
+      const key = 'last_email_verification_reminder_scheduled_at';
+      final lastStr = prefs.getString(key);
+      final lastMs = int.tryParse(lastStr ?? '') ?? 0;
+      const intervalHours = 24;
+      if (DateTime.now().millisecondsSinceEpoch - lastMs < intervalHours * 60 * 60 * 1000) {
+        return;
+      }
+      await NotificationService().scheduleEmailVerificationReminder();
+      await prefs.setString(key, DateTime.now().millisecondsSinceEpoch.toString());
+    } catch (_) {}
+  }
+
+  /// Sends email verification OTP. Returns true if success (caller can then show OTP modal).
+  Future<bool> sendEmailOtp() async {
+    if (isSendingOtp.value) return false;
+    isSendingOtp.value = true;
+    try {
+      await APIService().post('/auth/email/send-otp', {});
+      resendCooldownSec.value = _resendCooldownSeconds;
+      _startCooldownTimer();
+      CustomSnackbar.show(
+        title: 'Email dikirim',
+        message: 'Kode OTP telah dikirim ke email Anda. Cek inbox atau folder spam.',
+        icon: Icons.email_outlined,
+        backgroundColor: Colors.orange,
+      );
+      return true;
+    } catch (e) {
+      CustomSnackbar.show(
+        title: 'Gagal mengirim OTP',
+        message: e.toString().replaceFirst('Exception: ', ''),
+        icon: Icons.error_outline,
+        backgroundColor: Colors.red,
+      );
+      return false;
+    } finally {
+      isSendingOtp.value = false;
+    }
+  }
+
+  void _startCooldownTimer() {
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (resendCooldownSec.value > 0) {
+        resendCooldownSec.value--;
+      } else {
+        _cooldownTimer?.cancel();
+      }
+    });
+  }
+
+  /// Resend OTP (respects cooldown).
+  Future<void> resendEmailOtp() async {
+    if (resendCooldownSec.value > 0 || isSendingOtp.value) return;
+    await sendEmailOtp();
+  }
+
+  /// Verify email with OTP. Call Get.back() on success to close modal.
+  Future<void> verifyEmailOtp() async {
+    final otp = otpController.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
+    if (otp.length != 6) {
+      CustomSnackbar.show(
+        title: 'Kode tidak valid',
+        message: 'Masukkan 6 digit kode OTP.',
+        icon: Icons.warning_amber_outlined,
+        backgroundColor: Colors.orange,
+      );
+      return;
+    }
+    if (isVerifyingOtp.value) return;
+    isVerifyingOtp.value = true;
+    try {
+      await APIService().post('/auth/email/verify-otp', {'otp': otp});
+      await getDetailUser();
+      Get.back();
+      otpController.clear();
+      CustomSnackbar.show(
+        title: 'Email terverifikasi',
+        message: 'Terima kasih, email Anda sudah terverifikasi.',
+        icon: Icons.check_circle_outline,
+        backgroundColor: Colors.green,
+      );
+    } catch (e) {
+      CustomSnackbar.show(
+        title: 'Verifikasi gagal',
+        message: e.toString().replaceFirst('Exception: ', ''),
+        icon: Icons.error_outline,
+        backgroundColor: Colors.red,
+      );
+    } finally {
+      isVerifyingOtp.value = false;
+    }
+  }
+
+  @override
+  void onClose() {
+    _cooldownTimer?.cancel();
+    otpController.dispose();
+    super.onClose();
+  }
+
    Future<void> requestDeleteAccount() async {
     try {
       var data = await APIService().put('/orders/request-delete/${userId.value}', {});

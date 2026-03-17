@@ -21,6 +21,8 @@ class GlobalVariables {
   static RxBool isNeedAdditionalData = false.obs;
   static RxBool isShowStatusAccount = false.obs;
   static RxString additional_data_status = ''.obs;
+  /// True if user has verified their email via OTP; false or null from API = not verified.
+  static RxBool isEmailVerified = true.obs;
 
   static Future<void> initializeData() async {
     final prefs = await getAppPrefs();
@@ -72,5 +74,6 @@ class GlobalVariables {
     isNeedAdditionalData = false.obs;
     isShowStatusAccount = false.obs;
     additional_data_status = ''.obs;
+    isEmailVerified.value = true;
   }
 }

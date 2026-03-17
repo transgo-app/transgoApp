@@ -1,9 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:transgomobileapp/app/data/data.dart';
 import 'package:transgomobileapp/app/data/helper/AppPrefs.dart';
+import 'package:get/get.dart';
 import 'package:transgomobileapp/app/data/globalvariables.dart';
+import 'package:transgomobileapp/app/routes/app_pages.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -85,7 +88,10 @@ class FirebaseApi {
       iOS: iOSSettings,
     );
 
-    await flutterLocalNotificationsPlugin.initialize(settings);
+    await flutterLocalNotificationsPlugin.initialize(
+      settings,
+      onDidReceiveNotificationResponse: _onNotificationTap,
+    );
 
     const channel = AndroidNotificationChannel(
       'channel1',
@@ -98,6 +104,14 @@ class FirebaseApi {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
+  }
+
+  static void _onNotificationTap(NotificationResponse response) {
+    if (response.payload == 'email_verification_reminder') {
+      try {
+        Get.offAllNamed(Routes.DEFAULT, arguments: 3);
+      } catch (_) {}
+    }
   }
 }
 
@@ -136,5 +150,50 @@ class NotificationService {
       body, 
       notificationDetails,
     );
+  }
+
+  /// Notification id used for the "email belum diverifikasi" reminder.
+  static const int emailVerificationReminderId = 9999;
+
+  /// Schedules a one-time local notification in 24 hours reminding user to verify email.
+  /// When tapped, app opens to profile tab. Call only when user is logged in and email not verified.
+  Future<void> scheduleEmailVerificationReminder() async {
+    try {
+      await flutterLocalNotificationsPlugin.cancel(emailVerificationReminderId);
+      final when = tz.TZDateTime.now(tz.local).add(const Duration(hours: 24));
+      const title = 'Email Anda belum diverifikasi';
+      const body = 'Verifikasi email untuk pengalaman lebih baik. Ketuk untuk buka Profil.';
+      const payload = 'email_verification_reminder';
+
+      final androidDetails = AndroidNotificationDetails(
+        'channel1',
+        'channel1',
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+      );
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      );
+
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        emailVerificationReminderId,
+        title,
+        body,
+        when,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payload,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.wallClockTime,
+      );
+    } catch (e) {
+      print('Error scheduling email verification reminder: $e');
+    }
   }
 }

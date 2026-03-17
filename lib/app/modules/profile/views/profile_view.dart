@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../controllers/profile_controller.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
+import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalEmailVerificationOtp.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalHapusAkun.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalLogout.dart';
 
@@ -23,6 +24,10 @@ class ProfileView extends GetView<ProfileController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _profileHeader(),
+                const SizedBox(height: 16),
+                Obx(() => GlobalVariables.isEmailVerified.value
+                    ? const SizedBox.shrink()
+                    : _emailVerificationAlert(context)),
                 const SizedBox(height: 24),
                 _accountSection(),
                 const SizedBox(height: 16),
@@ -40,6 +45,71 @@ class ProfileView extends GetView<ProfileController> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _emailVerificationAlert(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.amber.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(IconsaxPlusBold.sms_edit, color: Colors.amber.shade700, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    gabaritoText(
+                      text: "Email Anda belum diverifikasi",
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      textColor: HexColor("#92400E"),
+                    ),
+                    const SizedBox(height: 4),
+                    gabaritoText(
+                      text: "Verifikasi email untuk pengalaman yang lebih baik dan menerima info penting seputar pemesanan.",
+                      fontSize: 12,
+                      textColor: HexColor("#B45309"),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Obx(() => SizedBox(
+            width: double.infinity,
+            child: ReusableButton(
+              height: 44,
+              title: controller.isSendingOtp.value ? 'Mengirim...' : 'Verifikasi Email',
+              bgColor: HexColor("#B45309"),
+              textColor: Colors.white,
+              ontap: controller.isSendingOtp.value
+                  ? null
+                  : () async {
+                      final ok = await controller.sendEmailOtp();
+                      if (ok && context.mounted) {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => const ModalEmailVerificationOtp(),
+                        );
+                      }
+                    },
+            ),
+          )),
+        ],
       ),
     );
   }

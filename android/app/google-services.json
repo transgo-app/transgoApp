@@ -66,6 +66,14 @@
           }
         },
         {
+          "client_id": "1022276810838-4281g6s7t9h32hrqc5rvchcr8vfrhfb8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.transgoapp.transgomobileapp",
+            "certificate_hash": "1bded7b85cc6d477a1fc8230592a5ff36635bef0"
+          }
+        },
+        {
           "client_id": "1022276810838-c7s6hdn8sirt5gl4tppkhrdk1g0lr40j.apps.googleusercontent.com",
           "client_type": 3
         }
