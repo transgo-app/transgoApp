@@ -74,6 +74,8 @@ class APIService {
       '/auth/login',
       '/auth/register',
       '/auth/register-partner',
+      '/auth/email/register/send-otp',
+      '/auth/email/register/verify-otp',
       '/auth/password/forgot',
       '/auth/password/reset',
     ];

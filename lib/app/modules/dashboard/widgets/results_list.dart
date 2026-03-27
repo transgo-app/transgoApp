@@ -8,6 +8,148 @@ import '../../../widget/widgets.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
 import 'fleet_recommendation_widget.dart';
 
+enum HomeSearchEmptyVariant { fleet, product }
+
+/// Empty state when home search returns no rows (fleets or products).
+class HomeSearchEmptyState extends StatelessWidget {
+  final DashboardController controller;
+  final HomeSearchEmptyVariant variant;
+
+  const HomeSearchEmptyState({
+    super.key,
+    required this.controller,
+    required this.variant,
+  });
+
+  static String _searchMetadataLine(
+    DashboardController c, {
+    required bool englishDate,
+  }) {
+    final rawDate = c.pickedDate.value;
+    final time = c.pickedTime.value;
+    String datePart = rawDate;
+    final parsed = DateTime.tryParse(rawDate);
+    if (parsed != null) {
+      datePart = DateFormat(
+        'd MMMM yyyy',
+        englishDate ? 'en' : 'id_ID',
+      ).format(parsed);
+    }
+    final timePart = time.isNotEmpty ? '$time WIB' : '';
+    if (timePart.isEmpty) return 'Pencarian: $datePart';
+    return 'Pencarian: $datePart • $timePart';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final metaColor = Colors.grey.shade800;
+    final bodyColor = textPrimary;
+    final englishDate = variant == HomeSearchEmptyVariant.product;
+
+    final title = variant == HomeSearchEmptyVariant.product
+        ? 'Produk Lagi Diminati Banget!'
+        : 'Wah, Kendaraan Lagi Laris Banget!';
+    final body = variant == HomeSearchEmptyVariant.product
+        ? 'Semua produk udah keburu laku nih! 😅 Coba cek tanggal atau waktu lain ya, pasti ada yang pas buat kebutuhan kamu! 📱✨'
+        : 'Semua kendaraan udah keburu dipesan nih! 😅 Coba cek tanggal atau waktu lain ya, pasti ada yang cocok buat kamu! 🚗✨';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 80),
+        child: Obx(() {
+          final meta = _searchMetadataLine(controller, englishDate: englishDate);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 100,
+                width: double.infinity,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned(
+                      left: 8,
+                      top: 0,
+                      child: Text(
+                        '⭐',
+                        style: TextStyle(
+                          fontSize: 22,
+                          color: Colors.amber.shade700,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 4,
+                      top: 0,
+                      child: Text(
+                        '💎',
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Colors.blue.shade600,
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      '😢',
+                      style: TextStyle(fontSize: 64, height: 1.1),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              gabaritoText(
+                text: title,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                textColor: textHeadline,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              poppinsText(
+                text: body,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                textColor: bodyColor,
+                textAlign: TextAlign.center,
+                heightText: 1.45,
+              ),
+              const SizedBox(height: 14),
+              poppinsText(
+                text: meta,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                textColor: metaColor,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  poppinsText(
+                    text:
+                        'Coba ubah tanggal atau waktu pencarian untuk melihat ketersediaan terbaru! 🔍',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    textColor: textSecondary,
+                    textAlign: TextAlign.center,
+                    heightText: 1.45,
+                  ),
+                  const Positioned(
+                    right: -4,
+                    bottom: -2,
+                    child: Text('🎉', style: TextStyle(fontSize: 18)),
+                  ),
+                ],
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
 class ResultsArea extends StatelessWidget {
   final DashboardController controller;
   const ResultsArea({Key? key, required this.controller}) : super(key: key);
@@ -33,20 +175,13 @@ class ResultsArea extends StatelessWidget {
             return ProdukList(controller: controller);
           }
 
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 80),
-              child: Column(
-                children: [
-                  Image.asset('assets/nodata.jpg', scale: 10),
-                  const poppinsText(
-                    text: "Data Tidak Ditemukan",
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ],
-              ),
-            ),
+          final isFleet = controller.selectedKategori.value == 'car' ||
+              controller.selectedKategori.value == 'motorcycle';
+          return HomeSearchEmptyState(
+            controller: controller,
+            variant: isFleet
+                ? HomeSearchEmptyVariant.fleet
+                : HomeSearchEmptyVariant.product,
           );
         }),
       ),

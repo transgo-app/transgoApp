@@ -212,6 +212,9 @@ class DashboardController extends GetxController
 
   RxString pickedDateTimeISO = ''.obs;
 
+  /// Optional. Matches backend `intended_use` for recommendation boost (fleet search).
+  RxString searchIntendedUse = ''.obs;
+
   void pickedDateAndTime() {
     if (pickedDate.value.isEmpty || pickedTime.value.isEmpty) return;
     final dateTime =
@@ -580,6 +583,13 @@ class DashboardController extends GetxController
       return;
     }
 
+    // Keep recommendation query window identical to available fleet query window.
+    pickedDateAndTime();
+    if (pickedDateTimeISO.value.isEmpty) {
+      fleetRecommendations.value = null;
+      return;
+    }
+
     isLoadingRecommendations.value = true;
 
     try {
@@ -590,7 +600,12 @@ class DashboardController extends GetxController
           ? selectedDurasiSewa.value 
           : '1';
       
-      final endpoint = '/fleets/recommendations?location_id=$locationId&date=${pickedDate.value}&duration=$duration';
+      var endpoint =
+          '/fleets/recommendations?location_id=$locationId&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=$duration';
+      if (searchIntendedUse.value.isNotEmpty) {
+        endpoint +=
+            '&intended_use=${Uri.encodeComponent(searchIntendedUse.value)}';
+      }
       final response = await APIService().get(endpoint, useCache: false);
 
       if (response != null) {

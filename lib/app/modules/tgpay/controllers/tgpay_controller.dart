@@ -17,6 +17,16 @@ class TgPayController extends GetxController {
   RxDouble balance = 0.0.obs;
   RxBool isLoadingBalance = false.obs;
   RxBool isLoadingMethods = false.obs;
+
+  // History (Top up / Usage / Cashback)
+  RxBool isLoadingTopupHistory = false.obs;
+  RxBool isLoadingUsageHistory = false.obs;
+  RxBool isLoadingCashbackHistory = false.obs;
+
+  // Note: keep dynamic to avoid tight coupling with backend formatting.
+  RxList<dynamic> topupHistoryItems = <dynamic>[].obs;
+  RxList<dynamic> usageHistoryItems = <dynamic>[].obs;
+  RxList<dynamic> cashbackHistoryItems = <dynamic>[].obs;
   
   // User ID (fetched from auth endpoint)
   RxInt userId = 0.obs;
@@ -87,6 +97,9 @@ class TgPayController extends GetxController {
     fetchUserId();
     fetchPaymentMethods();
     fetchBalance();
+    fetchTopupHistory();
+    fetchUsageHistory();
+    fetchCashbackHistory();
   }
   
   Future<void> fetchUserId() async {
@@ -246,6 +259,60 @@ class TgPayController extends GetxController {
       // Keep current balance on error, don't reset to 0
     } finally {
       isLoadingBalance.value = false;
+    }
+  }
+
+  Future<void> fetchTopupHistory({int page = 1, int limit = 20}) async {
+    if (isLoadingTopupHistory.value) return;
+    isLoadingTopupHistory.value = true;
+    try {
+      final data = await APIService().get(
+        '/topup/orders?page=$page&limit=$limit',
+        useCache: false,
+      );
+
+      final items = (data?['items'] ?? data?['data']?['items'] ?? []) as List;
+      topupHistoryItems.assignAll(items);
+    } catch (_) {
+      topupHistoryItems.clear();
+    } finally {
+      isLoadingTopupHistory.value = false;
+    }
+  }
+
+  Future<void> fetchUsageHistory({int page = 1, int limit = 20}) async {
+    if (isLoadingUsageHistory.value) return;
+    isLoadingUsageHistory.value = true;
+    try {
+      final data = await APIService().get(
+        '/topup/balance/usage-history?page=$page&limit=$limit',
+        useCache: false,
+      );
+
+      final items = (data?['items'] ?? data?['data']?['items'] ?? []) as List;
+      usageHistoryItems.assignAll(items);
+    } catch (_) {
+      usageHistoryItems.clear();
+    } finally {
+      isLoadingUsageHistory.value = false;
+    }
+  }
+
+  Future<void> fetchCashbackHistory({int page = 1, int limit = 20}) async {
+    if (isLoadingCashbackHistory.value) return;
+    isLoadingCashbackHistory.value = true;
+    try {
+      final data = await APIService().get(
+        '/topup/cashback/history?page=$page&limit=$limit',
+        useCache: false,
+      );
+
+      final items = (data?['items'] ?? data?['data']?['items'] ?? []) as List;
+      cashbackHistoryItems.assignAll(items);
+    } catch (_) {
+      cashbackHistoryItems.clear();
+    } finally {
+      isLoadingCashbackHistory.value = false;
     }
   }
 
@@ -628,6 +695,9 @@ class TgPayController extends GetxController {
         if (isCompleted) {
           debugPrint('Payment completed! Fetching balance...');
           await fetchBalance();
+          await fetchTopupHistory();
+          await fetchUsageHistory();
+          await fetchCashbackHistory();
           
           CustomSnackbar.show(
             title: 'Pembayaran Berhasil',

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:async';
 import 'package:image_picker/image_picker.dart';
 import 'package:transgomobileapp/app/data/helper/Storage_helper.dart';
 import 'package:transgomobileapp/app/widget/Dialog/DialogSuccessUploadRegister.dart';
@@ -56,6 +57,17 @@ class RegisterController extends GetxController {
 
   RxBool isLoading = false.obs;
   RxBool isUploadFile = false.obs;
+  RxBool isEmailVerified = false.obs;
+  RxBool isOtpSent = false.obs;
+  RxBool isSendingRegisterOtp = false.obs;
+  RxString emailVerificationToken = ''.obs;
+  RxString emailValue = ''.obs;
+  RxInt emailResendCount = 0.obs;
+  RxInt emailResendCooldownSeconds = 0.obs;
+  Timer? _emailCooldownTimer;
+  String _lastEmailValue = '';
+
+  final TextEditingController emailOtpController = TextEditingController();
 
   late Map<String, dynamic> paramPost;
   final int maxFileSize = 2 * 1024 * 1024;
@@ -128,7 +140,19 @@ class RegisterController extends GetxController {
       errorTextEmail.value = 'Email Tidak Boleh Kosong';
       isValid = false;
     } else {
-      errorTextEmail.value = '';
+      if (isEmailVerified.value) {
+        errorTextEmail.value = '';
+      } else {
+        if (!isOtpSent.value) {
+          errorTextEmail.value = 'Klik "Verifikasi" dulu';
+          isValid = false;
+        } else if (emailOtpController.text.trim().replaceAll(RegExp(r'[^0-9]'), '').length != 6) {
+          errorTextEmail.value = 'Masukkan OTP 6 digit';
+          isValid = false;
+        } else {
+          errorTextEmail.value = '';
+        }
+      }
     }
 
     if (nomorTelpC.text.isEmpty) {
@@ -198,6 +222,144 @@ class RegisterController extends GetxController {
     allowedToRegistrasi.value = isValid;
   }
 
+  bool _looksLikeEmail(String value) {
+    final v = value.trim().toLowerCase();
+    return v.length >= 5 && v.contains('@') && v.contains('.');
+  }
+
+  String _normalizedEmail() {
+    return emailC.text.trim().toLowerCase();
+  }
+
+  void _resetEmailVerificationState() {
+    isEmailVerified.value = false;
+    isOtpSent.value = false;
+    emailVerificationToken.value = '';
+    emailOtpController.text = '';
+    emailResendCount.value = 0;
+    emailResendCooldownSeconds.value = 0;
+    _emailCooldownTimer?.cancel();
+    _emailCooldownTimer = null;
+  }
+
+  void _startEmailCooldown() {
+    _emailCooldownTimer?.cancel();
+    emailResendCooldownSeconds.value = 60;
+    _emailCooldownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (emailResendCooldownSeconds.value <= 1) {
+        emailResendCooldownSeconds.value = 0;
+        t.cancel();
+        return;
+      }
+      emailResendCooldownSeconds.value = emailResendCooldownSeconds.value - 1;
+    });
+  }
+
+  Future<void> sendRegisterEmailOtp() async {
+    final email = _normalizedEmail();
+    if (!_looksLikeEmail(email)) {
+      CustomSnackbar.show(
+        title: "Terjadi Kesalahan",
+        message: "Email tidak valid",
+        icon: Icons.mail_outline,
+      );
+      return;
+    }
+
+    if (isSendingRegisterOtp.value) return;
+    isSendingRegisterOtp.value = true;
+
+    try {
+      // Sending a new OTP invalidates previous verification/OTP input.
+      isEmailVerified.value = false;
+      emailVerificationToken.value = '';
+      isOtpSent.value = false;
+      emailOtpController.text = '';
+
+      await APIService().post('/auth/email/register/send-otp', {
+        'email': email,
+        'name': namaLengkapC.text.trim(),
+      });
+      _startEmailCooldown();
+      isOtpSent.value = true;
+      validateInput();
+      CustomSnackbar.show(
+        title: "Berhasil",
+        message: "Kode verifikasi sudah dikirim ke email kamu",
+        icon: Icons.check,
+        backgroundColor: Colors.green,
+      );
+    } catch (e) {
+      print("Error sendRegisterEmailOtp: $e");
+      CustomSnackbar.show(
+        title: "Terjadi Kesalahan",
+        message: "Gagal mengirim kode verifikasi, coba lagi ya.",
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      _resetEmailVerificationState();
+      validateInput();
+    } finally {
+      isSendingRegisterOtp.value = false;
+    }
+  }
+
+  Future<void> resendRegisterEmailOtp() async {
+    if (!isOtpSent.value) return;
+    if (isSendingRegisterOtp.value) return;
+    if (emailResendCooldownSeconds.value > 0) return;
+    if (emailResendCount.value >= 5) return;
+
+    // resend count: first send is count 0, resend increments to 1..5
+    emailResendCount.value = emailResendCount.value + 1;
+    await sendRegisterEmailOtp();
+  }
+
+  Future<bool> verifyRegisterEmailOtp(String otp) async {
+    final email = _normalizedEmail();
+    if (!_looksLikeEmail(email)) return false;
+
+    try {
+      final res = await APIService().post('/auth/email/register/verify-otp', {
+        'email': email,
+        'otp': otp.trim(),
+      });
+
+      final token = res?['verification_token']?.toString();
+      if (token == null || token.isEmpty) {
+        CustomSnackbar.show(
+          title: "Terjadi Kesalahan",
+          message: "Token verifikasi tidak ditemukan, silakan coba lagi.",
+          icon: Icons.error,
+          backgroundColor: Colors.red,
+        );
+        return false;
+      }
+
+      emailVerificationToken.value = token;
+      isEmailVerified.value = true;
+      isOtpSent.value = false;
+      emailOtpController.text = '';
+      // Once verified, reset resend counters.
+      emailResendCount.value = 0;
+      emailResendCooldownSeconds.value = 0;
+      _emailCooldownTimer?.cancel();
+      _emailCooldownTimer = null;
+
+      validateInput();
+      return true;
+    } catch (e) {
+      print("Error verifyRegisterEmailOtp: $e");
+      CustomSnackbar.show(
+        title: "Kode salah / kedaluwarsa",
+        message: "Silakan coba lagi atau kirim ulang kodenya.",
+        icon: Icons.error,
+        backgroundColor: Colors.red,
+      );
+      return false;
+    }
+  }
+
   Future<void> prefillRegisterFromGoogle() async {
     try {
       final account = await GoogleAuthService.instance
@@ -247,6 +409,23 @@ class RegisterController extends GetxController {
         emailC.text = email;
       }
     }
+
+    emailValue.value = emailC.text;
+    _lastEmailValue = emailC.text;
+    emailC.addListener(() {
+      emailValue.value = emailC.text;
+      final current = emailC.text;
+      if (current != _lastEmailValue) {
+        _lastEmailValue = current;
+        _resetEmailVerificationState();
+      }
+      validateInput();
+    });
+
+    emailOtpController.addListener(() {
+      // Keep button state in sync with OTP input.
+      validateInput();
+    });
 
     final productData = dataArgumentsDetailKendaraan?['product'];
     final fleetData = dataArgumentsDetailKendaraan?['fleet'];
@@ -336,6 +515,8 @@ class RegisterController extends GetxController {
 
   Future<void> registerAccount(List<String> uploadedUrls) async {
     try {
+      final normalizedEmail = _normalizedEmail();
+
       if (dataArgumentsParamPost.isEmpty) {
         Map<String, String> uploadedFileUrls = {};
         int i = 0;
@@ -355,7 +536,10 @@ class RegisterController extends GetxController {
 
         paramPost = {
           "name": namaLengkapC.text,
-          "email": emailC.text,
+          "email": normalizedEmail,
+          "email_verification_token": emailVerificationToken.value.isEmpty
+              ? null
+              : emailVerificationToken.value,
           "gender": selectedJenisKelamin.value == '-'
               ? 'male'
               : selectedJenisKelamin.value,
@@ -388,7 +572,10 @@ class RegisterController extends GetxController {
           ...dataArgumentsParamPost,
           "new_customer": {
             "name": namaLengkapC.text,
-            "email": emailC.text,
+            "email": normalizedEmail,
+            "email_verification_token": emailVerificationToken.value.isEmpty
+                ? null
+                : emailVerificationToken.value,
             "gender": selectedJenisKelamin.value == '-'
                 ? 'male'
                 : selectedJenisKelamin.value,
@@ -462,6 +649,12 @@ class RegisterController extends GetxController {
     }
   }
 
+  @override
+  void onClose() {
+    _emailCooldownTimer?.cancel();
+    emailOtpController.dispose();
+    super.onClose();
+  }
 }
 
 typedef CompressAndAddImage = Future<void> Function(XFile file);

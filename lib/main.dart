@@ -51,6 +51,7 @@ void main() async {
   tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
 
   await initializeDateFormatting('id_ID', null);
+  await initializeDateFormatting('en', null);
   await GlobalVariables.initializeData();
 
   final bool loggedIn = await GlobalVariables().isLoggedIn();

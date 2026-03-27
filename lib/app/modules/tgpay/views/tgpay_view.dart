@@ -917,78 +917,338 @@ class _TgPayViewState extends State<TgPayView> {
   }
 
   Widget _buildTopUpHistoryTab(TgPayController controller) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            'assets/iconapp.png',
-            width: 64,
-            height: 64,
-            opacity: const AlwaysStoppedAnimation(0.5),
+    return Obx(() {
+      if (controller.isLoadingTopupHistory.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (controller.topupHistoryItems.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/iconapp.png',
+                width: 64,
+                height: 64,
+                opacity: const AlwaysStoppedAnimation(0.5),
+              ),
+              const SizedBox(height: 16),
+              gabaritoText(
+                text: 'Belum ada transaksi',
+                fontSize: 14,
+                textColor: Colors.grey,
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          gabaritoText(
-            text: 'Belum ada transaksi',
-            fontSize: 14,
-            textColor: Colors.grey,
-          ),
-        ],
-      ),
-    );
+        );
+      }
+
+      final currency = NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      );
+
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        itemCount: controller.topupHistoryItems.length,
+        itemBuilder: (context, index) {
+          final item = controller.topupHistoryItems[index] as Map;
+          final status = item['status']?.toString() ?? '-';
+          final referenceId = item['reference_id']?.toString() ??
+              item['client_reference_id']?.toString() ??
+              item['id']?.toString() ??
+              '-';
+          final amount = (item['amount'] ?? 0).toString();
+          final createdAtRaw = item['created_at'];
+          final createdAt = createdAtRaw is String
+              ? DateTime.tryParse(createdAtRaw)
+              : (createdAtRaw is DateTime ? createdAtRaw : null);
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          gabaritoText(
+                            text: 'Reference ID',
+                            fontSize: 12,
+                            textColor: Colors.grey.shade600,
+                          ),
+                          const SizedBox(height: 4),
+                          gabaritoText(
+                            text: referenceId,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: gabaritoText(
+                        text: status,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                gabaritoText(
+                  text: currency.format(double.tryParse(amount) ?? 0),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+                const SizedBox(height: 6),
+                gabaritoText(
+                  text: createdAt == null
+                      ? '-'
+                      : DateFormat('dd MMM yyyy, HH:mm').format(createdAt),
+                  fontSize: 12,
+                  textColor: Colors.grey.shade600,
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    });
   }
 
   Widget _buildUsageHistoryTab(TgPayController controller) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            'assets/iconapp.png',
-            width: 64,
-            height: 64,
-            opacity: const AlwaysStoppedAnimation(0.5),
+    return Obx(() {
+      if (controller.isLoadingUsageHistory.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (controller.usageHistoryItems.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/iconapp.png',
+                width: 64,
+                height: 64,
+                opacity: const AlwaysStoppedAnimation(0.5),
+              ),
+              const SizedBox(height: 16),
+              gabaritoText(
+                text: 'Belum ada riwayat pemakaian saldo',
+                fontSize: 14,
+                textColor: Colors.grey,
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          gabaritoText(
-            text: 'Belum ada riwayat pemakaian saldo',
-            fontSize: 14,
-            textColor: Colors.grey,
-          ),
-        ],
-      ),
-    );
+        );
+      }
+
+      final currency = NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      );
+
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        itemCount: controller.usageHistoryItems.length,
+        itemBuilder: (context, index) {
+          final item = controller.usageHistoryItems[index] as Map;
+          final amount = (item['amount'] ?? 0).toDouble();
+          final createdAtRaw = item['created_at'];
+          final createdAt = createdAtRaw is String
+              ? DateTime.tryParse(createdAtRaw)
+              : (createdAtRaw is DateTime ? createdAtRaw : null);
+
+          final order = item['order'] as Map?;
+          final fleet = order?['fleet'] as Map?;
+          final product = order?['product'] as Map?;
+
+          final String unitName;
+          if ((fleet?['name']?.toString().isNotEmpty ?? false)) {
+            unitName = fleet?['name']?.toString() ?? '-';
+          } else if ((product?['name']?.toString().isNotEmpty ?? false)) {
+            unitName = product?['name']?.toString() ?? '-';
+          } else {
+            unitName = order?['invoice_number']?.toString() ?? '-';
+          }
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                gabaritoText(
+                  text: unitName ?? '-',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+                const SizedBox(height: 8),
+                gabaritoText(
+                  text: 'Terpakai: ${currency.format(amount)}',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+                const SizedBox(height: 6),
+                gabaritoText(
+                  text: createdAt == null
+                      ? '-'
+                      : DateFormat('dd MMM yyyy, HH:mm').format(createdAt),
+                  fontSize: 12,
+                  textColor: Colors.grey.shade600,
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    });
   }
 
   Widget _buildCashbackHistoryTab(TgPayController controller) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            'assets/iconapp.png',
-            width: 64,
-            height: 64,
-            opacity: const AlwaysStoppedAnimation(0.5),
+    return Obx(() {
+      if (controller.isLoadingCashbackHistory.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (controller.cashbackHistoryItems.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/iconapp.png',
+                width: 64,
+                height: 64,
+                opacity: const AlwaysStoppedAnimation(0.5),
+              ),
+              const SizedBox(height: 16),
+              gabaritoText(
+                text: 'Belum ada riwayat cashback',
+                fontSize: 14,
+                textColor: Colors.grey,
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: gabaritoText(
+                  text:
+                      'Cashback akan diberikan saat Anda melakukan pembayaran full dengan Transgo Pay',
+                  fontSize: 12,
+                  textColor: Colors.grey,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          gabaritoText(
-            text: 'Belum ada riwayat cashback',
-            fontSize: 14,
-            textColor: Colors.grey,
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: gabaritoText(
-              text: 'Cashback akan diberikan saat Anda melakukan pembayaran full dengan Transgo Pay',
-              fontSize: 12,
-              textColor: Colors.grey,
-              textAlign: TextAlign.center,
+        );
+      }
+
+      final currency = NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      );
+
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        itemCount: controller.cashbackHistoryItems.length,
+        itemBuilder: (context, index) {
+          final item = controller.cashbackHistoryItems[index] as Map;
+          final amount = (item['amount'] ?? 0).toDouble();
+          final createdAtRaw = item['created_at'];
+          final createdAt = createdAtRaw is String
+              ? DateTime.tryParse(createdAtRaw)
+              : (createdAtRaw is DateTime ? createdAtRaw : null);
+
+          final order = item['order'] as Map?;
+          final fleet = order?['fleet'] as Map?;
+          final product = order?['product'] as Map?;
+
+          final String unitName;
+          if ((fleet?['name']?.toString().isNotEmpty ?? false)) {
+            unitName = fleet?['name']?.toString() ?? '-';
+          } else if ((product?['name']?.toString().isNotEmpty ?? false)) {
+            unitName = product?['name']?.toString() ?? '-';
+          } else {
+            unitName = order?['invoice_number']?.toString() ?? '-';
+          }
+
+          final metadata = item['metadata'] as Map?;
+          final cashbackTier = metadata?['cashback_tier']?.toString();
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-          ),
-        ],
-      ),
-    );
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                gabaritoText(
+                  text: unitName ?? '-',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+                const SizedBox(height: 8),
+                gabaritoText(
+                  text: 'Cashback: ${currency.format(amount)}',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+                if (cashbackTier != null && cashbackTier.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  gabaritoText(
+                    text: 'Tier: $cashbackTier',
+                    fontSize: 12,
+                    textColor: Colors.purple.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ],
+                const SizedBox(height: 6),
+                gabaritoText(
+                  text: createdAt == null
+                      ? '-'
+                      : DateFormat('dd MMM yyyy, HH:mm').format(createdAt),
+                  fontSize: 12,
+                  textColor: Colors.grey.shade600,
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    });
   }
 }

@@ -8,6 +8,7 @@ class RegisterInput extends StatelessWidget {
   final TextEditingController controller;
   final RxString errText;
   final TextInputType? inputType;
+  final Widget? icon;
 
   const RegisterInput({
     super.key,
@@ -16,6 +17,7 @@ class RegisterInput extends StatelessWidget {
     required this.controller,
     required this.errText,
     this.inputType,
+    this.icon,
   });
 
   @override
@@ -29,6 +31,7 @@ class RegisterInput extends StatelessWidget {
           controller: controller,
           errorText: errText.value,
           inputType: inputType,
+          icon: icon,
         ),
       ),
     );
