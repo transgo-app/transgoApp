@@ -2,6 +2,8 @@ import 'package:transgomobileapp/app/data/data.dart';
 import 'package:transgomobileapp/app/modules/detailitems/controllers/detailitems_controller.dart';
 import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ParentModal.dart';
+import 'package:transgomobileapp/app/widget/address_autocomplete_field.dart';
+import 'package:transgomobileapp/app/widget/saved_address_picker_sheet.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
 
 class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
@@ -21,6 +23,7 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<DetailitemsController>();
+    final ctx = context;
     return BottomSheetComponent(
       widget: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,6 +48,8 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                         if (isPengambilan) {
                           controller.selectedPengambilan.value = value!;
                           controller.pengambilanSendiri.value = true;
+                          controller.clearStartDeliveryCoords();
+                          controller.clearEndDeliveryCoords();
                           controller.detailLokasiPengambilan.value =
                               controller.detailData['item']['location'];
 
@@ -60,6 +65,7 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                         } else {
                           controller.selectedPengembalian.value = value!;
                           controller.pengembalianSendiri.value = true;
+                          controller.clearEndDeliveryCoords();
                           controller.detailLokasiPengembalian.value =
                               controller.detailData['item']['location'];
                         }
@@ -112,15 +118,79 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                         )),
                   ],
                 ),
-                reusableTextField(
-                  title: "Tuliskan alamat lengkap ya!",
-                  maxLines: 3,
+                AddressAutocompleteField(
                   controller: controllerView,
+                  onResolvedCoords: (lat, lng) {
+                    if (isPengambilan) {
+                      controller.setStartDeliveryCoords(lat, lng);
+                    } else {
+                      controller.setEndDeliveryCoords(lat, lng);
+                    }
+                    controller.getDetailAPI(false);
+                  },
+                  onClearCoords: () {
+                    if (isPengambilan) {
+                      controller.clearStartDeliveryCoords();
+                    } else {
+                      controller.clearEndDeliveryCoords();
+                    }
+                  },
                 ),
+                if (controller.isLoggedIn)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => showCustomerSavedAddressPicker(
+                          ctx,
+                          isPengambilan: isPengambilan,
+                          textController: controllerView,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          side: BorderSide(color: Colors.grey[400]!),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 14,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              color: primaryColor,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Pilih alamat tersimpan',
+                                style: gabaritoTextStyle.copyWith(
+                                  fontSize: 14,
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
                   child: gabaritoText(
-                    text: "*Harga akan dihitung oleh Admin",
+                    text: controller.isLoggedIn
+                        ? "*Pilih saran alamat agar biaya antar/jemput terhitung otomatis"
+                        : "*Login untuk saran alamat & estimasi biaya layanan",
                     textColor: textSecondary,
                     fontSize: 14,
                   ),

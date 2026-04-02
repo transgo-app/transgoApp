@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../controllers/profile_controller.dart';
 import '../../../data/data.dart';
+import '../../../routes/app_pages.dart';
 import '../../../widget/widgets.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalEmailVerificationOtp.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalHapusAkun.dart';
@@ -182,6 +183,13 @@ class ProfileView extends GetView<ProfileController> {
           title: "Dokumen Pribadi",
           subtitle: "Cek dokumen penting yang tersimpan",
           onTap: () => Get.toNamed("/detailuser", arguments: false),
+        ),
+        _divider(),
+        _menuItem(
+          icon: IconsaxPlusBold.location,
+          title: "Alamat tersimpan",
+          subtitle: "Kelola alamat untuk sewa (maks. 5)",
+          onTap: () => Get.toNamed(Routes.SAVED_ADDRESSES),
         ),
       ],
     );

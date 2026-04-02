@@ -1,12 +1,10 @@
 import 'package:transgomobileapp/app/data/data.dart';
+import 'package:transgomobileapp/app/data/helper/delivery_pricing_display.dart';
 import 'package:transgomobileapp/app/modules/detailitems/controllers/detailitems_controller.dart';
 import 'package:transgomobileapp/app/widget/Dialog/DialogBerhailSewa.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalDaftarAccount.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
 import 'package:flutter/gestures.dart';
-import 'package:intl/intl.dart';
-import '../../data/theme.dart';
-
 
 class RincianOrderModal extends StatelessWidget {
   final bool? isWithButton;
@@ -102,6 +100,48 @@ class RincianOrderModal extends StatelessWidget {
                           "High Season Charge (${controller.detailData['thursday_charge_percentage'] ?? 0}%)",
                           "Rp ${formatRupiah(controller.detailData['thursday_charge'])}",
                         ),
+
+                      Obx(() {
+                        final raw = controller.detailData;
+                        if (raw.isEmpty) return const SizedBox.shrink();
+                        final lines = buildDeliveryPricingLines(
+                            Map<String, dynamic>.from(raw));
+                        if (!lines.showSection) {
+                          return const SizedBox.shrink();
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Divider(),
+                            ),
+                            gabaritoText(
+                                text: "Biaya Layanan",
+                                textColor: textSecondary),
+                            if (lines.hasStartDelivery)
+                              detailRincianHarga(
+                                lines.startSubtitle != null
+                                    ? "Antar\n${lines.startSubtitle}"
+                                    : "Antar",
+                                "Rp ${formatRupiah(lines.startLegRupiah)}",
+                              ),
+                            if (lines.hasEndDelivery)
+                              detailRincianHarga(
+                                lines.endSubtitle != null
+                                    ? "Jemput\n${lines.endSubtitle}"
+                                    : "Jemput",
+                                "Rp ${formatRupiah(lines.endLegRupiah)}",
+                              ),
+                            if (!lines.hasStartDelivery &&
+                                !lines.hasEndDelivery)
+                              detailRincianHarga(
+                                "Layanan antar/jemput",
+                                "Rp ${formatRupiah(lines.servicePriceTotal)}",
+                              ),
+                          ],
+                        );
+                      }),
 
                       if (controller.selectedAddons.isNotEmpty)
                         Column(

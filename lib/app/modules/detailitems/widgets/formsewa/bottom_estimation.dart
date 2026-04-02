@@ -3,6 +3,7 @@ import '../../../../widget/widgets.dart';
 import '../../controllers/detailitems_controller.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBottomSheet.dart';
 import 'package:transgomobileapp/app/data/helper/FormatRupiah.dart';
+import 'package:transgomobileapp/app/data/helper/delivery_pricing_display.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -39,6 +40,22 @@ class BottomEstimation extends StatelessWidget {
               }),
             ],
           ),
+          Obx(() {
+            final raw = controller.detailData;
+            if (raw.isEmpty) return const SizedBox.shrink();
+            final lines = buildDeliveryPricingLines(
+                Map<String, dynamic>.from(raw));
+            if (!lines.showSection) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: gabaritoText(
+                text:
+                    'Termasuk biaya layanan antar/jemput Rp ${formatRupiah(lines.servicePriceTotal)}',
+                fontSize: 11,
+                textColor: textSecondary,
+              ),
+            );
+          }),
           const SizedBox(height: 10),
           ReusableButton(
             height: 50,

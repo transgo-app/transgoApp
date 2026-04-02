@@ -45,6 +45,8 @@ class APIService {
       '/topup/',
       '/topup', // Also match without trailing slash
       '/flash-sales', // Flash sales change frequently
+      '/places',
+      '/customer-saved-addresses',
     ];
     return !noCacheEndpoints.any((pattern) => endpoint.contains(pattern));
   }

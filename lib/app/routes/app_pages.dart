@@ -30,6 +30,10 @@ import '../modules/tgpay/bindings/tgpay_binding.dart';
 import '../modules/tgpay/views/tgpay_view.dart';
 import '../modules/fleet_ranking/bindings/fleet_ranking_binding.dart';
 import '../modules/fleet_ranking/views/fleet_ranking_view.dart';
+import '../modules/saved_addresses/bindings/saved_address_form_binding.dart';
+import '../modules/saved_addresses/bindings/saved_addresses_binding.dart';
+import '../modules/saved_addresses/views/saved_address_form_view.dart';
+import '../modules/saved_addresses/views/saved_addresses_list_view.dart';
 
 
 part 'app_routes.dart';
@@ -126,6 +130,16 @@ class AppPages {
       name: Routes.FLEETRANKING,
       page: () => const FleetRankingView(),
       binding: FleetRankingBinding(),
+    ),
+    GetPage(
+      name: Routes.SAVED_ADDRESSES,
+      page: () => const SavedAddressesListView(),
+      binding: SavedAddressesBinding(),
+    ),
+    GetPage(
+      name: Routes.SAVED_ADDRESS_FORM,
+      page: () => const SavedAddressFormView(),
+      binding: SavedAddressFormBinding(),
     ),
   ];
 }

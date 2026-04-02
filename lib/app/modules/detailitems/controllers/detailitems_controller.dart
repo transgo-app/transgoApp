@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:geocoding/geocoding.dart';
-import 'package:flutter/material.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
 
@@ -123,6 +122,48 @@ class DetailitemsController extends GetxController {
 
   RxBool pengambilanSendiri = true.obs;
   RxBool pengembalianSendiri = true.obs;
+
+  /// Delivery legs: set when user picks Places / saved address (cleared on free typing or self-pickup).
+  final startRequestLat = Rxn<double>();
+  final startRequestLng = Rxn<double>();
+  final endRequestLat = Rxn<double>();
+  final endRequestLng = Rxn<double>();
+
+  void clearStartDeliveryCoords() {
+    startRequestLat.value = null;
+    startRequestLng.value = null;
+  }
+
+  void clearEndDeliveryCoords() {
+    endRequestLat.value = null;
+    endRequestLng.value = null;
+  }
+
+  void setStartDeliveryCoords(double lat, double lng) {
+    startRequestLat.value = lat;
+    startRequestLng.value = lng;
+  }
+
+  void setEndDeliveryCoords(double lat, double lng) {
+    endRequestLat.value = lat;
+    endRequestLng.value = lng;
+  }
+
+  int? branchLocationIdForRequest() {
+    try {
+      final item = detailData['item'];
+      if (item is Map) {
+        final id = item['location_id'];
+        if (id != null) return int.tryParse(id.toString());
+      }
+      if (dataServer is Map) {
+        final id = (dataServer as Map)['location_id'];
+        if (id != null) return int.tryParse(id.toString());
+      }
+    } catch (_) {}
+    return null;
+  }
+
   RxBool isLoadinggetdetailkendaraan = false.obs;
   RxBool isLoading = false.obs;
   RxBool isLoadingRincian = false.obs;
@@ -361,11 +402,27 @@ class DetailitemsController extends GetxController {
         "insurance_id": int.parse(selectedAsuransi.value),
       "start_request": {
         "is_self_pickup": pengambilanSendiri.value,
-        if (!pengambilanSendiri.value) "address": lokasiPengambilanC.text,
+        if (branchLocationIdForRequest() != null)
+          "location_id": branchLocationIdForRequest(),
+        if (!pengambilanSendiri.value) ...{
+          "address": lokasiPengambilanC.text,
+          if (startRequestLat.value != null && startRequestLng.value != null) ...{
+            "latitude": startRequestLat.value,
+            "longitude": startRequestLng.value,
+          },
+        },
       },
       "end_request": {
         "is_self_pickup": pengembalianSendiri.value,
-        if (!pengembalianSendiri.value) "address": lokasiPengembalianC.text,
+        if (branchLocationIdForRequest() != null)
+          "location_id": branchLocationIdForRequest(),
+        if (!pengembalianSendiri.value) ...{
+          "address": lokasiPengembalianC.text,
+          if (endRequestLat.value != null && endRequestLng.value != null) ...{
+            "latitude": endRequestLat.value,
+            "longitude": endRequestLng.value,
+          },
+        },
       },
       "date": dataClient['date'],
       "duration": int.parse(dataClient['duration']),
@@ -671,7 +728,6 @@ class DetailitemsController extends GetxController {
         
         // Normalize to date only (remove time)
         final startDateOnly = DateTime(startYear, startMonth, startDay);
-        final endDateOnly = DateTime(endYear, endMonth, endDay);
         final selectedDateOnly = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
 
         // Convert dates to comparable integer format (YYYYMMDD)

@@ -19,6 +19,8 @@ abstract class Routes {
   static const REVIEWS = _Paths.REVIEWS;
   static const TGPAY = _Paths.TGPAY;
   static const FLEETRANKING = _Paths.FLEETRANKING;
+  static const SAVED_ADDRESSES = _Paths.SAVED_ADDRESSES;
+  static const SAVED_ADDRESS_FORM = _Paths.SAVED_ADDRESS_FORM;
 }
 
 abstract class _Paths {
@@ -39,4 +41,6 @@ abstract class _Paths {
   static const REVIEWS = '/reviews';
   static const TGPAY = '/tgpay';
   static const FLEETRANKING = '/fleet-ranking';
+  static const SAVED_ADDRESSES = '/saved-addresses';
+  static const SAVED_ADDRESS_FORM = '/saved-address-form';
 }
