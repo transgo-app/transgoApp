@@ -105,8 +105,9 @@ DeliveryPricingLines buildDeliveryPricingLines(Map<String, dynamic> detail) {
 
   String? legText(String label, int? meters, double? ratePerKm) {
     if (meters == null || ratePerKm == null) return null;
-    final km = meters ~/ 1000;
-    return '$label: ${km}Km (Rp ${formatRupiah(ratePerKm.round())}/km)';
+    final km = meters / 1000.0;
+    final kmStr = (km == km.floorToDouble()) ? km.toInt().toString() : km.toStringAsFixed(1);
+    return '$label: ${kmStr}Km (Rp ${formatRupiah(ratePerKm.round())}/km)';
   }
 
   return DeliveryPricingLines(

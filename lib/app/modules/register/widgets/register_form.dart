@@ -208,12 +208,8 @@ class RegisterForm extends StatelessWidget {
             controller: controller.namaLengkapC,
             errText: controller.errorTextNama),
         Obx(() {
-          final email = controller.emailC.text.trim().toLowerCase();
-          final emailLooksValid =
-              email.isNotEmpty && email.contains('@') && email.contains('.');
-          final canSend = emailLooksValid &&
-              !controller.isEmailVerified.value &&
-              !controller.isOtpSent.value &&
+          controller.emailValue.value;
+          final canSend = !controller.isEmailVerified.value &&
               !controller.isSendingRegisterOtp.value;
 
           return Padding(
@@ -325,7 +321,7 @@ class RegisterForm extends StatelessWidget {
           );
         }),
         Obx(() {
-          if (!controller.isOtpSent.value || controller.isEmailVerified.value) {
+          if (controller.isEmailVerified.value) {
             return const SizedBox.shrink();
           }
 

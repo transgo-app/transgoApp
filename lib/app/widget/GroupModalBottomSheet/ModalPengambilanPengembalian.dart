@@ -69,6 +69,7 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                           controller.detailLokasiPengembalian.value =
                               controller.detailData['item']['location'];
                         }
+                        controller.getDetailAPI(false);
                       },
                     )),
               ],
@@ -114,6 +115,7 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                               controller.selectedPengembalian.value = value!;
                               controller.pengembalianSendiri.value = false;
                             }
+                            controller.getDetailAPI(false);
                           },
                         )),
                   ],
@@ -226,6 +228,7 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                     controller.pengambilanSendiri.value;
               }
 
+              controller.getDetailAPI(false);
               Get.back();
             },
             title: "Simpan Lokasi",

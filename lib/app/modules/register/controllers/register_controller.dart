@@ -276,10 +276,15 @@ class RegisterController extends GetxController {
       isOtpSent.value = false;
       emailOtpController.text = '';
 
-      await APIService().post('/auth/email/register/send-otp', {
+      final res = await APIService().post('/auth/email/register/send-otp', {
         'email': email,
         'name': namaLengkapC.text.trim(),
       });
+      if (res is! Map) {
+        _resetEmailVerificationState();
+        validateInput();
+        return;
+      }
       _startEmailCooldown();
       isOtpSent.value = true;
       validateInput();

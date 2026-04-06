@@ -48,11 +48,34 @@ class BottomEstimation extends StatelessWidget {
             if (!lines.showSection) return const SizedBox.shrink();
             return Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: gabaritoText(
-                text:
-                    'Termasuk biaya layanan antar/jemput Rp ${formatRupiah(lines.servicePriceTotal)}',
-                fontSize: 11,
-                textColor: textSecondary,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  gabaritoText(
+                    text:
+                        'Termasuk biaya layanan antar/jemput Rp ${formatRupiah(lines.servicePriceTotal)}',
+                    fontSize: 11,
+                    textColor: textSecondary,
+                  ),
+                  if (lines.startSubtitle != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: gabaritoText(
+                        text: lines.startSubtitle!,
+                        fontSize: 10,
+                        textColor: textSecondary,
+                      ),
+                    ),
+                  if (lines.endSubtitle != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: gabaritoText(
+                        text: lines.endSubtitle!,
+                        fontSize: 10,
+                        textColor: textSecondary,
+                      ),
+                    ),
+                ],
               ),
             );
           }),

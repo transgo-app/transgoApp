@@ -232,36 +232,47 @@ class DetailitemsController extends GetxController {
   late Map<String, dynamic> paramPost;
   var selectedDurasi = 1.obs;
 
-  /// Validates that the selected rental start time is at least
-  /// 2 hours from now (rounded up to the nearest 30 minutes).
+  /// Validates that the selected rental start time passes the same rules
+  /// enforced by the search card time picker:
+  ///   1. Min hour: 05:00 for D-DAY high season, 07:00 otherwise.
+  ///   2. Max hour: 23:00.
+  ///   3. At least 2 hours from now (rounded up to the nearest 30 minutes).
   /// Returns true if valid, otherwise shows an error snackbar and returns false.
   bool validateRentTime() {
-    DateTime ceilTo30Min(DateTime dt) {
-      const stepMinutes = 30;
-      final minutes = dt.hour * 60 + dt.minute;
-      final hasRemainder = (minutes % stepMinutes) != 0 ||
-          dt.second != 0 ||
-          dt.millisecond != 0 ||
-          dt.microsecond != 0;
-      final roundedMinutes =
-          hasRemainder ? ((minutes ~/ stepMinutes) + 1) * stepMinutes : minutes;
-      if (roundedMinutes >= 24 * 60) {
-        final nextDay =
-            DateTime(dt.year, dt.month, dt.day).add(const Duration(days: 1));
-        final minsInDay = roundedMinutes - (24 * 60);
-        return DateTime(nextDay.year, nextDay.month, nextDay.day,
-            minsInDay ~/ 60, minsInDay % 60);
-      }
-      return DateTime(dt.year, dt.month, dt.day, roundedMinutes ~/ 60,
-          roundedMinutes % 60);
-    }
-
     final dateStr = dataClient['date'];
     if (dateStr != null && dateStr.toString().isNotEmpty) {
       final start = DateTime.tryParse(dateStr.toString())?.toLocal();
       if (start != null) {
-        const minLead = Duration(hours: 2);
-        final minimumStart = ceilTo30Min(DateTime.now().add(minLead));
+        // Mirror search card: D-DAY high season → min 05:00, otherwise 07:00.
+        final alert = currentChargeAlert.value;
+        final isDday = alert != null && alert['type'] == 'dday';
+        final minHour = isDday ? 5 : 7;
+        const maxHour = 23;
+
+        if (start.hour < minHour) {
+          CustomSnackbar.show(
+            title: "Waktu sewa tidak valid",
+            message:
+                "Waktu mulai sewa minimal pukul ${minHour.toString().padLeft(2, '0')}:00. Silakan kembali dan pilih waktu yang sesuai.",
+            icon: Icons.schedule,
+          );
+          return false;
+        }
+
+        if (start.hour > maxHour) {
+          CustomSnackbar.show(
+            title: "Waktu sewa tidak valid",
+            message:
+                "Waktu mulai sewa maksimal pukul 23:00. Silakan kembali dan pilih waktu yang sesuai.",
+            icon: Icons.schedule,
+          );
+          return false;
+        }
+
+        // Mirror search card: minTime = DateTime(now.year, now.month, now.day, now.hour + 2)
+        // Minutes are dropped — only the hour matters, same as the time picker UI.
+        final now = DateTime.now();
+        final minimumStart = DateTime(now.year, now.month, now.day, now.hour + 2, 0);
         if (start.isBefore(minimumStart)) {
           CustomSnackbar.show(
             title: "Waktu sewa tidak valid",

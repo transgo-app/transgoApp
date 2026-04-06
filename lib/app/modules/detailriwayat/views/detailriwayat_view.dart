@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import 'package:transgomobileapp/app/widget/Card/InfoCard.dart';
+import 'package:transgomobileapp/app/data/helper/delivery_pricing_display.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalBatalkanSewa.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalPenganggungJawab.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalReviewRating.dart';
@@ -217,6 +218,45 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                             style: gabaritoTextStyle.copyWith(
                                 fontSize: 16, color: primaryColor),
                           ),
+                          Obx(() {
+                            final raw = controller.detailKendaraan;
+                            if (raw.isEmpty) return const SizedBox.shrink();
+                            final lines = buildDeliveryPricingLines(
+                                Map<String, dynamic>.from(raw));
+                            if (!lines.showSection) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  gabaritoText(
+                                    text:
+                                        'Termasuk biaya antar/jemput Rp ${formatRupiah(lines.servicePriceTotal)}',
+                                    fontSize: 12,
+                                    textColor: textSecondary,
+                                  ),
+                                  if (lines.startSubtitle != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: gabaritoText(
+                                        text: lines.startSubtitle!,
+                                        fontSize: 11,
+                                        textColor: textSecondary,
+                                      ),
+                                    ),
+                                  if (lines.endSubtitle != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: gabaritoText(
+                                        text: lines.endSubtitle!,
+                                        fontSize: 11,
+                                        textColor: textSecondary,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }),
                           if (controller.detailKendaraan['weekend_days']
                                   ?.isNotEmpty ??
                               false)
