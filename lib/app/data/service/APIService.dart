@@ -96,21 +96,91 @@ class APIService {
         : 'Bearer ${GlobalVariables.token.value}';
   }
 
-  dynamic _handleResponse(http.Response response, String endpoint) {
+  static Map<String, dynamic> _decodeBodyMap(String body) {
+    if (body.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// 401 on these routes means wrong credentials or registration errors — not "session expired".
+  bool _isCredentialEntryEndpoint(String endpoint) {
+    const paths = [
+      '/auth/login',
+      '/auth/register',
+      '/auth/register-partner',
+      '/auth/email/register/send-otp',
+      '/auth/email/register/verify-otp',
+      '/auth/password/forgot',
+      '/auth/password/reset',
+    ];
+    return paths.any((p) => endpoint.contains(p));
+  }
+
+  Future<void> _clearSessionAndGoToLogin() async {
+    APIService.clearCache();
+    await GlobalVariables.resetData();
+    Get.offAllNamed('/login');
+  }
+
+  Future<dynamic> _handleResponse(http.Response response, String endpoint) async {
     print(response.statusCode);
     print(response.body);
     print("${baseUrl}${endpoint}");
-    final decodedBody = jsonDecode(response.body);
-    if (response.statusCode == 403) {
+    final decodedBody = _decodeBodyMap(response.body);
+    final code = response.statusCode;
+
+    if (code == 200 || code == 201) {
+      try {
+        return jsonDecode(response.body);
+      } catch (_) {
+        return decodedBody;
+      }
+    }
+
+    if (code == 401) {
+      final hadUserSession = GlobalVariables.token.value.isNotEmpty;
+      if (_isCredentialEntryEndpoint(endpoint)) {
+        CustomSnackbar.show(
+          title: 'Terjadi Kesalahan',
+          message: decodedBody['message']?.toString() ?? 'Login gagal',
+          icon: Icons.person_2,
+          backgroundColor: Colors.red,
+        );
+        throw Exception('UNAUTHORIZED_CREDENTIALS');
+      }
+      if (hadUserSession) {
+        CustomSnackbar.show(
+            title: 'Sesi berakhir',
+            message: 'Silakan login kembali untuk melanjutkan.',
+            icon: Icons.account_circle);
+        await _clearSessionAndGoToLogin();
+        throw Exception('SESSION_EXPIRED');
+      }
+      CustomSnackbar.show(
+        title: 'Terjadi Kesalahan',
+        message: decodedBody['message']?.toString() ?? 'Autentikasi gagal',
+        icon: Icons.car_crash_outlined,
+        backgroundColor: Colors.red,
+      );
+      throw Exception('UNAUTHORIZED');
+    }
+
+    if (code == 403) {
       CustomSnackbar.show(
           title: "Terjadi Kesalahan",
           message: "Silahkan Login Kembali",
           icon: Icons.account_circle);
-      GlobalVariables.resetData();
-      Get.offAndToNamed('/login');
+      await _clearSessionAndGoToLogin();
+      throw Exception('FORBIDDEN');
     }
 
-    if (response.statusCode == 409) {
+    if (code == 409) {
       return CustomSnackbar.show(
         title: "Terjadi Kesalahan",
         message: "${decodedBody['message']}",
@@ -118,7 +188,7 @@ class APIService {
       );
     }
 
-    if (response.statusCode == 404 && endpoint == '/auth/login/customer') {
+    if (code == 404 && endpoint == '/auth/login/customer') {
       return CustomSnackbar.show(
         title: "Terjadi Kesalahan",
         message: "${decodedBody['message']}",
@@ -126,7 +196,7 @@ class APIService {
       );
     }
 
-    if (response.statusCode == 404 && endpoint == '/auth/password/forgot') {
+    if (code == 404 && endpoint == '/auth/password/forgot') {
       return CustomSnackbar.show(
         title: "Terjadi Kesalahan",
         message: "Email Tidak Ditemukan. Silahkan Gunakan Email Valid Anda",
@@ -134,8 +204,7 @@ class APIService {
       );
     }
 
-    // Handle 422 Unprocessable Entity errors
-    if (response.statusCode == 422) {
+    if (code == 422) {
       final message = decodedBody['message'] ?? 'Data tidak valid';
       if (message.toString().toLowerCase().contains('customer')) {
         CustomSnackbar.show(
@@ -155,52 +224,40 @@ class APIService {
       throw Exception(message);
     }
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(response.body);
-    } else {
-      try {
-        final errorResponse = jsonDecode(response.body);
-        final errorCode = errorResponse['code'] ?? '';
+    final errorCode = decodedBody['code'] ?? '';
 
-        switch (errorCode) {
-          case 'user_email_unique':
-            CustomSnackbar.show(
-              title: 'Email sudah terdaftar sebelumnya',
-              message: "Coba lakukan Lupa Password",
-              icon: Icons.mail,
-              backgroundColor: Colors.red,
-            );
-            break;
-          case 'fleet_already_booked':
-            CustomSnackbar.show(
-              title: 'Armada sudah terbooking',
-              message: "Silahkan cari armada/jadwal lain",
-              icon: Icons.car_crash_outlined,
-              backgroundColor: Colors.red,
-            );
-            break;
-          case 'cannot_deactivate_account':
-            CustomSnackbar.show(
-              title: 'Terjadi Kesalahan',
-              message: "${decodedBody['message']}",
-              icon: Icons.car_rental_rounded,
-              backgroundColor: Colors.red,
-            );
-            break;
-          default:
-            CustomSnackbar.show(
-              title: 'Terjadi Kesalahan $endpoint',
-              message: "${decodedBody['message']}",
-              icon: Icons.car_crash_outlined,
-              backgroundColor: Colors.red,
-            );
-        }
-      } catch (e) {
-        throw Exception({
-          'title': 'Kesalahan parsing respons',
-          'description': 'Tidak dapat memproses respons: ${response.body}'
-        });
-      }
+    switch (errorCode) {
+      case 'user_email_unique':
+        CustomSnackbar.show(
+          title: 'Email sudah terdaftar sebelumnya',
+          message: "Coba lakukan Lupa Password",
+          icon: Icons.mail,
+          backgroundColor: Colors.red,
+        );
+        break;
+      case 'fleet_already_booked':
+        CustomSnackbar.show(
+          title: 'Armada sudah terbooking',
+          message: "Silahkan cari armada/jadwal lain",
+          icon: Icons.car_crash_outlined,
+          backgroundColor: Colors.red,
+        );
+        break;
+      case 'cannot_deactivate_account':
+        CustomSnackbar.show(
+          title: 'Terjadi Kesalahan',
+          message: "${decodedBody['message']}",
+          icon: Icons.car_rental_rounded,
+          backgroundColor: Colors.red,
+        );
+        break;
+      default:
+        CustomSnackbar.show(
+          title: 'Terjadi Kesalahan $endpoint',
+          message: "${decodedBody['message'] ?? response.body}",
+          icon: Icons.car_crash_outlined,
+          backgroundColor: Colors.red,
+        );
     }
   }
 
@@ -226,7 +283,7 @@ class APIService {
     print(headersAuth);
     try {
       final response = await http.get(url, headers: headersAuth);
-      final data = _handleResponse(response, endpoint);
+      final data = await _handleResponse(response, endpoint);
       
       // Cache successful GET responses
       if (useCache && _shouldCache(endpoint) && data != null) {
@@ -268,7 +325,7 @@ class APIService {
         headers: headersAuth,
         body: jsonEncode(data),
       );
-      return _handleResponse(response, endpoint);
+      return await _handleResponse(response, endpoint);
     } catch (e) {
       rethrow;
     }
@@ -288,7 +345,7 @@ class APIService {
         headers: headersAuth,
         body: jsonEncode(data),
       );
-      return _handleResponse(response, endpoint);
+      return await _handleResponse(response, endpoint);
     } catch (e) {
       rethrow;
     }
@@ -308,7 +365,7 @@ class APIService {
         headers: headersAuth,
         body: jsonEncode(data),
       );
-      return _handleResponse(response, endpoint);
+      return await _handleResponse(response, endpoint);
     } catch (e) {
       rethrow;
     }
@@ -331,7 +388,7 @@ class APIService {
         'Content-Type': 'application/json',
         'Authorization': _getAuthorizationHeader(endpoint),
       });
-      return _handleResponse(response, endpoint);
+      return await _handleResponse(response, endpoint);
     } catch (e) {
       rethrow;
     }

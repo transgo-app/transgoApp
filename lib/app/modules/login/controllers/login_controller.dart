@@ -128,6 +128,13 @@ class LoginController extends GetxController {
       }
     } catch (e) {
       print('Error during Google login: $e');
+      final err = e.toString();
+      if (err.contains('SESSION_EXPIRED') ||
+          err.contains('FORBIDDEN') ||
+          err.contains('UNAUTHORIZED_CREDENTIALS')) {
+        // APIService already showed snackbar and/or navigated to login
+        return;
+      }
       CustomSnackbar.show(
         title: "Terjadi Kesalahan",
         message: "Gagal masuk dengan Google. Silakan coba lagi.",
@@ -175,6 +182,12 @@ class LoginController extends GetxController {
     }
   } catch (e) {
     print('Error during login: $e');
+    final err = e.toString();
+    if (err.contains('SESSION_EXPIRED') ||
+        err.contains('FORBIDDEN') ||
+        err.contains('UNAUTHORIZED_CREDENTIALS')) {
+      return;
+    }
     CustomSnackbar.show(
       title: "Terjadi Kesalahan",
       message: "Email atau password salah. Silakan coba lagi",

@@ -9,7 +9,6 @@ import '../controllers/dashboard_controller.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ParentModal.dart';
 import '../../../routes/app_pages.dart';
-import '../../../data/intended_use_options.dart';
 
 class SearchCard extends StatefulWidget {
   final DashboardController controller;
@@ -69,8 +68,6 @@ class _SearchCardState extends State<SearchCard> {
               _buildWaktu(context, controller),
               const SizedBox(height: 16),
               _buildDurasi(controller),
-              const SizedBox(height: 16),
-              _buildTujuanPemakaian(controller),
               const SizedBox(height: 20),
               _buildKategoriTab(controller),
               const SizedBox(height: 24),
@@ -442,77 +439,6 @@ class _SearchCardState extends State<SearchCard> {
         },
       ),
     );
-  }
-
-  Widget _buildTujuanPemakaian(DashboardController controller) {
-    return Obx(() {
-      final cat = controller.selectedKategori.value;
-      if (cat != 'car' && cat != 'motorcycle') {
-        return const SizedBox.shrink();
-      }
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          gabaritoText(
-            text: 'Tujuan pemakaian (opsional)',
-            fontSize: 14,
-          ),
-          gabaritoText(
-            text:
-                'Membantu menyusun rekomendasi sesuai penggunaan yang sering dipilih untuk unit serupa.',
-            fontSize: 11,
-            textColor: Colors.grey.shade700,
-          ),
-          const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _intentChip(controller, '', 'Semua'),
-                ...kIntendedUseSearchOptions.map(
-                  (o) => _intentChip(controller, o.value, o.label),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    });
-  }
-
-  Widget _intentChip(
-    DashboardController controller,
-    String value,
-    String label,
-  ) {
-    return Obx(() {
-      final selected = value.isEmpty
-          ? controller.searchIntendedUse.value.isEmpty
-          : controller.searchIntendedUse.value == value;
-      return Padding(
-        padding: const EdgeInsets.only(right: 8, bottom: 4),
-        child: ChoiceChip(
-          label: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: selected ? Colors.white : Colors.black87,
-            ),
-          ),
-          selected: selected,
-          selectedColor: primaryColor,
-          backgroundColor: Colors.grey.shade100,
-          onSelected: (_) async {
-            controller.searchIntendedUse.value = value;
-            if (controller.showDataMobil.value &&
-                (controller.selectedKategori.value == 'car' ||
-                    controller.selectedKategori.value == 'motorcycle')) {
-              await controller.fetchRecommendations();
-            }
-          },
-        ),
-      );
-    });
   }
 
   Widget _buildKategoriTab(DashboardController controller) {
