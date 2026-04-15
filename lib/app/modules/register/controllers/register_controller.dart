@@ -560,6 +560,7 @@ class RegisterController extends GetxController {
           "role": selectedRole.value,
           "referral_code":
               referralCodeC.text.isEmpty ? null : referralCodeC.text,
+          "created_with": "application",
         };
       } else {
         Map<String, String> uploadedFileUrls = {};
@@ -597,6 +598,7 @@ class RegisterController extends GetxController {
             "referral_code":
                 referralCodeC.text.isEmpty ? null : referralCodeC.text,
           },
+          "created_with": "application",
         };
       }
 

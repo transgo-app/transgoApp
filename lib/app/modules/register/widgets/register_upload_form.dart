@@ -31,9 +31,9 @@ class RegisterUploadForm extends StatelessWidget {
         ),
         RegisterFileInput(keyFile: 'ktp', title: "Kartu Tanda Penduduk"),
         RegisterFileInput(keyFile: 'kartu_keluarga', title: "Kartu Keluarga"),
-        RegisterFileInput(keyFile: 'sim_npwp', title: "SIM atau NPWP"),
-        RegisterFileInput(keyFile: 'id_kerja', title: "ID Kerja, Kartu Pelajar, atau KTM"),
-        RegisterFileInput(keyFile: 'data_pendukung', title: "Data Pendukung Lainnya (Opsional)"),
+        RegisterFileInput(keyFile: 'sim_npwp', title: "SIM, NPWP, ID Kerja atau KTM"),
+        RegisterFileInput(keyFile: 'id_kerja', title: "Screenshot Instagram"),
+        RegisterFileInput(keyFile: 'data_pendukung', title: "Lampirkan bukti Transportasi/Hotel (Khusus Luar Domisili)"),
         const SizedBox(
           height: 15,
         ),

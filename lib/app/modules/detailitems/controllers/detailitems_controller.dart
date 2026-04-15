@@ -452,6 +452,7 @@ class DetailitemsController extends GetxController {
                 })
             .toList(),
       "use_balance": useTgPayBalance.value,
+      "created_with": "application",
     };
     Map<String, dynamic>? response;
 
