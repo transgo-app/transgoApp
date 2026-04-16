@@ -59,8 +59,6 @@ class _SearchCardState extends State<SearchCard> {
                       ],
                     )
                   : const SizedBox.shrink()),
-              _buildSearch(controller),
-              const SizedBox(height: 16),
               _buildLokasi(controller),
               const SizedBox(height: 16),
               _buildTanggal(context, controller),
@@ -142,7 +140,7 @@ class _SearchCardState extends State<SearchCard> {
                           alignment: Alignment.centerLeft,
                           child: gabaritoText(
                             text: isVisible ? formattedBalance : 'Rp ••••••',
-                            fontSize: 18,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                             textColor: Colors.black,
                           ),
@@ -265,7 +263,7 @@ class _SearchCardState extends State<SearchCard> {
                   alignment: Alignment.centerLeft,
                   child: gabaritoText(
                     text: controller.tgRewardTier.value,
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     textColor: Colors.black,
                   ),

@@ -9,7 +9,10 @@ class DetailitemsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    isKendaraan = Get.arguments['isKendaraan'] ?? true;
+    final args = Get.arguments ?? {};
+    isKendaraan = args['isKendaraan'] ?? true;
+    dataClient = args['dataClient'] ?? {};
+    dataServer = args['dataServer'] ?? {};
 
     final dateStr = dataClient?['date'];
     final durationStr = dataClient?['duration'];
@@ -227,8 +230,8 @@ class DetailitemsController extends GetxController {
     super.onClose();
   }
 
-  var dataClient = Get.arguments['dataClient'];
-  var dataServer = Get.arguments['dataServer'];
+  var dataClient;
+  var dataServer;
   late Map<String, dynamic> paramPost;
   var selectedDurasi = 1.obs;
 

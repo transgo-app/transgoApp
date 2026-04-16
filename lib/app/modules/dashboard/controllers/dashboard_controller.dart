@@ -41,6 +41,8 @@ class DashboardController extends GetxController
   // Fleet recommendations
   Rxn<FleetRecommendationResponse> fleetRecommendations = Rxn<FleetRecommendationResponse>();
   RxBool isLoadingRecommendations = false.obs;
+  RxBool hasInteractedRecommendation = false.obs;
+  RxString selectedRecommendationTab = 'time'.obs; // 'time', 'usage', 'purpose'
 
   void _setDefaultDate() {
     DateTime now = DateTime.now();
@@ -601,7 +603,7 @@ class DashboardController extends GetxController
           : '1';
       
       var endpoint =
-          '/fleets/recommendations?location_id=$locationId&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=$duration';
+          '/fleets/recommendations?location_id=$locationId&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=$duration&type=${selectedKategori.value}';
       if (searchIntendedUse.value.isNotEmpty) {
         endpoint +=
             '&intended_use=${Uri.encodeComponent(searchIntendedUse.value)}';
@@ -617,6 +619,11 @@ class DashboardController extends GetxController
     } finally {
       isLoadingRecommendations.value = false;
     }
+  }
+
+  void clearRecommendationFilter() {
+    hasInteractedRecommendation.value = false;
+    selectedRecommendationTab.value = 'time';
   }
 
   Future<void> getKotaKendaraan() async {

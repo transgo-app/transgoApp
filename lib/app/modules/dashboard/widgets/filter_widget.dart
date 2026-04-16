@@ -76,8 +76,6 @@ class FilterWidget extends StatelessWidget {
                   const SizedBox(height: 20),
                   _buildFilterCari(controller),
                   const SizedBox(height: 16),
-                  _buildTujuanPemakaian(controller),
-                  const SizedBox(height: 16),
                   _buildFilterHarga(controller),
                   const SizedBox(height: 16),
                   _buildFilterMerk(controller),
@@ -118,103 +116,7 @@ class FilterWidget extends StatelessWidget {
     );
   }
 
-  /// Rekomendasi pintar header (matches web `fleet-recommendation.tsx`) + `intended_use` chips.
-  Widget _buildTujuanPemakaian(DashboardController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.auto_awesome, size: 14, color: primaryColor),
-              const SizedBox(width: 8),
-              Text(
-                'Rekomendasi Pintar',
-                style: gabaritoTextStyle.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: primaryColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Pilih Kendaraan Favoritmu',
-          style: gabaritoTextStyle.copyWith(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Colors.grey.shade900,
-            height: 1.2,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Obx(() {
-          final cat = controller.selectedKategori.value;
-          if (cat != 'car' && cat != 'motorcycle') {
-            return const SizedBox.shrink();
-          }
-          final use = controller.searchIntendedUse.value;
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _intentFilterChip(controller, use, '', 'Semua'),
-                ...kIntendedUseSearchOptions.map(
-                  (o) => _intentFilterChip(controller, use, o.value, o.label),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
 
-  Widget _intentFilterChip(
-    DashboardController controller,
-    String current,
-    String value,
-    String label,
-  ) {
-    final selected =
-        value.isEmpty ? current.isEmpty : current == value;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8, bottom: 4),
-      child: FilterChip(
-        label: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: selected ? Colors.white : Colors.black87,
-          ),
-        ),
-        selected: selected,
-        showCheckmark: true,
-        checkmarkColor: Colors.white,
-        selectedColor: primaryColor,
-        backgroundColor: Colors.grey.shade100,
-        side: BorderSide(
-          color: selected ? primaryColor : Colors.grey.shade400,
-        ),
-        onSelected: (_) async {
-          controller.searchIntendedUse.value = value;
-          if (controller.showDataMobil.value &&
-              (controller.selectedKategori.value == 'car' ||
-                  controller.selectedKategori.value == 'motorcycle')) {
-            await controller.fetchRecommendations();
-          }
-        },
-      ),
-    );
-  }
 
   Widget _buildFilterCari(DashboardController controller) {
     return Column(
