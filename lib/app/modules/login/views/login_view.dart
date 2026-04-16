@@ -53,8 +53,8 @@ class LoginView extends GetView<LoginController> {
                       height: 20,
                     ),
                     newReusableTextField(
-                      title: "Email*",
-                      hintText: "Masukan Email...",
+                      title: "Email / No. Handphone*",
+                      hintText: "Masukan Email atau No. Handphone",
                       controller: controller.emailC,
                       inputType: TextInputType.emailAddress,
                     ),

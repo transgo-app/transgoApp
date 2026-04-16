@@ -147,11 +147,6 @@ class TransGoRewardView extends GetView<TransGoRewardController> {
             }),
             const SizedBox(height: 24),
             Obx(() {
-              final progress = controller.nextThreshold.value > 0
-                  ? controller.totalRentalAmount.value /
-                      controller.nextThreshold.value
-                  : 0.0;
-
               return Column(
                 children: [
                   Row(
@@ -161,20 +156,35 @@ class TransGoRewardView extends GetView<TransGoRewardController> {
                         text:
                             "Rp ${formatRupiah(controller.totalRentalAmount.value)}",
                         fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
                       gabaritoText(
                         text:
                             "Rp ${formatRupiah(controller.nextThreshold.value)}",
                         fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: progress.clamp(0.0, 1.0),
-                    minHeight: 10,
-                    backgroundColor: Colors.grey[300],
-                    color: primaryColor,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: controller.progressPercent.value.clamp(0.0, 1.0),
+                      minHeight: 12,
+                      backgroundColor: Colors.grey[200],
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: gabaritoText(
+                      text: "${(controller.progressPercent.value * 100).toInt()}%",
+                      fontSize: 12,
+                      textColor: primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               );

@@ -45,7 +45,7 @@ class LoginController extends GetxController {
 
   void validateInput() {
     if (emailC.text.isEmpty) {
-      errorTextEmail.value = 'Email Tidak Boleh Kosong';
+      errorTextEmail.value = 'Email atau No. Handphone Tidak Boleh Kosong';
     } else {
       errorTextEmail.value = '';
     }
@@ -177,7 +177,7 @@ class LoginController extends GetxController {
       print('Login gagal, data user: $user');
       CustomSnackbar.show(
         title: "Terjadi Kesalahan",
-        message: "Email atau password anda salah. Silahkan coba lagi",
+        message: "Email / No. Handphone atau password anda salah. Silahkan coba lagi",
       );
     }
   } catch (e) {
@@ -190,7 +190,7 @@ class LoginController extends GetxController {
     }
     CustomSnackbar.show(
       title: "Terjadi Kesalahan",
-      message: "Email atau password salah. Silakan coba lagi",
+      message: "Email / No. Handphone atau password salah. Silakan coba lagi",
     );
   } finally {
     isLoading.value = false;

@@ -34,7 +34,7 @@ class ReferralUser {
   final String name;
   final String phoneNumber;
   final String memberTier;
-  final int totalRentalAmount;
+  final num totalRentalAmount;
   final int totalOrders;
   final int totalRentalDays;
 
@@ -64,8 +64,8 @@ class ReferralUser {
 class TransGoRewardController extends GetxController {
   RxString memberTier = ''.obs;
   RxDouble progressPercent = 0.0.obs;
-  RxInt totalRentalAmount = 0.obs;
-  RxInt nextThreshold = 0.obs;
+  Rx<num> totalRentalAmount = Rx<num>(0);
+  Rx<num> nextThreshold = Rx<num>(0);
   RxList<Benefit> benefits = <Benefit>[].obs;
 
   // Referral
@@ -105,11 +105,9 @@ class TransGoRewardController extends GetxController {
 
       final data = await APIService().get('/loyalty/me');
       memberTier.value = data['member_tier'] ?? '';
-      totalRentalAmount.value = data['total_rental_amount'] ?? 0;
-      nextThreshold.value = data['next_threshold'] ?? 0;
-      progressPercent.value = nextThreshold.value > 0
-          ? totalRentalAmount.value / nextThreshold.value
-          : 0.0;
+      totalRentalAmount.value = (data['total_rental_amount'] ?? 0);
+      nextThreshold.value = (data['next_threshold'] ?? 0);
+      progressPercent.value = (data['progress_percent'] ?? 0).toDouble() / 100.0;
 
       final benefitsData = data['benefits'] as List<dynamic>? ?? [];
       benefits.value = benefitsData.map((b) => Benefit.fromJson(b)).toList();
