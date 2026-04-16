@@ -66,6 +66,27 @@ class _SearchCardState extends State<SearchCard> {
               _buildWaktu(context, controller),
               const SizedBox(height: 16),
               _buildDurasi(controller),
+              Obx(() {
+                final estimate = controller.rentalEndTimeEstimate;
+                if (estimate.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8, left: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 14, color: primaryColor),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: gabaritoText(
+                          text: estimate,
+                          fontSize: 11,
+                          textColor: primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
               const SizedBox(height: 20),
               _buildKategoriTab(controller),
               const SizedBox(height: 24),

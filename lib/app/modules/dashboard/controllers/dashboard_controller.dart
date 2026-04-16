@@ -225,6 +225,34 @@ class DashboardController extends GetxController
     pickedDateTimeISO.value = dateTime.toUtc().toIso8601String();
   }
 
+  /// Calculates the estimated end time of the rental
+  String get rentalEndTimeEstimate {
+    if (pickedDate.value.isEmpty || pickedTime.value.isEmpty) return '';
+
+    final start = DateTime.tryParse("${pickedDate.value}T${pickedTime.value}");
+    if (start == null) return '';
+
+    final duration = int.tryParse(selectedDurasiSewa.value) ?? 1;
+    
+    // Determine if we are in calendar dates mode based on the current alert
+    // If there's a 'dday' alert, it means it's a high season period which usually uses calendar dates
+    final alert = currentChargeAlert.value;
+    final isCalendarDates = alert != null && alert['type'] == 'dday';
+
+    if (isCalendarDates) {
+      // Calendar Dates: ends at 23:59 of the last day
+      // 1 day means same day 23:59, 2 days means tomorrow 23:59
+      final end = start.add(Duration(days: duration - 1));
+      final formattedDate = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(end);
+      return "Estimasi Selesai: $formattedDate pukul 23:59";
+    } else {
+      // 24 Hours: ends at the same time after duration days
+      final end = start.add(Duration(days: duration));
+      final formattedDate = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(end);
+      return "Estimasi Selesai: $formattedDate pukul ${pickedTime.value}";
+    }
+  }
+
   DateTime get minimumRentalStartTime {
     final now = DateTime.now();
     final minHour = now.hour + 2;
