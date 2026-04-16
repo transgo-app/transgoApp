@@ -1,4 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../data/data.dart';
+import '../../../widget/widgets.dart';
+import '../../../widget/Card/BackgroundCard.dart';
 
 class RiwayatpemesananController extends GetxController {
   final ScrollController scrollController = ScrollController();
@@ -215,5 +219,238 @@ class RiwayatpemesananController extends GetxController {
   void onClose() {
     scrollController.dispose();
     super.onClose();
+  }
+
+  final TextEditingController alasanRescheduleC = TextEditingController();
+
+  void showChangeSchedulePicker(BuildContext context, dynamic data) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildSchedulePickerSheet(context, data),
+    );
+  }
+
+  Widget _buildSchedulePickerSheet(BuildContext context, dynamic data) {
+    // Local state for picker within the sheet
+    final RxMap localOrder = Map<String, dynamic>.from(data).obs;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20, right: 20, top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                gabaritoText(text: "Ganti Jadwal Sewa", fontSize: 18, fontWeight: FontWeight.bold),
+                IconButton(onPressed: () => Get.back(), icon: const Icon(Icons.close)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const gabaritoText(
+              text: "Pastikan ketersediaan unit dan harga mungkin berubah sesuai jadwal baru.",
+              fontSize: 12,
+              textColor: Colors.orange,
+            ),
+            const SizedBox(height: 20),
+            gabaritoText(text: "Tanggal Mulai Baru", fontSize: 14),
+            const SizedBox(height: 8),
+            Obx(() {
+              final dateStr = localOrder['start_date'] ?? '';
+              final formatted = dateStr.isNotEmpty 
+                  ? formatTanggalIndonesia(dateStr) 
+                  : "Pilih tanggal";
+              return BackgroundCard(
+                ontap: () async {
+                  final current = DateTime.tryParse("${localOrder['start_date']}") ?? DateTime.now();
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: current,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (picked != null) {
+                    final time = current;
+                    final newDateTime = DateTime(picked.year, picked.month, picked.day, time.hour, time.minute);
+                    localOrder['start_date'] = newDateTime.toIso8601String();
+                  }
+                },
+                height: 50,
+                body: Row(
+                  children: [
+                    const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
+                    const SizedBox(width: 10),
+                    Text(formatted, style: const TextStyle(fontSize: 14)),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      gabaritoText(text: "Waktu Mulai", fontSize: 14),
+                      const SizedBox(height: 8),
+                      Obx(() {
+                        final dateStr = localOrder['start_date'] ?? '';
+                        final time = dateStr.isNotEmpty 
+                            ? DateFormat('HH:mm').format(DateTime.parse(dateStr)) 
+                            : "12:00";
+                        return BackgroundCard(
+                          ontap: () async {
+                            final current = DateTime.tryParse("${localOrder['start_date']}") ?? DateTime.now();
+                            final picked = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(current),
+                            );
+                            if (picked != null) {
+                              final newDateTime = DateTime(current.year, current.month, current.day, picked.hour, picked.minute);
+                              localOrder['start_date'] = newDateTime.toIso8601String();
+                            }
+                          },
+                          height: 50,
+                          body: Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 20, color: Colors.grey),
+                              const SizedBox(width: 10),
+                              Text(time, style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      gabaritoText(text: "Durasi", fontSize: 14),
+                      const SizedBox(height: 8),
+                      Obx(() {
+                        final durasi = localOrder['duration'] ?? 1;
+                        return BackgroundCard(
+                          ontap: () {
+                            final durasiItems = List.generate(30, (i) => i + 1);
+                            showModalBottomSheet(
+                              context: context,
+                              builder: (context) => Container(
+                                height: 300,
+                                child: Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: gabaritoText(text: "Pilih Durasi Sewa", fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    Expanded(
+                                      child: ListView.builder(
+                                        itemCount: durasiItems.length,
+                                        itemBuilder: (context, index) {
+                                          final val = durasiItems[index];
+                                          return ListTile(
+                                            title: Text("$val Hari"),
+                                            onTap: () {
+                                              localOrder['duration'] = val;
+                                              Get.back();
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          height: 50,
+                          body: Row(
+                            children: [
+                              const Icon(Icons.timer_outlined, size: 20, color: Colors.grey),
+                              const SizedBox(width: 10),
+                              Text("$durasi Hari", style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            gabaritoText(text: "Alasan Perubahan Jadwal", fontSize: 14),
+            const SizedBox(height: 8),
+            reusableTextField(
+              title: "Contoh: Rencana berubah / Ada acara mendadak",
+              controller: alasanRescheduleC,
+              maxLines: 2,
+            ),
+            const SizedBox(height: 24),
+            ReusableButton(
+              title: "Terapkan Jadwal Baru",
+              bgColor: primaryColor,
+              ontap: () {
+                updateOrderSchedule(localOrder);
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> updateOrderSchedule(RxMap localOrder) async {
+    if (alasanRescheduleC.text.trim().isEmpty) {
+      CustomSnackbar.show(
+        title: 'Alasan Belum Diisi',
+        message: 'Mohon tuliskan alasan perubahan jadwal Anda.',
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    final orderId = localOrder['id'];
+    isLoading.value = true;
+    try {
+      await APIService().post('/orders/$orderId/reschedule-request', {
+        'new_start_date': localOrder['start_date'],
+        'new_duration': localOrder['duration'],
+        'reason': alasanRescheduleC.text,
+      });
+      
+      Get.back(); // close picker
+      alasanRescheduleC.clear();
+      await refreshData(); // refresh the list
+      
+      CustomSnackbar.show(
+        title: 'Jadwal Berhasil Diperbarui',
+        message: 'Jadwal sewa dan harga telah disesuaikan.',
+        backgroundColor: Colors.green,
+      );
+    } catch (e) {
+      CustomSnackbar.show(
+        title: 'Gagal Memperbarui Jadwal',
+        message: 'Terjadi kesalahan atau unit tidak tersedia di jadwal tersebut.',
+        backgroundColor: Colors.red,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

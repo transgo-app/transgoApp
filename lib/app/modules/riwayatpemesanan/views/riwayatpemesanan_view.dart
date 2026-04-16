@@ -173,6 +173,7 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: _customCard(
+                                context,
                                 index,
                                 data,
                                 imagePath,
@@ -196,6 +197,7 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
   }
 
   Widget _customCard(
+    BuildContext context,
     int index,
     dynamic data,
     String imagePath,
@@ -323,6 +325,32 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                           (data['payment_status']?.toString().toLowerCase() ?? '') == 'done') ...[
                         const SizedBox(height: 8),
                         Obx(() => _buildReviewButton(data, itemName)),
+                      ],
+                      // Ganti Jadwal button only for "Terkonfirmasi"
+                      if (data['order_status'] == 'confirmed') ...[
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => controller.showChangeSchedulePicker(context, data),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: primaryColor,
+                              side: BorderSide(color: primaryColor),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: gabaritoText(
+                              text: "Ganti Jadwal",
+                              fontSize: 13,
+                              textColor: primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ],
                     ],
                   ),

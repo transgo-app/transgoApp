@@ -98,7 +98,7 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                                   fontWeight: FontWeight.w500,
                                 ),
                                 const SizedBox(height: 5),
-                                Obx(() {
+                                 Obx(() {
                                   final rawStart = controller.dataClient['startDate'] ??
                                       controller.dataClient['date'];
                                   final startIso = rawStart?.toString() ?? '';

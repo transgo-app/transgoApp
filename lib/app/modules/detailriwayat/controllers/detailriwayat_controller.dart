@@ -1,5 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
+import '../../../widget/Card/BackgroundCard.dart';
 
 class DetailriwayatController extends GetxController {
   @override
@@ -24,7 +27,6 @@ class DetailriwayatController extends GetxController {
     }
   }
 
-  /// True if rental period [startDate, startDate + duration - 1] crosses any high season range.
   bool rentalCrossesHighSeason(String startDateStr, int duration, dynamic orderData) {
     final ranges = chargeSettings['calendar_dates_ranges'] as List?;
     final fleet = orderData['fleet'];
@@ -43,12 +45,12 @@ class DetailriwayatController extends GetxController {
   RxInt activePenanggungJawabTab = 1.obs;
   RxBool menyetujuiPembatalan = false.obs;
   TextEditingController permintaanKhususC = TextEditingController();
+  TextEditingController alasanRescheduleC = TextEditingController();
 
   RxMap detailKendaraan = {}.obs;
   RxMap detaiItemsID = {}.obs;
   RxList riwayatAsuransi = [].obs;
 
-  /// Charge settings for high season crossing check (order-calculation-settings).
   final RxMap chargeSettings = {}.obs;
   RxString googleMapEmbed = ''.obs;
   RxBool isCancelOrderDisabled = false.obs;
@@ -57,7 +59,6 @@ class DetailriwayatController extends GetxController {
   RxBool isLoadingGetSingleData = false.obs;
   RxBool hasRating = false.obs;
   
-  // Transgo Pay balance
   RxDouble tgPayBalance = 0.0.obs;
   RxBool isLoadingBalance = false.obs;
   RxBool isProcessingPayment = false.obs;
@@ -78,7 +79,6 @@ class DetailriwayatController extends GetxController {
       getDetailRiwayat();
       checkRatingStatus();
     } catch (e) {
-      // Error handled silently
     } finally {
       isLoadingGetSingleData.value = false;
     }
@@ -86,13 +86,11 @@ class DetailriwayatController extends GetxController {
 
   Future<void> checkRatingStatus() async {
     try {
-      // Check if order has rating field directly
       if (detaiItemsID['has_rating'] == true || detaiItemsID['rating'] != null) {
         hasRating.value = true;
         return;
       }
 
-      // If not, check the fleet ratings to see if there's a rating for this order
       final fleet = detaiItemsID['fleet'];
       final product = detaiItemsID['product'];
       final orderId = detaiItemsID['id'];
@@ -116,7 +114,6 @@ class DetailriwayatController extends GetxController {
       final ratings = ratingResponse['items'] as List?;
       
       if (ratings != null) {
-        // Check if any rating has this order_id
         final hasRatingForOrder = ratings.any((rating) => 
           rating['order']?['id'] == orderId || 
           rating['order_id'] == orderId
@@ -131,17 +128,17 @@ class DetailriwayatController extends GetxController {
   }
 
   Future<void> getDetailRiwayat() async {
-    var startReq = dataArguments['start_request'] ?? {};
-    var endReq = dataArguments['end_request'] ?? {};
+    var startReq = detaiItemsID['start_request'] ?? {};
+    var endReq = detaiItemsID['end_request'] ?? {};
     var paramPost = {
-      "fleet_id": dataArguments['fleet']?['id'],
-      "product_id": dataArguments['product']?['id'],
-      "customer_id": dataArguments['customer_id'],
-      "description": dataArguments['description'],
-      "is_out_of_town": dataArguments['is_out_of_town'],
-      "is_with_driver": dataArguments['is_with_driver'],
+      "fleet_id": detaiItemsID['fleet']?['id'],
+      "product_id": detaiItemsID['product']?['id'],
+      "customer_id": detaiItemsID['customer_id'],
+      "description": detaiItemsID['description'],
+      "is_out_of_town": detaiItemsID['is_out_of_town'],
+      "is_with_driver": detaiItemsID['is_with_driver'],
       "insurance_id": detaiItemsID['insurance']?['id'],
-      "rental_type": dataArguments['rental_type'],
+      "rental_type": detaiItemsID['rental_type'],
       "start_request": {
         "is_self_pickup": startReq['is_self_pickup'] ?? false,
         "address": startReq['address'] ?? '',
@@ -154,22 +151,21 @@ class DetailriwayatController extends GetxController {
         "distance": endReq['distance'] ?? 0,
         "driver_id": endReq['driver_id'] ?? 0,
       },
-      "date": dataArguments['start_date'],
-      "duration": dataArguments['duration'],
-      "discount": dataArguments['discount'],
-      "service_price": dataArguments['service_price'],
-      "out_of_town_price": dataArguments['out_of_town_price'],
+      "date": detaiItemsID['start_date'],
+      "duration": detaiItemsID['duration'],
+      "discount": detaiItemsID['discount_percentage'],
+      "service_price": detaiItemsID['service_price'],
+      "out_of_town_price": detaiItemsID['out_of_town_price'],
       "other_price": null,
-      "additional_services": dataArguments['additional_services'] ?? [],
-      "addons": dataArguments['addons'] ?? [],
-      "addons_price": dataArguments['addons_price'] ?? 0
+      "additional_services": detaiItemsID['additional_services'] ?? [],
+      "addons": detaiItemsID['addons'] ?? [],
+      "addons_price": detaiItemsID['addons_price'] ?? 0
     };
     try {
       var data = await APIService().post('/orders/calculate-price', paramPost);
       detailKendaraan.value = data;
       checkCancelOrderStatus(detaiItemsID);
     } catch (e) {
-      // Error handled silently
     } finally {
       isLoading.value = false;
     }
@@ -187,7 +183,7 @@ class DetailriwayatController extends GetxController {
   Future<void> batalkanSewaAPI() async {
     isLoadingCancelTicket.value = true;
     try {
-      await APIService().delete('/orders/${dataArguments['id']}');
+      await APIService().delete('/orders/${detaiItemsID['id']}');
       NotificationService().showNotification(
         title:
             "Sewa ${detaiItemsID['fleet']?['name'] ?? detaiItemsID['product']?['name']} Untuk Durasi ${detaiItemsID['duration']} Telah Dibatalkan",
@@ -195,24 +191,9 @@ class DetailriwayatController extends GetxController {
             "Kami menginformasikan bahwa sewa Anda telah dibatalkan. Hubungi layanan pelanggan jika perlu."
       );
     } catch (e) {
-      // Error handled silently
     } finally {
       isLoadingCancelTicket.value = false;
     }
-  }
-
-  String getDescriptionByPrice(RxList<dynamic> items, int targetPrice) {
-    var item = items.firstWhere((item) => item['price'] == targetPrice,
-        orElse: () => null);
-    return item != null
-        ? item['description'] ?? ''
-        : 'Item dengan harga $targetPrice tidak ditemukan.';
-  }
-
-  String getTitle(RxList<dynamic> items, int targetPrice) {
-    var item = items.firstWhere((item) => item['price'] == targetPrice,
-        orElse: () => null);
-    return item != null ? item['name'] ?? '' : 'Item dengan harga $targetPrice tidak ditemukan.';
   }
 
   Future<void> fetchTgPayBalance() async {
@@ -235,7 +216,7 @@ class DetailriwayatController extends GetxController {
   Future<bool> payWithTransgoPay() async {
     if (isProcessingPayment.value) return false;
     
-    final orderId = dataArguments['id'];
+    final orderId = detaiItemsID['id'];
     final grandTotal = detailKendaraan['grand_total'] ?? 0;
     
     if (tgPayBalance.value < grandTotal) {
@@ -249,21 +230,16 @@ class DetailriwayatController extends GetxController {
 
     isProcessingPayment.value = true;
     try {
-      // Call API to pay with Transgo Pay balance
       await APIService().post('/orders/$orderId/pay-with-balance', {
         'amount': grandTotal,
       });
-      
-      // Refresh order data and balance
       await getDataById();
       await fetchTgPayBalance();
-      
       CustomSnackbar.show(
         title: 'Pembayaran Berhasil',
         message: 'Pembayaran menggunakan Transgo Pay berhasil dilakukan',
         backgroundColor: Colors.green,
       );
-      
       return true;
     } catch (e) {
       CustomSnackbar.show(
@@ -274,6 +250,242 @@ class DetailriwayatController extends GetxController {
       return false;
     } finally {
       isProcessingPayment.value = false;
+    }
+  }
+
+  void showChangeSchedulePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildSchedulePickerSheet(context),
+    );
+  }
+
+  Widget _buildSchedulePickerSheet(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20, right: 20, top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                gabaritoText(text: "Ganti Jadwal Sewa", fontSize: 18, fontWeight: FontWeight.bold),
+                IconButton(onPressed: () => Get.back(), icon: const Icon(Icons.close)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const gabaritoText(
+              text: "Pastikan ketersediaan unit dan harga mungkin berubah sesuai jadwal baru.",
+              fontSize: 12,
+              textColor: Colors.orange,
+            ),
+            const SizedBox(height: 20),
+            gabaritoText(text: "Tanggal Mulai Baru", fontSize: 14),
+            const SizedBox(height: 8),
+            Obx(() {
+              final dateStr = detaiItemsID['start_date'] ?? '';
+              final formatted = dateStr.isNotEmpty 
+                  ? formatTanggalIndonesia(dateStr) 
+                  : "Pilih tanggal";
+              return BackgroundCard(
+                ontap: () => _handleDatePicker(context),
+                height: 50,
+                body: Row(
+                  children: [
+                    const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
+                    const SizedBox(width: 10),
+                    Text(formatted, style: const TextStyle(fontSize: 14)),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      gabaritoText(text: "Waktu Mulai", fontSize: 14),
+                      const SizedBox(height: 8),
+                      Obx(() {
+                        final dateStr = detaiItemsID['start_date'] ?? '';
+                        final time = dateStr.isNotEmpty 
+                            ? DateFormat('HH:mm').format(DateTime.parse(dateStr)) 
+                            : "12:00";
+                        return BackgroundCard(
+                          ontap: () => _handleTimePicker(context),
+                          height: 50,
+                          body: Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 20, color: Colors.grey),
+                              const SizedBox(width: 10),
+                              Text(time, style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      gabaritoText(text: "Durasi", fontSize: 14),
+                      const SizedBox(height: 8),
+                      Obx(() {
+                        final durasi = detaiItemsID['duration'] ?? 1;
+                        return BackgroundCard(
+                          ontap: () => _handleDurationPicker(context),
+                          height: 50,
+                          body: Row(
+                            children: [
+                              const Icon(Icons.timer_outlined, size: 20, color: Colors.grey),
+                              const SizedBox(width: 10),
+                              Text("$durasi Hari", style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            gabaritoText(text: "Alasan Perubahan Jadwal", fontSize: 14),
+            const SizedBox(height: 8),
+            reusableTextField(
+              title: "Contoh: Rencana berubah / Ada acara mendadak",
+              controller: alasanRescheduleC,
+              maxLines: 2,
+            ),
+            const SizedBox(height: 24),
+            ReusableButton(
+              title: "Terapkan Jadwal Baru",
+              bgColor: primaryColor,
+              ontap: () {
+                updateOrderSchedule();
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleDatePicker(BuildContext context) async {
+    final current = DateTime.tryParse("${detaiItemsID['start_date']}") ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      final time = current;
+      final newDateTime = DateTime(picked.year, picked.month, picked.day, time.hour, time.minute);
+      detaiItemsID['start_date'] = newDateTime.toIso8601String();
+      detaiItemsID.refresh();
+    }
+  }
+
+  Future<void> _handleTimePicker(BuildContext context) async {
+    final current = DateTime.tryParse("${detaiItemsID['start_date']}") ?? DateTime.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(current),
+    );
+    if (picked != null) {
+      final newDateTime = DateTime(current.year, current.month, current.day, picked.hour, picked.minute);
+      detaiItemsID['start_date'] = newDateTime.toIso8601String();
+      detaiItemsID.refresh();
+    }
+  }
+
+  void _handleDurationPicker(BuildContext context) {
+    final durasiItems = List.generate(30, (i) => i + 1);
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        height: 300,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: gabaritoText(text: "Pilih Durasi Sewa", fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: durasiItems.length,
+                itemBuilder: (context, index) {
+                  final val = durasiItems[index];
+                  return ListTile(
+                    title: Text("$val Hari"),
+                    onTap: () {
+                      detaiItemsID['duration'] = val;
+                      detaiItemsID.refresh();
+                      Get.back();
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> updateOrderSchedule() async {
+    if (alasanRescheduleC.text.trim().isEmpty) {
+      CustomSnackbar.show(
+        title: 'Alasan Belum Diisi',
+        message: 'Mohon tuliskan alasan perubahan jadwal Anda.',
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    final orderId = detaiItemsID['id'];
+    isLoading.value = true;
+    try {
+      await APIService().post('/orders/$orderId/reschedule-request', {
+        'new_start_date': detaiItemsID['start_date'],
+        'new_duration': detaiItemsID['duration'],
+        'reason': alasanRescheduleC.text,
+      });
+      
+      Get.back();
+      await getDataById();
+      
+      CustomSnackbar.show(
+        title: 'Jadwal Berhasil Diperbarui',
+        message: 'Jadwal sewa dan harga telah disesuaikan.',
+        backgroundColor: Colors.green,
+      );
+    } catch (e) {
+      CustomSnackbar.show(
+        title: 'Gagal Memperbarui Jadwal',
+        message: 'Terjadi kesalahan atau unit tidak tersedia di jadwal tersebut.',
+        backgroundColor: Colors.red,
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 }

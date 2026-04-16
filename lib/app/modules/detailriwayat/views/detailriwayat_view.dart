@@ -44,22 +44,14 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     
-    // When app comes back to foreground (resumed)
     if (state == AppLifecycleState.resumed) {
       final now = DateTime.now();
-      
-      // Only refresh if:
-      // 1. This is the first resume, OR
-      // 2. At least 2 seconds have passed since last resume (to avoid multiple rapid refreshes)
       if (_lastResumeTime == null || 
           now.difference(_lastResumeTime!).inSeconds >= 2) {
         _lastResumeTime = now;
         
-        // Check if payment status is still pending before refreshing
-        // Access the reactive map value correctly
         final paymentStatus = controller.detaiItemsID.value['payment_status'];
         if (paymentStatus == 'pending') {
-          // Refresh the data automatically when user returns from payment app
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) {
               controller.getDataById();
@@ -94,7 +86,6 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
         if (controller.isLoading.value) {
           return Center(child: CircularProgressIndicator(color: primaryColor));
         } else if (controller.detaiItemsID.isNotEmpty) {
-          // Extract data once to avoid repeated access
           final detaiItemsID = controller.detaiItemsID.value;
           final fleet = detaiItemsID['fleet'];
           final product = detaiItemsID['product'];
@@ -126,12 +117,12 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child: AspectRatio(
-                                aspectRatio: 1.0, // 1:1 aspect ratio
+                                aspectRatio: 1.0,
                                 child: CachedNetworkImage(
                                   imageUrl: fleet?['photo']?['photo'] ??
                                       product?['photo']?['photo'] ??
                                       '',
-                                  fit: BoxFit.cover, // Crop to fill, maintaining aspect ratio
+                                  fit: BoxFit.cover,
                                   placeholder: (context, url) => Container(
                                     color: Colors.grey.shade200,
                                     child: const Center(
@@ -142,7 +133,6 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                                     color: Colors.grey.shade300,
                                     child: const Icon(Icons.broken_image, size: 50),
                                   ),
-                                  // Optimized for 1:1 ratio cache
                                   memCacheWidth: (MediaQuery.of(context).size.width * 
                                       MediaQuery.of(context).devicePixelRatio).round().clamp(400, 800),
                                   memCacheHeight: (MediaQuery.of(context).size.width * 
@@ -193,6 +183,39 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                                   detaiItemsID,
                                 )),
                           ),
+                          
+                          // BANNER GANTI JADWAL (HANYA TERKONFIRMASI)
+                          if (detaiItemsID['order_status'] == 'confirmed')
+                            BackgroundCard(
+                              marginVertical: 10,
+                              stringHexBG: "#FFF8E1",
+                              stringHexBorder: "#FFD54F",
+                              body: Row(
+                                children: [
+                                  const Icon(Icons.info_outline, color: Colors.amber, size: 24),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        gabaritoText(text: "Butuh ubah jadwal sewa?", fontWeight: FontWeight.bold, fontSize: 13),
+                                        gabaritoText(text: "Kamu masih bisa mengatur ulang waktu sewa di sini.", fontSize: 11),
+                                      ],
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => controller.showChangeSchedulePicker(context),
+                                    style: TextButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                      side: const BorderSide(color: Colors.amber),
+                                    ),
+                                    child: gabaritoText(text: "Ganti Jadwal", textColor: Colors.amber[900], fontWeight: FontWeight.bold, fontSize: 12),
+                                  )
+                                ],
+                              ),
+                            ),
+
                           iconWithDetailSewa(
                             (fleet?['type'] ?? 'car') == 'car'
                                 ? IconsaxPlusBold.car
@@ -206,7 +229,6 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                               fleet?['color'] ??
                                   product?['specifications']?['color'] ??
                                   ''),
-                          // Beri Ulasan button (only for done orders)
                           if (detaiItemsID['order_status'] == 'done') ...[
                             const SizedBox(height: 15),
                             _buildReviewButton(controller, detaiItemsID),
@@ -257,9 +279,7 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                               ),
                             );
                           }),
-                          if (controller.detailKendaraan['weekend_days']
-                                  ?.isNotEmpty ??
-                              false)
+                          if (controller.detailKendaraan['weekend_days']?.isNotEmpty ?? false)
                             BackgroundCard(
                                 marginVertical: 10,
                                 stringHexBorder: '#A8F2FC',
@@ -457,7 +477,6 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                             ),
                           ),
                           const SizedBox(height: 20),
-                          // Only show button when order_status is "confirmed" or "done"
                           if (detaiItemsID['order_status'] == 'confirmed' ||
                               detaiItemsID['order_status'] == 'done')
                             ReusableButton(
@@ -675,7 +694,6 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                     fleetId: fleet?['id'],
                     productId: product?['id'],
                     onSuccess: () {
-                      // Refresh the detail page asynchronously without blocking
                       Future.delayed(const Duration(milliseconds: 500), () {
                         controller.getDataById();
                       });

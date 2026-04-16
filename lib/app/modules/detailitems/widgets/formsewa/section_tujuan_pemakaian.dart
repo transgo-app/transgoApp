@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transgomobileapp/app/data/theme.dart';
-import 'package:transgomobileapp/app/widget/Card/BackgroundCard.dart';
 import '../../../../widget/widgets.dart';
 import '../../controllers/detailitems_controller.dart';
 
