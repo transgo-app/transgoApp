@@ -5,6 +5,7 @@ import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ParentModal.da
 import 'package:transgomobileapp/app/widget/address_autocomplete_field.dart';
 import 'package:transgomobileapp/app/widget/saved_address_picker_sheet.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
+import 'package:transgomobileapp/app/routes/app_pages.dart';
 
 class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
   final String labelTitle;
@@ -139,53 +140,144 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                   },
                 ),
                 if (controller.isLoggedIn)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () => showCustomerSavedAddressPicker(
-                          ctx,
-                          isPengambilan: isPengambilan,
-                          textController: controllerView,
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          side: BorderSide(color: Colors.grey[400]!),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Obx(() {
+                      if (controller.isLoadingAddresses.value) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 14,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              color: primaryColor,
-                              size: 18,
+                        );
+                      }
+
+                      if (controller.savedAddresses.isEmpty) {
+                        return Container(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => Get.toNamed(Routes.SAVED_ADDRESSES),
+                            icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+                            label: gabaritoText(
+                              text: "Tambah Alamat Baru",
+                              fontSize: 14,
+                              textColor: primaryColor,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Pilih alamat tersimpan',
-                                style: gabaritoTextStyle.copyWith(
-                                  fontSize: 14,
-                                  color: primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.grey[300]!),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        );
+                      }
+
+                      // Find main address or first address
+                      final mainAddr = controller.savedAddresses.firstWhere(
+                        (a) => a['is_default'] == true,
+                        orElse: () => controller.savedAddresses.first,
+                      );
+
+                      final label = mainAddr['label']?.toString() ?? 'Alamat';
+                      final address = mainAddr['address']?.toString() ?? '-';
+                      final isDefault = mainAddr['is_default'] == true;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          gabaritoText(
+                            text: "PAKAI ALAMAT TERSIMPAN",
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            textColor: Colors.blueGrey[300],
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () => showCustomerSavedAddressPicker(
+                              ctx,
+                              isPengambilan: isPengambilan,
+                              textController: controllerView,
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      border: Border.all(color: Colors.grey[100]!),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      label.toLowerCase().contains('kantor') 
+                                          ? Icons.business_outlined 
+                                          : label.toLowerCase().contains('rumah') 
+                                              ? Icons.home_outlined 
+                                              : Icons.location_on_outlined,
+                                      color: primaryColor,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            gabaritoText(
+                                              text: label,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            if (isDefault) ...[
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: primaryColor,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: const Text(
+                                                  'UTAMA',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 8,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          address,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey[600],
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(Icons.chevron_right, color: Colors.grey[400]),
+                                ],
                               ),
                             ),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: Colors.grey,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                          ),
+                        ],
+                      );
+                    }),
                   ),
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),

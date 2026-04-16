@@ -47,6 +47,7 @@ class DetailitemsController extends GetxController {
     if (isLoggedIn) {
       getMyVouchers();
       fetchTgPayBalance();
+      fetchSavedAddresses();
     }
 
     getDetailAPI(true).then((_) {
@@ -125,6 +126,34 @@ class DetailitemsController extends GetxController {
 
   RxBool pengambilanSendiri = true.obs;
   RxBool pengembalianSendiri = true.obs;
+
+  RxList savedAddresses = [].obs;
+  RxBool isLoadingAddresses = false.obs;
+
+  Future<void> fetchSavedAddresses() async {
+    if (!isLoggedIn) return;
+    isLoadingAddresses.value = true;
+    try {
+      final raw = await APIService().get('/customer-saved-addresses', useCache: false);
+      // Debug print to see what the server returns
+      print("DEBUG: Saved Addresses Response: $raw");
+      
+      if (raw is List) {
+        savedAddresses.assignAll(raw);
+      } else if (raw is Map) {
+        if (raw['data'] is List) {
+          savedAddresses.assignAll(raw['data']);
+        } else if (raw['results'] is List) {
+          savedAddresses.assignAll(raw['results']);
+        }
+      }
+    } catch (e) {
+      print("DEBUG: Error fetching addresses: $e");
+      savedAddresses.clear();
+    } finally {
+      isLoadingAddresses.value = false;
+    }
+  }
 
   /// Delivery legs: set when user picks Places / saved address (cleared on free typing or self-pickup).
   final startRequestLat = Rxn<double>();
