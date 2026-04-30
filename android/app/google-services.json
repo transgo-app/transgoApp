@@ -43,6 +43,42 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:1022276810838:android:0b47581802059c375763f7",
+        "android_client_info": {
+          "package_name": "com.transgo.sandboxclient"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1022276810838-c7s6hdn8sirt5gl4tppkhrdk1g0lr40j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPZWOTBBZpDDExpo4Z4ew3oOtK6a9To7s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1022276810838-c7s6hdn8sirt5gl4tppkhrdk1g0lr40j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1022276810838-1ir96jl6p6c7188a7ujc1pov7rkg6b3v.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.transgoapp.transgomobileapp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:1022276810838:android:2d81c59d1a4930e45763f7",
         "android_client_info": {
           "package_name": "com.transgoapp.transgomobileapp"
@@ -63,14 +99,6 @@
           "android_info": {
             "package_name": "com.transgoapp.transgomobileapp",
             "certificate_hash": "8176a47a13c42ba51cc4a7b17372feb936a38414"
-          }
-        },
-        {
-          "client_id": "1022276810838-4281g6s7t9h32hrqc5rvchcr8vfrhfb8.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.transgoapp.transgomobileapp",
-            "certificate_hash": "1bded7b85cc6d477a1fc8230592a5ff36635bef0"
           }
         },
         {

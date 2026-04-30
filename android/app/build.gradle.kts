@@ -9,9 +9,19 @@ plugins {
 }
 
 val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
+// Detect flavor from task names (e.g., :app:assembleSandboxRelease)
+val taskNames = project.gradle.startParameter.taskNames
+val flavor = if (taskNames.any { it.contains("sandbox", ignoreCase = true) }) "sandbox" else "production"
+val keystorePropertiesFile = rootProject.file("key-$flavor.properties")
+
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+} else {
+    // Fallback to old key.properties if it exists
+    val fallbackFile = rootProject.file("key.properties")
+    if (fallbackFile.exists()) {
+        keystoreProperties.load(FileInputStream(fallbackFile))
+    }
 }
 
 android {
@@ -30,12 +40,26 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.transgoapp.transgomobileapp"
+        // applicationId = "com.transgoapp.transgomobileapp" // Moved to flavors
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
 
         versionCode = 53
         versionName = "2.3.1"
+    }
+
+    flavorDimensions += "version"
+    productFlavors {
+        create("production") {
+            dimension = "version"
+            applicationId = "com.transgoapp.transgomobileapp"
+            resValue("string", "app_name", "TransGo")
+        }
+        create("sandbox") {
+            dimension = "version"
+            applicationId = "com.transgo.sandboxclient"
+            resValue("string", "app_name", "TransGo Sandbox")
+        }
     }
 
     signingConfigs {
@@ -60,6 +84,7 @@ android {
 
         debug {
             isMinifyEnabled = false
+            // Optional: You can also assign signingConfig = signingConfigs.getByName("release") here if you want debug builds to be signed
         }
     }
 }
