@@ -464,6 +464,10 @@ class _SearchCardState extends State<SearchCard> {
     return Obx(() {
       final filtered = _filteredKategori(controller);
 
+      if (!controller.isTabInitialized.value) {
+        return const SizedBox(height: 48); // Fallback while loading
+      }
+
       if (controller.tabController.length != filtered.length) {
         controller.tabController.dispose();
         controller.tabController = TabController(
@@ -691,80 +695,86 @@ class _BottomTimePicker extends StatefulWidget {
 class _BottomTimePickerState extends State<_BottomTimePicker> {
   static const int maxHourLimit = 23;
 
-  late int minHourLimit;
-  late int hour;
-  late int minute;
-  late FixedExtentScrollController hourController;
-  late FixedExtentScrollController minuteController;
-  late DateTime minTime;
+  List<int> allowedHours = [7];
+  int hour = 7;
+  int minute = 0;
+  FixedExtentScrollController hourController = FixedExtentScrollController();
+  FixedExtentScrollController minuteController = FixedExtentScrollController();
 
   @override
   void initState() {
     super.initState();
 
-    // Check if this date is within a D-DAY high season range (or crosses high season)
     final alert = widget.controller.currentChargeAlert.value;
     final isHighSeason = alert != null && alert['type'] == 'dday';
-    // Only D-DAY (start date in high season) gets 05:00; crosses still uses 07:00
-    minHourLimit = isHighSeason ? 5 : 7;
 
     DateTime now = DateTime.now();
     DateTime pickedDate = widget.controller.pickedDate.value.isNotEmpty
         ? DateTime.tryParse(widget.controller.pickedDate.value) ?? now
         : now;
 
-    minTime = (pickedDate.year == now.year &&
-            pickedDate.month == now.month &&
-            pickedDate.day == now.day)
-        ? DateTime(now.year, now.month, now.day, now.hour + 2)
-        : DateTime(
-            pickedDate.year, pickedDate.month, pickedDate.day, minHourLimit);
+    bool isToday = (pickedDate.year == now.year &&
+        pickedDate.month == now.month &&
+        pickedDate.day == now.day);
 
-    if (minTime.hour < minHourLimit) {
-      minTime = DateTime(
-        minTime.year,
-        minTime.month,
-        minTime.day,
-        minHourLimit,
-      );
+    // 1. Determine base allowed hours
+    List<int> baseHours;
+    if (isHighSeason) {
+      // High Season: 00:xx and 01:00 are allowed, 02-06 blocked, 07-23 allowed
+      baseHours = [0, 1, ...List.generate(maxHourLimit - 7 + 1, (i) => i + 7)];
+    } else {
+      // Normal: 07-23 allowed
+      baseHours = List.generate(maxHourLimit - 7 + 1, (i) => i + 7);
     }
 
-    if (minTime.hour > maxHourLimit) {
-      minTime = DateTime(
-        minTime.year,
-        minTime.month,
-        minTime.day,
-        maxHourLimit,
-      );
+    // 2. Filter by "2 hours from now" if today
+    if (isToday) {
+      int minHourRequired = now.hour + 2;
+      List<int> filtered = baseHours.where((h) => h >= minHourRequired).toList();
+      
+      // Special case: if now is 22:00 or later, today might have no hours left
+      if (filtered.isEmpty && baseHours.isNotEmpty) {
+        allowedHours = [baseHours.last]; 
+      } else {
+        allowedHours = filtered.isNotEmpty ? filtered : baseHours;
+      }
+    } else {
+      allowedHours = baseHours;
     }
 
+    // Safety check: ensure allowedHours is never empty
+    if (allowedHours.isEmpty) allowedHours = [7];
+
+    // 3. Initialize selected hour and minute
     if (widget.controller.pickedTime.value.isEmpty) {
-      hour = minTime.hour;
+      hour = allowedHours.isNotEmpty ? allowedHours.first : 7;
       minute = 0;
     } else {
       try {
-        hour = int.parse(widget.controller.pickedTime.value.split(":")[0]);
-        minute = int.parse(widget.controller.pickedTime.value.split(":")[1]);
+        List<String> parts = widget.controller.pickedTime.value.split(":");
+        int currentHour = int.parse(parts[0]);
+        minute = int.parse(parts[1]);
 
-        if (hour < minTime.hour) {
-          hour = minTime.hour;
-          minute = 0;
-        }
-        if (hour > maxHourLimit) {
-          hour = maxHourLimit;
+        if (allowedHours.contains(currentHour)) {
+          hour = currentHour;
+        } else {
+          // If current selection is now invalid (e.g. date changed to high season),
+          // find the nearest valid hour
+          hour = allowedHours.firstWhere((h) => h >= currentHour,
+              orElse: () => allowedHours.first);
           minute = 0;
         }
       } catch (_) {
-        hour = minTime.hour;
+        hour = allowedHours.isNotEmpty ? allowedHours.first : 7;
         minute = 0;
       }
     }
 
-    int hourIndex = (hour - minTime.hour).clamp(0, maxHourLimit - minTime.hour);
-    int minuteIndex = minute.clamp(0, 59);
+    int hourIndex = allowedHours.indexOf(hour);
+    if (hourIndex == -1) hourIndex = 0;
 
     hourController = FixedExtentScrollController(initialItem: hourIndex);
-    minuteController = FixedExtentScrollController(initialItem: minuteIndex);
+    minuteController = FixedExtentScrollController(initialItem: minute.clamp(0, 59));
   }
 
   @override
@@ -776,9 +786,6 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
 
   @override
   Widget build(BuildContext context) {
-    final int startHour = minTime.hour;
-    final int availableHours = (maxHourLimit - startHour + 1).clamp(0, 24);
-
     return BottomSheetComponent(
       widget: Column(
         mainAxisSize: MainAxisSize.min,
@@ -799,9 +806,9 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
                     itemExtent: 40,
                     physics: const FixedExtentScrollPhysics(),
                     childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: availableHours,
+                      childCount: allowedHours.length,
                       builder: (_, index) {
-                        int h = startHour + index;
+                        int h = allowedHours[index];
                         return Center(
                           child: Text(h.toString().padLeft(2, '0')),
                         );
@@ -809,7 +816,12 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
                     ),
                     onSelectedItemChanged: (index) {
                       setState(() {
-                        hour = startHour + index;
+                        hour = allowedHours[index];
+                        // If hour is 1 (high season limit), force minute to 0
+                        if (hour == 1 && minute > 0) {
+                          minute = 0;
+                          minuteController.jumpToItem(0);
+                        }
                       });
                     },
                   ),
@@ -833,7 +845,13 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
                     ),
                     onSelectedItemChanged: (index) {
                       setState(() {
-                        minute = index;
+                        // If hour is 1, don't allow selecting minutes > 0
+                        if (hour == 1 && index > 0) {
+                          minute = 0;
+                          minuteController.jumpToItem(0);
+                        } else {
+                          minute = index;
+                        }
                       });
                     },
                   ),
@@ -848,7 +866,6 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
             ontap: () {
               widget.controller.pickedTime.value =
                   "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}";
-              // Update pickedDateTimeISO when time changes
               widget.controller.pickedDateAndTime();
               Navigator.pop(context);
             },

@@ -10,6 +10,7 @@ class DashboardController extends GetxController
   RxString teksLokasi = 'Harap Tunggu....'.obs;
   RxString teksCari = 'Harap Tunggu....'.obs;
   late TabController tabController;
+  RxBool isTabInitialized = false.obs;
   RxBool showWhatsApp = true.obs;
   double _lastScrollOffset = 0;
 
@@ -58,11 +59,10 @@ class DashboardController extends GetxController
   }
 
   void setDefaultTime() {
-    // Behave like time search: for today use current hour + 2; for other days use 05:00/07:00.
+    // Behave like time search: for today use current hour + 2; for other days use 07:00 (or 00:00 for high season).
     final alert = currentChargeAlert.value;
     final isHighSeason = alert != null && alert['type'] == 'dday';
-    final minHourLimit = isHighSeason ? 5 : 7;
-
+    
     final now = DateTime.now();
     final defaultDate = pickedDate.value.isNotEmpty
         ? DateTime.tryParse(pickedDate.value)
@@ -75,11 +75,22 @@ class DashboardController extends GetxController
     if (isToday) {
       final twoHoursLater = now.add(const Duration(hours: 2));
       int hour = twoHoursLater.hour;
-      if (hour < minHourLimit) hour = minHourLimit;
+      
+      if (isHighSeason) {
+        // High season rule: allow 00:xx, block 01:xx-06:xx, allow 07:xx+
+        if (hour >= 1 && hour < 7) {
+          hour = 7;
+        }
+      } else {
+        // Normal rule: min 07:xx
+        if (hour < 7) hour = 7;
+      }
+      
       if (hour > 23) hour = 23;
       pickedTime.value = '${hour.toString().padLeft(2, '0')}:00';
     } else {
-      pickedTime.value = isHighSeason ? '05:00' : '07:00';
+      // For other days, default to 07:00 as it's the standard start time
+      pickedTime.value = '07:00';
     }
     // Update pickedDateTimeISO after setting default time
     pickedDateAndTime();
@@ -413,6 +424,7 @@ class DashboardController extends GetxController
     WidgetsBinding.instance.addPostFrameCallback((_) {
       int index = kategori.indexWhere((k) => k['id'] == selectedKategori.value);
       if (index != -1) tabController.index = index;
+      isTabInitialized.value = true;
     });
 
     await getKotaKendaraan();
