@@ -5,6 +5,7 @@ import 'package:transgomobileapp/app/widget/Dialog/DialogBerhailSewa.dart';
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalDaftarAccount.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
 import 'package:flutter/gestures.dart';
+import 'package:intl/intl.dart';
 
 class RincianOrderModal extends StatelessWidget {
   final bool? isWithButton;
@@ -32,7 +33,7 @@ class RincianOrderModal extends StatelessWidget {
               Expanded(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + MediaQuery.of(context).padding.bottom),
-                  child: Column(
+                  child: Obx(() => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 10),
@@ -399,7 +400,7 @@ class RincianOrderModal extends StatelessWidget {
                         ),
                       if (isWithButton == false) SizedBox(height: 30 + MediaQuery.of(context).padding.bottom)
                     ],
-                  ),
+                  )),
                 ),
               ),
             ],
@@ -424,37 +425,29 @@ class RincianOrderModal extends StatelessWidget {
   Widget _buildRentalPeriodDetail(DetailitemsController controller) {
     // Rental crosses high season (any day in period in high season range)
     final isHighSeason = controller.rentalCrossesHighSeason.value;
+    final startDateStr = controller.dataClient['startDate'] as String?;
+    final endDateStr = controller.dataClient['endDate'] as String?;
+    final duration = int.tryParse("${controller.dataClient['duration']}") ?? 1;
     
-    if (isHighSeason) {
-      // Format dates with times for high season per-date calculation
-      final startDateStr = controller.dataClient['startDate'] as String?;
-      final duration = int.tryParse("${controller.dataClient['duration']}") ?? 1;
-      
-      if (startDateStr != null) {
-        try {
-          final periodText = formatTanggalSewa(
-            controller.dataClient['date'] ?? startDateStr,
-            duration,
-            isHighSeason: true,
-          );
-          
-          return detailRincianHarga(
-            "Harga sewa unit periode\n$periodText",
-            'Rp. ${formatRupiah(controller.detailData['total_rent_price'])}',
-          );
-        } catch (e) {
-          // Fallback to duration format if date parsing fails
-          return detailRincianHarga(
-            "${controller.dataClient['duration']} Hari",
-            'Rp. ${formatRupiah(controller.detailData['total_rent_price'])}',
-          );
-        }
+    if (isHighSeason && startDateStr != null && endDateStr != null) {
+      try {
+        final start = DateTime.parse(startDateStr).toLocal();
+        final end = DateTime.parse(endDateStr).toLocal();
+        final formatter = DateFormat("dd/MM/yyyy HH:mm");
+        final periodText = "${formatter.format(start)} - ${formatter.format(end)}";
+        
+        return detailRincianHarga(
+          "Harga sewa unit periode\n$periodText",
+          'Rp. ${formatRupiah(controller.detailData['total_rent_price'])}',
+        );
+      } catch (e) {
+        // Fallback below
       }
     }
     
     // Normal format for non-high season
     return detailRincianHarga(
-      "${controller.dataClient['duration']} Hari",
+      "$duration Hari",
       'Rp. ${formatRupiah(controller.detailData['total_rent_price'])}',
     );
   }

@@ -179,7 +179,16 @@ class BottomEstimation extends StatelessWidget {
     }
 
     final String formattedDate = DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(rentDate);
-    final DateTime endDate = rentDate.add(Duration(days: duration));
+    
+    // Use the pre-calculated endDate from dataClient if available (it handles high season 23:59 logic)
+    final endDateStr = controller.dataClient['endDate'];
+    DateTime endDate;
+    if (endDateStr != null && endDateStr.toString().isNotEmpty) {
+      endDate = DateTime.tryParse(endDateStr.toString())?.toLocal() ?? rentDate.add(Duration(days: duration));
+    } else {
+      endDate = rentDate.add(Duration(days: duration));
+    }
+    
     final String formattedEndDate = DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(endDate);
 
     showModalBottomSheet(

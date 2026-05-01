@@ -99,7 +99,7 @@ class DashboardController extends GetxController
   /// Called when user picks a date - checks charge settings, updates time, and refreshes list.
   Future<void> onDatePicked() async {
     await checkChargeSettings();
-    // Use same default time logic as on open (today = now+2h, other days = 05:00/07:00)
+    // Use same default time logic as on open (today = now+2h, other days = 00:xx/07:00+)
     setDefaultTime();
     // Update pickedDateTimeISO when date/time changes
     pickedDateAndTime();
@@ -179,7 +179,7 @@ class DashboardController extends GetxController
     
     // Check charge settings to determine if default date is high season
     await checkChargeSettings();
-    // Set default time like time search: today = current hour + 2, other days = 05:00/07:00
+    // Set default time like time search: today = current hour + 2, other days = 00:xx/07:00+
     setDefaultTime();
     
     // Parallel API calls for independent data

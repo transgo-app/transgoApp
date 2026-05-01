@@ -717,15 +717,8 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
         pickedDate.month == now.month &&
         pickedDate.day == now.day);
 
-    // 1. Determine base allowed hours
-    List<int> baseHours;
-    if (isHighSeason) {
-      // High Season: 00:xx and 01:00 are allowed, 02-06 blocked, 07-23 allowed
-      baseHours = [0, 1, ...List.generate(maxHourLimit - 7 + 1, (i) => i + 7)];
-    } else {
-      // Normal: 07-23 allowed
-      baseHours = List.generate(maxHourLimit - 7 + 1, (i) => i + 7);
-    }
+    // Standard rule: allow 00:xx and 01:00, block 02-06, allow 07-23
+    final List<int> baseHours = [0, 1, ...List.generate(maxHourLimit - 7 + 1, (i) => i + 7)];
 
     // 2. Filter by "2 hours from now" if today
     if (isToday) {
