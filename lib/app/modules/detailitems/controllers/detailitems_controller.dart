@@ -30,6 +30,12 @@ class DetailitemsController extends GetxController {
     int duration = int.tryParse(durationStr?.toString() ?? '1') ?? 1;
     if (duration < 1) duration = 1;
 
+    // Apply time snapping: allow 00-01, block 02-06, allow 07-23
+    final localStart = startDate.toLocal();
+    if ((localStart.hour == 1 && localStart.minute > 0) || (localStart.hour > 1 && localStart.hour < 7)) {
+      startDate = DateTime(localStart.year, localStart.month, localStart.day, 7, 0);
+    }
+
     // Ensure dataClient is a mutable map and normalize core fields
     if (dataClient == null) {
       dataClient = <String, dynamic>{};
@@ -267,7 +273,7 @@ class DetailitemsController extends GetxController {
 
   /// Validates that the selected rental start time passes the same rules
   /// enforced by the search card time picker:
-  ///   1. Min hour: 05:00 for D-DAY high season, 07:00 otherwise.
+  ///   1. Min hour: 00:00/01:00 (special window) or 07:00+ for high season.
   ///   2. Max hour: 23:00.
   ///   3. At least 2 hours from now (rounded up to the nearest 30 minutes).
   /// Returns true if valid, otherwise shows an error snackbar and returns false.
@@ -276,7 +282,7 @@ class DetailitemsController extends GetxController {
     if (dateStr != null && dateStr.toString().isNotEmpty) {
       final start = DateTime.tryParse(dateStr.toString())?.toLocal();
       if (start != null) {
-        // Mirror search card: D-DAY high season → min 05:00, otherwise 07:00.
+        // Mirror search card: D-DAY high season → 00:00/01:00 or 07:00+; otherwise 07:00+.
         final alert = currentChargeAlert.value;
         final isDday = alert != null && alert['type'] == 'dday';
         if (isDday) {
@@ -902,7 +908,7 @@ class DetailitemsController extends GetxController {
   }
 
   /// Normalize default start/end time based on high season rules.
-  /// - If currentChargeAlert.type == 'dday' → minimum start at 05:00; else 07:00.
+  /// - If currentChargeAlert.type == 'dday' → follow high season window (00:xx, 01:00, 07:00+).
   /// - If rental crosses high season → end at 23:59 of last calendar day; else start + duration (24h).
   void _adjustDefaultTimeForHighSeason() {
     final rawDate = dataClient['date'];
@@ -911,13 +917,11 @@ class DetailitemsController extends GetxController {
     DateTime base = (DateTime.tryParse(rawDate.toString()) ?? DateTime.now()).toLocal();
 
     final alert = currentChargeAlert.value;
-    final bool isDdayHighSeason =
-        alert != null && alert['type']?.toString() == 'dday';
-
-    final int minHour = isDdayHighSeason ? 5 : 7;
-
-    if (base.hour < minHour) {
-      base = DateTime(base.year, base.month, base.day, minHour, 0);
+    // Standardized rule: allow 00:xx, allow 01:00, block 01:01-06:xx, allow 07:xx+
+    bool isInvalid = (base.hour == 1 && base.minute > 0) || 
+                    (base.hour > 1 && base.hour < 7);
+    if (isInvalid) {
+      base = DateTime(base.year, base.month, base.day, 7, 0);
     }
 
     dataClient['date'] = base.toIso8601String();

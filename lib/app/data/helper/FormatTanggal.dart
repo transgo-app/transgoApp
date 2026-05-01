@@ -27,7 +27,7 @@ String formatTanggalSewa(String isoDate, int duration, {bool isHighSeason = fals
   if (isHighSeason) {
     // Per-date calculation: end at 23:59 of the last calendar date
     // Duration includes the start date, so if duration = 3, it's start date + 2 more days
-    // Example: Start Monday 05:00, duration 3 → ends Wednesday 23:59
+    // Example: Start Monday 00:00, duration 3 → ends Wednesday 23:59
     final endDate = start.add(Duration(days: duration - 1));
     final end = tz.TZDateTime(
       jakarta,

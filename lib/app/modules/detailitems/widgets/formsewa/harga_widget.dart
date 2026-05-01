@@ -340,9 +340,8 @@ class _BottomTimePickerHarga extends StatefulWidget {
 }
 
 class _BottomTimePickerHargaState extends State<_BottomTimePickerHarga> {
-  static const int maxHour = 23;
+  final List<int> availableHours = [0, 1, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 
-  late int minHour;
   late int hour;
   late int minute;
 
@@ -353,25 +352,32 @@ class _BottomTimePickerHargaState extends State<_BottomTimePickerHarga> {
   void initState() {
     super.initState();
 
-    // Determine high season D-DAY based on charge settings alert
-    final alert = widget.controller.currentChargeAlert.value;
-    final isHighSeason = alert != null && alert['type'] == 'dday';
-    minHour = isHighSeason ? 5 : 7;
-
     final base =
         DateTime.tryParse(widget.controller.dataClient['startDate'] ?? '') ??
             DateTime.now();
 
-    // If high season and no time set yet (or time is before 5:00), default to 5:00
-    if (isHighSeason && (base.hour < 5 || widget.controller.dataClient['startDate'] == null)) {
-      hour = 5;
-      minute = 0;
-    } else {
-      hour = base.hour.clamp(minHour, maxHour);
-      minute = base.minute;
+    hour = base.hour;
+    minute = base.minute;
+
+    // If initial hour is in the forbidden range (2-6), snap to 7
+    if (hour >= 2 && hour < 7) {
+      hour = 7;
     }
 
-    hourController = FixedExtentScrollController(initialItem: hour - minHour);
+    // If hour is 1, minute must be 0
+    if (hour == 1 && minute > 0) {
+      minute = 0;
+    }
+
+    // Find index of the hour in availableHours
+    int initialHourIndex = availableHours.indexOf(hour);
+    if (initialHourIndex == -1) {
+      // Fallback if not found (shouldn't happen with the logic above)
+      initialHourIndex = availableHours.indexOf(7);
+      hour = 7;
+    }
+
+    hourController = FixedExtentScrollController(initialItem: initialHourIndex);
     minuteController = FixedExtentScrollController(initialItem: minute);
   }
 
@@ -407,9 +413,9 @@ class _BottomTimePickerHargaState extends State<_BottomTimePickerHarga> {
                     itemExtent: 40,
                     physics: const FixedExtentScrollPhysics(),
                     childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: maxHour - minHour + 1,
+                      childCount: availableHours.length,
                       builder: (_, index) {
-                        final h = minHour + index;
+                        final h = availableHours[index];
                         return Center(
                           child: Text(
                             h.toString().padLeft(2, '0'),
@@ -420,7 +426,12 @@ class _BottomTimePickerHargaState extends State<_BottomTimePickerHarga> {
                     ),
                     onSelectedItemChanged: (index) {
                       setState(() {
-                        hour = minHour + index;
+                        hour = availableHours[index];
+                        // If hour is 1, force minute to 0
+                        if (hour == 1 && minute > 0) {
+                          minute = 0;
+                          minuteController.jumpToItem(0);
+                        }
                       });
                     },
                   ),
@@ -444,7 +455,13 @@ class _BottomTimePickerHargaState extends State<_BottomTimePickerHarga> {
                     ),
                     onSelectedItemChanged: (index) {
                       setState(() {
-                        minute = index;
+                        // If hour is 1, only allow minute 0
+                        if (hour == 1) {
+                          minute = 0;
+                          minuteController.jumpToItem(0);
+                        } else {
+                          minute = index;
+                        }
                       });
                     },
                   ),

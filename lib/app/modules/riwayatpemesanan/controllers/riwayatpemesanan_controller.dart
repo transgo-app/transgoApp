@@ -116,7 +116,7 @@ class RiwayatpemesananController extends GetxController {
       // Build query string so that when no status filter is selected ("Semua" tab),
       // we do NOT send an empty status parameter to the API. Some backends treat
       // "status=" as an actual filter that returns no data.
-      final String statusQuery = statusFilter.value.isNotEmpty
+      final String statusQuery = statusFilter.value != ''
           ? '&status=${statusFilter.value}'
           : '';
 
@@ -268,7 +268,7 @@ class RiwayatpemesananController extends GetxController {
             const SizedBox(height: 8),
             Obx(() {
               final dateStr = localOrder['start_date'] ?? '';
-              final formatted = dateStr.isNotEmpty 
+              final formatted = dateStr != '' 
                   ? formatTanggalIndonesia(dateStr) 
                   : "Pilih tanggal";
               return BackgroundCard(
@@ -307,7 +307,7 @@ class RiwayatpemesananController extends GetxController {
                       const SizedBox(height: 8),
                       Obx(() {
                         final dateStr = localOrder['start_date'] ?? '';
-                        final time = dateStr.isNotEmpty 
+                        final time = dateStr != '' 
                             ? DateFormat('HH:mm').format(DateTime.parse(dateStr)) 
                             : "12:00";
                         return BackgroundCard(
