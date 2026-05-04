@@ -44,8 +44,8 @@ android {
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
 
-        versionCode = 53
-        versionName = "2.3.1"
+        versionCode = 54
+        versionName = "2.2.4"
     }
 
     flavorDimensions += "version"
