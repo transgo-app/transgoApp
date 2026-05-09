@@ -668,7 +668,7 @@ class DashboardController extends GetxController
 
   Future<void> getKotaKendaraan() async {
     try {
-      var data = await APIService().get('/locations?limit=100&page=1&q=');
+      var data = await APIService().get('/locations?limit=100&page=1&q=&is_active=true');
       List allKota = data['items'];
 
       if (selectedKategori.value == 'iphone' ||
