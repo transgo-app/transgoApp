@@ -326,8 +326,8 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
                         const SizedBox(height: 8),
                         Obx(() => _buildReviewButton(data, itemName)),
                       ],
-                      // Ganti Jadwal button only for "Terkonfirmasi"
-                      if (data['order_status'] == 'confirmed') ...[
+                      // Ganti Jadwal button only for "Terkonfirmasi" tab
+                      if (data['order_status'] == 'confirmed' && controller.statusFilter.value == 'confirmed') ...[
                         const SizedBox(height: 8),
                         SizedBox(
                           width: double.infinity,
