@@ -81,6 +81,8 @@ class FilterWidget extends StatelessWidget {
                   _buildFilterMerk(controller),
                   const SizedBox(height: 16),
                   _buildFilterTier(controller),
+                  const SizedBox(height: 16),
+                  _buildFilterWithDriverOnly(controller),
                   const SizedBox(height: 20),
                   _buildApplyFilterButton(controller),
                 ],
@@ -309,6 +311,38 @@ class FilterWidget extends StatelessWidget {
               icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
             );
           },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterWithDriverOnly(DashboardController controller) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            gabaritoText(
+              text: "Driver Only",
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+            gabaritoText(
+              text: "Hanya unit dengan driver",
+              fontSize: 11,
+              textColor: Colors.grey,
+            ),
+          ],
+        ),
+        Obx(
+          () => Switch(
+            value: controller.withDriverOnly.value,
+            onChanged: (value) {
+              controller.withDriverOnly.value = value;
+            },
+            activeColor: solidPrimary,
+          ),
         ),
       ],
     );

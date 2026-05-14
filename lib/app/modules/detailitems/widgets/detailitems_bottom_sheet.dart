@@ -37,11 +37,23 @@ class DetailitemsBottomSheet extends StatelessWidget {
               : 10, // Keep padding even if no system bar
         ),
         child: Obx(() {
-          final double rentPrice =
-              (controller.detailData['rent_price'] ?? 0).toDouble();
-          final double discount =
-              (controller.detailData['discount_percentage'] ?? 0).toDouble();
+          final dynamic fleet = controller.detailData['fleet'];
+          final bool isWithDriverOnly = fleet?['with_driver_only'] == true;
+
+          dynamic rawRentPrice;
+          if (isWithDriverOnly) {
+            rawRentPrice = fleet?['with_driver_only_price'];
+          } else {
+            rawRentPrice = controller.detailData['rent_price'];
+          }
+          
+          final double rentPrice = double.tryParse(rawRentPrice.toString()) ?? 0;
+
+          final double discount = isWithDriverOnly
+              ? 0
+              : (controller.detailData['discount_percentage'] ?? 0).toDouble();
           final double finalPrice = rentPrice - (rentPrice * discount / 100);
+          final String durationLabel = isWithDriverOnly ? "12 Jam" : "Hari";
 
           return SingleChildScrollView(
             child: Column(
@@ -55,7 +67,7 @@ class DetailitemsBottomSheet extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: gabaritoText(
                     text:
-                        "Rp ${NumberFormat.decimalPattern('id').format(finalPrice)} / Hari",
+                        "Rp ${NumberFormat.decimalPattern('id').format(finalPrice)} / $durationLabel",
                     fontSize: 16,
                     textColor: primaryColor,
                   ),

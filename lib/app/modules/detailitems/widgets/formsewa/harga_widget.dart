@@ -45,25 +45,49 @@ class HargaWidget extends StatelessWidget {
       controller.updateTotalHarga();
 
       final dynamic product = controller.detailData['product'];
-      final int hargaOriginal = controller.isKendaraan
-          ? (controller.detailData['rent_price'] ?? 0)
-          : ((product is Map)
-              ? (product['price_after_discount'] ?? product['price'] ?? 0)
-              : 0);
+      final dynamic fleet = controller.detailData['fleet'];
+      final bool isWithDriverOnly = fleet?['with_driver_only'] == true;
+
+      int hargaOriginal = 0;
+      if (controller.isKendaraan) {
+        if (isWithDriverOnly) {
+          final rawPrice = fleet['with_driver_only_price'];
+          hargaOriginal = int.tryParse(rawPrice.toString().split('.')[0]) ?? 0;
+        } else {
+          final rawPrice = controller.detailData['rent_price'];
+          hargaOriginal = int.tryParse(rawPrice.toString().split('.')[0]) ?? 0;
+        }
+      } else {
+        final rawPrice = (product is Map)
+            ? (product['price_after_discount'] ?? product['price'] ?? 0)
+            : 0;
+        hargaOriginal = int.tryParse(rawPrice.toString().split('.')[0]) ?? 0;
+      }
 
       final int hargaOriginalTotal = hargaOriginal * durasi;
       final int diskon = hargaOriginalTotal - controller.totalHarga.value;
 
-      // Use hybrid high season: rental crosses high season → end 23:59 last day
-      final isHighSeason = controller.rentalCrossesHighSeason.value;
+      // Only use hybrid high season for non-WDO fleets
+      final isHighSeason =
+          controller.rentalCrossesHighSeason.value && !isWithDriverOnly;
+
       String dateRangeText;
-      
-      if (isHighSeason) {
+
+      if (isWithDriverOnly) {
+        // Driver Only: Exactly 12 hours per day duration
+        // 1 day = start + 12h
+        // 2 days = start + 24h + 12h (36h total)
+        final actualEndDate =
+            startDate.add(Duration(days: durasi - 1, hours: 12));
+        dateRangeText =
+            "${DateFormat('dd MMM yyyy HH:mm').format(startDate)} - ${DateFormat('dd MMM yyyy HH:mm').format(actualEndDate)}";
+      } else if (isHighSeason) {
         // Per-date calculation: show full period with end time at 23:59
         final endDateForDisplay = startDate.add(Duration(days: durasi - 1));
-        final endTime = DateTime(endDateForDisplay.year, endDateForDisplay.month, 
+        final endTime = DateTime(endDateForDisplay.year, endDateForDisplay.month,
             endDateForDisplay.day, 23, 59);
-        dateRangeText = "${DateFormat('dd MMM yyyy HH:mm').format(startDate)} - ${DateFormat('dd MMM yyyy HH:mm').format(endTime)}";
+        dateRangeText =
+            "${DateFormat('dd MMM yyyy HH:mm').format(startDate)} - ${DateFormat('dd MMM yyyy HH:mm').format(endTime)}";
       } else {
         // Per-day calculation: show start date/time only (end calculated as 24h later)
         final tanggalText = DateFormat('dd MMM yyyy').format(startDate);
@@ -104,12 +128,13 @@ class HargaWidget extends StatelessWidget {
                               fontSize: 14,
                               color: Colors.white70,
                               decoration: TextDecoration.lineThrough,
+                              decorationThickness: 0.8,
                             ),
                           ),
                       ],
                     ),
                     Text(
-                      "/$durasi Hari",
+                      "/${isWithDriverOnly ? (durasi * 12).toString() + ' Jam' : durasi.toString() + ' Hari'}",
                       style: gabaritoTextStyle.copyWith(
                         fontSize: 14,
                         color: Colors.white70,
@@ -117,7 +142,7 @@ class HargaWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (controller.isKendaraan)
+                if (controller.isKendaraan && !isWithDriverOnly)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Text(
@@ -145,14 +170,14 @@ class HargaWidget extends StatelessWidget {
                                 fontSize: 14,
                                 color: Colors.white,
                               ),
-                              maxLines: isHighSeason ? 2 : 1,
+                              maxLines: (isHighSeason || isWithDriverOnly) ? 2 : 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    if (!isHighSeason)
+                    if (!isHighSeason && !isWithDriverOnly)
                       const Icon(Icons.arrow_forward_ios,
                           color: Colors.white, size: 16),
                   ],

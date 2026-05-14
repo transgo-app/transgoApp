@@ -17,8 +17,10 @@ String formatTanggalIndonesia(String isoDate) {
   }
 }
 
-String formatTanggalSewa(String isoDate, int duration, {bool isHighSeason = false}) {
-  final startUtc = DateTime.parse(isoDate);
+String formatTanggalSewa(String? isoDate, int duration, {bool isHighSeason = false}) {
+  if (isoDate == null || isoDate.isEmpty) return '-';
+  final startUtc = DateTime.tryParse(isoDate);
+  if (startUtc == null) return isoDate;
   final jakarta = tz.getLocation('Asia/Jakarta');
   final start = tz.TZDateTime.from(startUtc, jakarta);
 
@@ -69,13 +71,14 @@ String formatTanggalNew2(String isoDate) {
 /// [calendarRanges] is the list from order-calculation-settings (calendar_dates_ranges).
 /// [categoryType] is 'car' or 'motorcycle' (only these use high season in the app).
 bool rentalPeriodCrossesHighSeason(
-  String startDateStr,
+  String? startDateStr,
   int duration,
   String? categoryType,
   List<dynamic>? calendarRanges,
 ) {
   if (calendarRanges == null || calendarRanges.isEmpty || duration <= 0) return false;
   if (categoryType != 'car' && categoryType != 'motorcycle') return false;
+  if (startDateStr == null) return false;
   final start = DateTime.tryParse(startDateStr);
   if (start == null) return false;
   final startLocal = start.toLocal();

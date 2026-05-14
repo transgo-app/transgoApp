@@ -352,6 +352,7 @@ class RincianOrderModal extends StatelessWidget {
                             ),
                             ReusableButton(
                               ontap: () {
+                                if (controller.isLoadinggetdetailkendaraan.value) return;
                                 if (!controller.menyetujuiSnK.value) {
                                   return CustomSnackbar.show(
                                       title: "Terjadi Kesalahan",
@@ -376,14 +377,29 @@ class RincianOrderModal extends StatelessWidget {
                                             barrierDismissible: false,
                                             PopScope(
                                                 canPop: false,
-                                                child: DialogBerhasilSewa()));
+                                                child: const DialogBerhasilSewa()));
                                       }
                                     });
                                   }
                                 }
                               },
                               bgColor: primaryColor,
-                              title: "Sewa Sekarang",
+                              widget: Center(
+                                child: Obx(() => controller.isLoadinggetdetailkendaraan.value
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const gabaritoText(
+                                        text: "Sewa Sekarang",
+                                        textColor: Colors.white,
+                                        fontSize: 16,
+                                      )),
+                              ),
                             ),
                             const SizedBox(height: 10),
                             ReusableButton(

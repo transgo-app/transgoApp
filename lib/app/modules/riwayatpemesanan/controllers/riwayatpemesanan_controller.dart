@@ -46,6 +46,22 @@ class RiwayatpemesananController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    // Check for initial status filter from arguments
+    if (Get.arguments is Map && Get.arguments['status'] != null) {
+      final status = Get.arguments['status'].toString();
+      statusFilter.value = status;
+
+      // Update indexActive to match the status
+      for (int i = 0; i < filterTitle.length; i++) {
+        final statusItem = filterTitle[i]['status'];
+        if (statusItem != null && statusItem.toString() == status) {
+          indexActive.value = i;
+          break;
+        }
+      }
+    }
+
     fetchChargeSettings();
     getListKendaraan();
 
@@ -68,7 +84,7 @@ class RiwayatpemesananController extends GetxController {
   }
 
   /// True if rental period [startDate, startDate + duration - 1] crosses any high season range.
-  bool rentalCrossesHighSeason(String startDateStr, int duration, dynamic orderData) {
+  bool rentalCrossesHighSeason(String? startDateStr, int duration, dynamic orderData) {
     final ranges = chargeSettings['calendar_dates_ranges'] as List?;
     final fleet = orderData['fleet'];
     final product = orderData['product'];
@@ -274,17 +290,25 @@ class RiwayatpemesananController extends GetxController {
               return BackgroundCard(
                 ontap: () async {
                   final current = DateTime.tryParse("${localOrder['start_date']}") ?? DateTime.now();
+                  final now = DateTime.now();
+                  final first = now;
+                  final last = now.add(const Duration(days: 365 * 5));
+                  
+                  DateTime initial = current;
+                  if (initial.isBefore(first)) initial = first;
+                  if (initial.isAfter(last)) initial = last;
+
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: current,
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    initialDate: initial,
+                    firstDate: first,
+                    lastDate: last,
                   );
-                  if (picked != null) {
-                    final time = current;
-                    final newDateTime = DateTime(picked.year, picked.month, picked.day, time.hour, time.minute);
-                    localOrder['start_date'] = newDateTime.toIso8601String();
-                  }
+                    if (picked != null) {
+                      final time = current;
+                      final newDateTime = DateTime(picked.year, picked.month, picked.day, time.hour, time.minute);
+                      localOrder['start_date'] = newDateTime.toUtc().toIso8601String();
+                    }
                 },
                 height: 50,
                 body: Row(
@@ -319,7 +343,7 @@ class RiwayatpemesananController extends GetxController {
                             );
                             if (picked != null) {
                               final newDateTime = DateTime(current.year, current.month, current.day, picked.hour, picked.minute);
-                              localOrder['start_date'] = newDateTime.toIso8601String();
+                              localOrder['start_date'] = newDateTime.toUtc().toIso8601String();
                             }
                           },
                           height: 50,

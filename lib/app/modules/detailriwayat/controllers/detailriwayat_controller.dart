@@ -390,16 +390,24 @@ class DetailriwayatController extends GetxController {
 
   Future<void> _handleDatePicker(BuildContext context) async {
     final current = DateTime.tryParse("${detaiItemsID['start_date']}") ?? DateTime.now();
+    final now = DateTime.now();
+    final first = now;
+    final last = now.add(const Duration(days: 365 * 5));
+    
+    DateTime initial = current;
+    if (initial.isBefore(first)) initial = first;
+    if (initial.isAfter(last)) initial = last;
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: current,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initial,
+      firstDate: first,
+      lastDate: last,
     );
     if (picked != null) {
       final time = current;
       final newDateTime = DateTime(picked.year, picked.month, picked.day, time.hour, time.minute);
-      detaiItemsID['start_date'] = newDateTime.toIso8601String();
+      detaiItemsID['start_date'] = newDateTime.toUtc().toIso8601String();
       detaiItemsID.refresh();
     }
   }
@@ -412,7 +420,7 @@ class DetailriwayatController extends GetxController {
     );
     if (picked != null) {
       final newDateTime = DateTime(current.year, current.month, current.day, picked.hour, picked.minute);
-      detaiItemsID['start_date'] = newDateTime.toIso8601String();
+      detaiItemsID['start_date'] = newDateTime.toUtc().toIso8601String();
       detaiItemsID.refresh();
     }
   }

@@ -41,14 +41,14 @@ class DialogBerhasilSewa extends StatelessWidget {
             ReusableButton(
               height: 50,
               ontap: () {
-                // Close dialog and go back to detail kendaraan page
-                Get.back();
+                // Redirect to NavigationPage (root route) with index 1 (Riwayat) and status confirmed
+                Get.offAllNamed('/', arguments: {'index': 1, 'status': 'confirmed'});
               },
               bgColor: Colors.white,
               borderSideColor: Colors.grey,
               textColor: Colors.black,
               widget: Center(
-                child: poppinsText(text: "Kembali", textColor: Colors.black, fontWeight: FontWeight.w600,)
+                child: poppinsText(text: "Lihat Pesanan", textColor: Colors.black, fontWeight: FontWeight.w600,)
               ),
             ),
             const SizedBox(height: 10,)

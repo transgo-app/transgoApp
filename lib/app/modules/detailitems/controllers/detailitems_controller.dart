@@ -342,15 +342,29 @@ class DetailitemsController extends GetxController {
   }
 
   void updateTotalHarga() {
-    final harga = isKendaraan
-        ? (detailData['rent_price'] ?? 0) -
-            ((detailData['rent_price'] ?? 0) *
-                    (detailData['discount_percentage'] ?? 0) /
-                    100)
-                .toInt()
-        : (detailData['product']?['price_after_discount'] ??
-            detailData['product']?['price'] ??
-            0);
+    final fleet = detailData['fleet'];
+    final bool isWithDriverOnly = fleet?['with_driver_only'] == true;
+
+    int basePrice = 0;
+    if (isKendaraan) {
+      if (isWithDriverOnly) {
+        final rawPrice = fleet?['with_driver_only_price'];
+        basePrice = int.tryParse(rawPrice.toString().split('.')[0]) ?? 0;
+      } else {
+        final rawPrice = detailData['rent_price'];
+        basePrice = int.tryParse(rawPrice.toString().split('.')[0]) ?? 0;
+      }
+    } else {
+      final rawPrice = (detailData['product']?['price_after_discount'] ??
+          detailData['product']?['price'] ??
+          0);
+      basePrice = int.tryParse(rawPrice.toString().split('.')[0]) ?? 0;
+    }
+
+    final harga = (isKendaraan && !isWithDriverOnly)
+        ? basePrice -
+            (basePrice * (detailData['discount_percentage'] ?? 0) / 100).toInt()
+        : basePrice;
     totalHarga.value = harga * selectedDurasi.value;
   }
 

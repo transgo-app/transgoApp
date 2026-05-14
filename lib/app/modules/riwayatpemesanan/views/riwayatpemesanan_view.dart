@@ -16,7 +16,8 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
     return '${text.substring(0, limit)}...';
   }
 
-  String _formatRentalPeriod(String startDateStr, int duration, bool isHighSeason) {
+  String _formatRentalPeriod(String? startDateStr, int duration, bool isHighSeason) {
+    if (startDateStr == null || startDateStr.isEmpty) return 'Waktu tidak tersedia';
     try {
       return formatTanggalSewa(startDateStr, duration, isHighSeason: isHighSeason);
     } catch (e) {
@@ -36,6 +37,7 @@ class RiwayatpemesananView extends GetView<RiwayatpemesananController> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
+      initialIndex: controller.indexActive.value,
       length: controller.filterTitle.length,
       child: Scaffold(
         backgroundColor: Colors.white,

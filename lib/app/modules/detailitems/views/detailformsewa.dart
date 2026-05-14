@@ -16,6 +16,7 @@ import '../widgets/formsewa/section_voucher.dart';
 import '../widgets/formsewa/section_supir.dart';
 import '../widgets/formsewa/transgovers.dart';
 import '../widgets/charge_widget.dart';
+import '../widgets/formsewa/section_driver_info.dart';
 
 class DetailFormSewa extends GetView<DetailitemsController> {
   const DetailFormSewa({super.key});
@@ -141,6 +142,8 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                       const SizedBox(height: 20),
                       HargaWidget(controller: controller),
                       AddonsListView(controller: controller),
+                      if (controller.isKendaraan)
+                        SectionDriverInfo(controller: controller),
                       if (controller.isKendaraan)
                         DriverOption(controller: controller),
                       const SizedBox(height: 20),

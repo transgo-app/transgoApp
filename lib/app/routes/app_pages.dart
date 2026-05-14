@@ -47,7 +47,13 @@ class AppPages {
   static final routes = [
     GetPage(
       name: _Paths.DEFAULT,
-      page: () => NavigationPage(selectedIndex: Get.arguments is int ? Get.arguments as int : 0),
+      page: () => NavigationPage(
+        selectedIndex: Get.arguments is int 
+            ? Get.arguments as int 
+            : (Get.arguments is Map && Get.arguments['index'] is int 
+                ? Get.arguments['index'] as int 
+                : 0),
+      ),
     ),
     GetPage(
       name: _Paths.LOGIN,

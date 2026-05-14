@@ -315,6 +315,7 @@ class DashboardController extends GetxController
   RxString selectedTier = ''.obs;
   RxString minPrice = ''.obs;
   RxString maxPrice = ''.obs;
+  RxBool withDriverOnly = false.obs;
   RxList<Map<String, dynamic>> availableBrands = <Map<String, dynamic>>[].obs;
   RxList<String> availableTiers = <String>[].obs;
 
@@ -485,6 +486,9 @@ class DashboardController extends GetxController
         }
         if (maxPrice.value.isNotEmpty) {
           filterParams += '&max_price=${Uri.encodeComponent(maxPrice.value)}';
+        }
+        if (withDriverOnly.value) {
+          filterParams += '&with_driver_only=true';
         }
         apiUrl =
             '/fleets/available?limit=10&page=$currentPage&q=${Uri.encodeComponent(searchQuery.value)}&location_id=${selectedLokasiKendaraan.value}&date=${Uri.encodeComponent(pickedDateTimeISO.value)}&duration=${selectedDurasiSewa.value}${selectedKategori.value != '-' ? '&type=${selectedKategori.value}' : ''}$filterParams';
@@ -744,6 +748,7 @@ class DashboardController extends GetxController
     selectedTier.value = '';
     minPrice.value = '';
     maxPrice.value = '';
+    withDriverOnly.value = false;
   }
 
   final List<Map<String, String>> cardDataLayanan = [
