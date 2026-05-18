@@ -282,45 +282,61 @@ class DetailitemsController extends GetxController {
     if (dateStr != null && dateStr.toString().isNotEmpty) {
       final start = DateTime.tryParse(dateStr.toString())?.toLocal();
       if (start != null) {
-        // Mirror search card: D-DAY high season → 00:00/01:00 or 07:00+; otherwise 07:00+.
-        final alert = currentChargeAlert.value;
-        final isDday = alert != null && alert['type'] == 'dday';
-        if (isDday) {
-          // High season rule: allow 00:xx, allow 01:00, block 01:01-06:xx, allow 07:xx+
-          bool isInvalid = (start.hour == 1 && start.minute > 0) || 
-                          (start.hour > 1 && start.hour < 7);
-          
-          if (isInvalid) {
+        final fleet = detailData['fleet'];
+        final bool isWithDriverOnly = fleet?['with_driver_only'] == true || 
+                                     dataServer?['with_driver_only'] == true;
+
+        if (isWithDriverOnly) {
+          if (start.hour < 7 || start.hour > 21) {
             CustomSnackbar.show(
               title: "Waktu sewa tidak valid",
               message:
-                  "Untuk periode ini, pemesanan jam 01:00 - 06:59 tidak tersedia. Silakan pilih jam 00:00 atau mulai dari jam 07:00.",
+                  "Khusus armada ini, waktu mulai sewa adalah pukul 07:00 - 21:00 WIB.",
               icon: Icons.schedule,
             );
             return false;
           }
         } else {
-          // Normal rule: min 07:xx
-          if (start.hour < 7) {
+          // Mirror search card: D-DAY high season → 00:00/01:00 or 07:00+; otherwise 07:00+.
+          final alert = currentChargeAlert.value;
+          final isDday = alert != null && alert['type'] == 'dday';
+          if (isDday) {
+            // High season rule: allow 00:xx, allow 01:00, block 01:01-06:xx, allow 07:xx+
+            bool isInvalid = (start.hour == 1 && start.minute > 0) || 
+                            (start.hour > 1 && start.hour < 7);
+            
+            if (isInvalid) {
+              CustomSnackbar.show(
+                title: "Waktu sewa tidak valid",
+                message:
+                    "Untuk periode ini, pemesanan jam 01:00 - 06:59 tidak tersedia. Silakan pilih jam 00:00 atau mulai dari jam 07:00.",
+                icon: Icons.schedule,
+              );
+              return false;
+            }
+          } else {
+            // Normal rule: min 07:xx
+            if (start.hour < 7) {
+              CustomSnackbar.show(
+                title: "Waktu sewa tidak valid",
+                message:
+                    "Waktu mulai sewa minimal pukul 07:00. Silakan kembali dan pilih waktu yang sesuai.",
+                icon: Icons.schedule,
+              );
+              return false;
+            }
+          }
+
+          const maxHour = 23;
+          if (start.hour > maxHour) {
             CustomSnackbar.show(
               title: "Waktu sewa tidak valid",
               message:
-                  "Waktu mulai sewa minimal pukul 07:00. Silakan kembali dan pilih waktu yang sesuai.",
+                  "Waktu mulai sewa maksimal pukul 23:00. Silakan kembali dan pilih waktu yang sesuai.",
               icon: Icons.schedule,
             );
             return false;
           }
-        }
-
-        const maxHour = 23;
-        if (start.hour > maxHour) {
-          CustomSnackbar.show(
-            title: "Waktu sewa tidak valid",
-            message:
-                "Waktu mulai sewa maksimal pukul 23:00. Silakan kembali dan pilih waktu yang sesuai.",
-            icon: Icons.schedule,
-          );
-          return false;
         }
 
         // Mirror search card: minTime = DateTime(now.year, now.month, now.day, now.hour + 2)
@@ -344,6 +360,9 @@ class DetailitemsController extends GetxController {
   void updateTotalHarga() {
     final fleet = detailData['fleet'];
     final bool isWithDriverOnly = fleet?['with_driver_only'] == true;
+    if (isWithDriverOnly) {
+      isWithDriver.value = true;
+    }
 
     int basePrice = 0;
     if (isKendaraan) {

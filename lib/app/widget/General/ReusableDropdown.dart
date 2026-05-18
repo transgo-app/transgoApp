@@ -100,6 +100,7 @@ class DurationDropdown extends StatefulWidget {
   final String time;
   final Function(DurationOption)? onSelectionChanged;
   final int? minimumDuration; // Minimum duration for high season (null means no minimum)
+  final bool isWithDriverOnly;
 
   const DurationDropdown({
     Key? key,
@@ -107,6 +108,7 @@ class DurationDropdown extends StatefulWidget {
     required this.time,
     this.onSelectionChanged,
     this.minimumDuration,
+    this.isWithDriverOnly = false,
   }) : super(key: key);
 
   @override
@@ -135,8 +137,9 @@ class _DurationDropdownState extends State<DurationDropdown> {
   @override
   void didUpdateWidget(DurationDropdown oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update options and selection when minimumDuration changes
-    if (oldWidget.minimumDuration != widget.minimumDuration) {
+    // Update options and selection when minimumDuration or WDO mode changes
+    if (oldWidget.minimumDuration != widget.minimumDuration || 
+        oldWidget.isWithDriverOnly != widget.isWithDriverOnly) {
       options = _generateDurationOptions();
       if (widget.minimumDuration != null && widget.minimumDuration! > 0) {
         final minOption = options.firstWhere(
@@ -159,12 +162,33 @@ class _DurationDropdownState extends State<DurationDropdown> {
     final minDays = widget.minimumDuration ?? 1;
     
     for (int i = minDays; i <= 30; i++) {
-      DateTime endDate = startDate.add(Duration(days: i));
+      DateTime endDate;
+      String displayTime = widget.time;
+      String label = '$i Hari';
+
+      if (widget.isWithDriverOnly) {
+        label = '$i Hari (${i * 12} Jam)';
+        // Parse the start date and time to calculate exact end time
+        DateTime fullStart = DateTime(startDate.year, startDate.month, startDate.day);
+        try {
+          List<String> timeParts = widget.time.split(':');
+          fullStart = DateTime(startDate.year, startDate.month, startDate.day, 
+                               int.parse(timeParts[0]), int.parse(timeParts[1]));
+        } catch (_) {}
+        
+        final calculatedEnd = fullStart.add(Duration(hours: i * 12));
+        final endOfSameDay = DateTime(fullStart.year, fullStart.month, fullStart.day, 23, 59, 59);
+        endDate = calculatedEnd.isAfter(endOfSameDay) ? endOfSameDay : calculatedEnd;
+        displayTime = DateFormat('HH:mm').format(endDate);
+      } else {
+        endDate = startDate.add(Duration(days: i));
+      }
+
       result.add(DurationOption(
         days: i,
-        label: '$i Hari',
+        label: label,
         endDate: _formatDate(endDate),
-        displayTime: widget.time,
+        displayTime: displayTime,
       ));
     }
     

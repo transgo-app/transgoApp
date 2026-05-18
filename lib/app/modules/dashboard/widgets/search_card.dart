@@ -65,6 +65,8 @@ class _SearchCardState extends State<SearchCard> {
               const SizedBox(height: 16),
               _buildWaktu(context, controller),
               const SizedBox(height: 16),
+              _buildWithDriverToggle(controller),
+              const SizedBox(height: 16),
               _buildDurasi(controller),
               Obx(() {
                 final estimate = controller.rentalEndTimeEstimate;
@@ -435,14 +437,92 @@ class _SearchCardState extends State<SearchCard> {
     );
   }
 
+  Widget _buildWithDriverToggle(DashboardController controller) {
+    return Obx(() {
+      if (!controller.isWdoAvailable) {
+        return const SizedBox.shrink();
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const gabaritoText(
+            text: "Opsi Sewa",
+            fontSize: 14,
+          ),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.withOpacity(0.5)),
+            ),
+            child: InkWell(
+              onTap: () {
+                controller.withDriverOnly.value = !controller.withDriverOnly.value;
+                controller.onWdoToggled();
+                // Refresh list if category is selected
+                if (controller.selectedKategori.value.isNotEmpty) {
+                  controller.getList();
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      controller.withDriverOnly.value 
+                        ? Icons.person_pin_circle 
+                        : Icons.person_pin_circle_outlined,
+                      color: controller.withDriverOnly.value ? solidPrimary : Colors.grey,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          gabaritoText(
+                            text: "With Driver Only (WDO)",
+                            fontSize: 14,
+                            fontWeight: controller.withDriverOnly.value ? FontWeight.w600 : FontWeight.normal,
+                            textColor: controller.withDriverOnly.value ? Colors.black : Colors.black87,
+                          ),
+                          gabaritoText(
+                            text: "Sewa per 12 jam",
+                            fontSize: 11,
+                            textColor: Colors.grey,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: controller.withDriverOnly.value,
+                      onChanged: (value) {
+                        controller.withDriverOnly.value = value;
+                        controller.onWdoToggled();
+                        if (controller.selectedKategori.value.isNotEmpty) {
+                          controller.getList();
+                        }
+                      },
+                      activeColor: solidPrimary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
   Widget _buildDurasi(DashboardController controller) {
     return Obx(
       () => DurationDropdown(
         key: ValueKey(
-          '${controller.pickedDate.value}_${controller.pickedTime.value}_${controller.minimumDuration.value}',
+          '${controller.pickedDate.value}_${controller.pickedTime.value}_${controller.minimumDuration.value}_${controller.withDriverOnly.value}',
         ),
         startDate: convertDateFormat(controller.pickedDate.value),
         time: controller.pickedTime.value,
+        isWithDriverOnly: controller.withDriverOnly.value,
         minimumDuration: controller.minimumDuration.value > 0 
             ? controller.minimumDuration.value 
             : null,
@@ -717,15 +797,26 @@ class _BottomTimePickerState extends State<_BottomTimePicker> {
         pickedDate.month == now.month &&
         pickedDate.day == now.day);
 
-    // Standard rule: allow 00:xx and 01:00, block 02-06, allow 07-23
-    final List<int> baseHours = [0, 1, ...List.generate(maxHourLimit - 7 + 1, (i) => i + 7)];
+    // 1. Determine base hours based on WDO status and Peak Season
+    final List<int> baseHours;
+
+    if (widget.controller.withDriverOnly.value) {
+      // WDO Rule: strictly 07:00 - 21:00
+      baseHours = List.generate(21 - 7 + 1, (i) => i + 7);
+    } else if (isHighSeason) {
+      // High Season (Peak) Rule: allow 00:xx and 01:00, block 02-06, allow 07-23
+      baseHours = [0, 1, ...List.generate(maxHourLimit - 7 + 1, (i) => i + 7)];
+    } else {
+      // Normal Rule: strictly 07:00 - 23:00
+      baseHours = List.generate(maxHourLimit - 7 + 1, (i) => i + 7);
+    }
 
     // 2. Filter by "2 hours from now" if today
     if (isToday) {
       int minHourRequired = now.hour + 2;
       List<int> filtered = baseHours.where((h) => h >= minHourRequired).toList();
       
-      // Special case: if now is 22:00 or later, today might have no hours left
+      // Special case: if now is late, today might have no hours left
       if (filtered.isEmpty && baseHours.isNotEmpty) {
         allowedHours = [baseHours.last]; 
       } else {

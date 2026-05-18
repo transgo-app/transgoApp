@@ -182,8 +182,17 @@ class BottomEstimation extends StatelessWidget {
     
     // Use the pre-calculated endDate from dataClient if available (it handles high season 23:59 logic)
     final endDateStr = controller.dataClient['endDate'];
+    final isWithDriverOnly = controller.detailData['fleet']?['with_driver_only'] == true || 
+                             controller.dataServer?['with_driver_only'] == true;
+                             
     DateTime endDate;
-    if (endDateStr != null && endDateStr.toString().isNotEmpty) {
+    if (isWithDriverOnly) {
+      // For WDO, 1 unit = 12 hours
+      final calculatedEnd = rentDate.add(Duration(hours: duration * 12));
+      // CAP at 23:59 of the same day (WDO cannot cross into the next day)
+      final endOfSameDay = DateTime(rentDate.year, rentDate.month, rentDate.day, 23, 59, 59);
+      endDate = calculatedEnd.isAfter(endOfSameDay) ? endOfSameDay : calculatedEnd;
+    } else if (endDateStr != null && endDateStr.toString().isNotEmpty) {
       endDate = DateTime.tryParse(endDateStr.toString())?.toLocal() ?? rentDate.add(Duration(days: duration));
     } else {
       endDate = rentDate.add(Duration(days: duration));

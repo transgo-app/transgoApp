@@ -76,13 +76,17 @@ class DashboardController extends GetxController
       final twoHoursLater = now.add(const Duration(hours: 2));
       int hour = twoHoursLater.hour;
       
-      if (isHighSeason) {
+      if (withDriverOnly.value) {
+        // WDO specific: 07-21
+        if (hour < 7) hour = 7;
+        if (hour > 21) hour = 21;
+      } else if (isHighSeason) {
         // High season rule: allow 00:xx, block 01:xx-06:xx, allow 07:xx+
         if (hour >= 1 && hour < 7) {
           hour = 7;
         }
       } else {
-        // Normal rule: min 07:xx
+        // Normal non-WDO: strictly 07-23
         if (hour < 7) hour = 7;
       }
       
@@ -108,6 +112,33 @@ class DashboardController extends GetxController
     if (selectedKategori.value.isNotEmpty) {
       await getList();
     }
+  }
+
+  /// Adjusts time if it's invalid for the current WDO state
+  void onWdoToggled() {
+    if (pickedTime.value.isEmpty) return;
+    
+    try {
+      final hour = int.parse(pickedTime.value.split(':').first);
+      
+      if (withDriverOnly.value) {
+        // WDO constraints: 07:00 - 21:00
+        if (hour < 7 || hour > 21) {
+          setDefaultTime();
+        }
+      } else {
+        // Standard constraints: 00-01 or 07-23
+        // If it was exactly 21 for WDO, it's fine for standard too.
+        // But if it was some other restricted value, reset it.
+        if (hour > 1 && hour < 7) {
+          setDefaultTime();
+        }
+      }
+    } catch (_) {
+      setDefaultTime();
+    }
+    
+    pickedDateAndTime();
   }
 
   String getGreetingText() {
@@ -244,8 +275,23 @@ class DashboardController extends GetxController
     if (start == null) return '';
 
     final duration = int.tryParse(selectedDurasiSewa.value) ?? 1;
-    
-    // Determine if we are in calendar dates mode based on the current alert
+
+    // 1. With Driver Only (WDO) Logic: 12-hour units
+    if (withDriverOnly.value) {
+      DateTime endDate;
+      if (start.hour == 21 && start.minute == 0) {
+        // SPECIAL CASE: 21:00 starts end at 23:59 same day
+        endDate = DateTime(start.year, start.month, start.day, 23, 59, 59);
+      } else {
+        // Standard WDO: 12 hours from start (can cross into next day)
+        endDate = start.add(Duration(hours: duration * 12));
+      }
+      
+      final formattedDate = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(endDate);
+      return "Estimasi Selesai (WDO): $formattedDate pukul ${DateFormat('HH:mm').format(endDate)}";
+    }
+
+    // 2. Determine if we are in calendar dates mode based on the current alert
     // If there's a 'dday' alert, it means it's a high season period which usually uses calendar dates
     final alert = currentChargeAlert.value;
     final isCalendarDates = alert != null && alert['type'] == 'dday';
@@ -322,6 +368,47 @@ class DashboardController extends GetxController
   // Charge settings
   RxMap chargeSettings = {}.obs;
   Rxn<Map<String, dynamic>> currentChargeAlert = Rxn<Map<String, dynamic>>();
+
+  bool get isWdoAvailable {
+    if (pickedDate.value.isEmpty) return false;
+    final wdoRanges = chargeSettings['wdo_active_ranges'] as List?;
+    if (wdoRanges == null || wdoRanges.isEmpty) return false;
+
+    try {
+      final selectedDate = DateTime.parse(pickedDate.value);
+      final compareDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+
+      for (var range in wdoRanges) {
+        final startDateStr = range['start_date'] as String?;
+        final endDateStr = range['end_date'] as String?;
+        if (startDateStr == null || endDateStr == null) continue;
+
+        // Parse dates - extract date part from ISO string to avoid timezone issues
+        final startDateMatch = RegExp(r'(\d{4})-(\d{2})-(\d{2})').firstMatch(startDateStr);
+        final endDateMatch = RegExp(r'(\d{4})-(\d{2})-(\d{2})').firstMatch(endDateStr);
+
+        if (startDateMatch != null && endDateMatch != null) {
+          final start = DateTime(
+            int.parse(startDateMatch.group(1)!),
+            int.parse(startDateMatch.group(2)!),
+            int.parse(startDateMatch.group(3)!),
+          );
+          final end = DateTime(
+            int.parse(endDateMatch.group(1)!),
+            int.parse(endDateMatch.group(2)!),
+            int.parse(endDateMatch.group(3)!),
+          );
+
+          if (!compareDate.isBefore(start) && !compareDate.isAfter(end)) {
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      print('Error parsing WDO dates: $e');
+    }
+    return false;
+  }
 
   RxList<Map<String, String>> kategori = [
     {'id': 'car', 'name': 'Mobil'},
@@ -606,6 +693,19 @@ class DashboardController extends GetxController
       if (pickedDate.value.isNotEmpty && 
           (selectedKategori.value == 'car' || selectedKategori.value == 'motorcycle')) {
         await fetchRecommendations();
+      }
+
+      // Auto-scroll to results list if this is a fresh search (not pagination)
+      if (!isPagination && scrollController.hasClients) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (scrollController.hasClients) {
+            scrollController.animateTo(
+              500, // Scroll down to results area
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeInOutQuart,
+            );
+          }
+        });
       }
     }
   }
@@ -1036,6 +1136,10 @@ class DashboardController extends GetxController
   }
 
   Future<void> checkChargeSettings() async {
+    if (!isWdoAvailable) {
+      withDriverOnly.value = false;
+    }
+
     if (pickedDate.value.isEmpty || selectedKategori.value.isEmpty) {
       currentChargeAlert.value = null;
       return;

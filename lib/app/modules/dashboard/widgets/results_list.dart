@@ -245,6 +245,7 @@ class KendaraanList extends StatelessWidget {
                     child: ItemCard(
                       data: data,
                       isKendaraan: true,
+                      isWithDriver: controller.withDriverOnly.value,
                       onTap: () {
                         controller.pickedDateAndTime();
                         if (!controller.isPickedDateTimeValidForRental) {
@@ -353,6 +354,7 @@ class ItemCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback? onTap;
   final bool isKendaraan;
+  final bool isWithDriver;
   
   // Pre-computed values to avoid recalculating in build
   final String photo;
@@ -378,8 +380,10 @@ class ItemCard extends StatelessWidget {
     required this.data,
     this.onTap,
     this.isKendaraan = false,
+    this.isWithDriver = false,
   }) : 
     // Pre-compute all values in constructor
+    tier = isKendaraan ? (data['tier']?.toString().toLowerCase() ?? '') : '',
     photo = isKendaraan
         ? (data['photo']?['photo'] ??
             ((data['photos'] != null && (data['photos'] as List).isNotEmpty)
@@ -398,14 +402,20 @@ class ItemCard extends StatelessWidget {
         ? (data['color'] ?? '-')
         : (data['specifications']?['color'] ?? ''),
     capacity = data['specifications']?['size'] ?? '',
-    price = (data['price'] ?? 0).round(),
-    discount = ((data['discount'] ?? 0) as num).toInt(),
-    priceAfter = ((data['price'] ?? 0).round() - ((data['price'] ?? 0).round() * ((data['discount'] ?? 0) as num).toInt() / 100)).round(),
-    weekly = (data['weekly_price'] ?? 0).round(),
-    monthly = (data['monthly_price'] ?? 0).round(),
-    averageRating = (data['average_rating'] ?? 0).toDouble(),
-    ratingCount = ((data['rating_count'] ?? 0) as num).toInt(),
-    tier = isKendaraan ? (data['tier']?.toString().toLowerCase() ?? '') : '';
+    price = (double.tryParse(((isWithDriver && data['with_driver_only_price'] != null)
+            ? data['with_driver_only_price']
+            : (data['price'] ?? 0))
+        .toString()) ?? 0).round(),
+    discount = isWithDriver ? 0 : (int.tryParse((data['discount'] ?? 0).toString()) ?? 0),
+    priceAfter = isWithDriver
+        ? (double.tryParse((data['with_driver_only_price'] ?? data['price'] ?? 0).toString()) ?? 0).round()
+        : ((double.tryParse((data['price'] ?? 0).toString()) ?? 0).round() - 
+           ((double.tryParse((data['price'] ?? 0).toString()) ?? 0).round() * 
+            (int.tryParse((data['discount'] ?? 0).toString()) ?? 0) / 100)).round(),
+    weekly = (double.tryParse((data['weekly_price'] ?? 0).toString()) ?? 0).round(),
+    monthly = (double.tryParse((data['monthly_price'] ?? 0).toString()) ?? 0).round(),
+    averageRating = (double.tryParse((data['average_rating'] ?? 0).toString()) ?? 0).toDouble(),
+    ratingCount = (int.tryParse((data['rating_count'] ?? 0).toString()) ?? 0).toInt();
 
   static String _mapVehicleType(dynamic type) {
     switch (type) {
@@ -696,16 +706,16 @@ class ItemCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: Colors.blue),
               ),
-              const TextSpan(
-                text: " / Hari",
-                style: TextStyle(
+              TextSpan(
+                text: isWithDriver ? " / 12 Jam" : " / Hari",
+                style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Colors.black),
               ),
             ])),
           Text(
-            "Rp ${NumberFormat.decimalPattern('id').format(price)} / Hari",
+            "Rp ${NumberFormat.decimalPattern('id').format(price)} ${isWithDriver ? "/ 12 Jam" : "/ Hari"}",
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
