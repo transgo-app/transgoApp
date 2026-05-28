@@ -108,6 +108,12 @@ class DetailitemsController extends GetxController {
   TextEditingController lokasiPengembalianC = TextEditingController();
   TextEditingController deskripsiPermintaanKhusus = TextEditingController();
 
+  // Guest info controllers
+  TextEditingController guestNameC = TextEditingController();
+  TextEditingController guestEmailC = TextEditingController();
+  TextEditingController guestPhoneC = TextEditingController();
+  TextEditingController guestEmergencyPhoneC = TextEditingController();
+
   RxList dataAsuransi = [].obs;
   RxMap detailData = {}.obs;
   RxList dataAddons = <Map<String, dynamic>>[].obs;
@@ -127,6 +133,7 @@ class DetailitemsController extends GetxController {
   RxList vouchers = [].obs;
   RxMap selectedVoucher = {}.obs;
   RxBool isLoadingVoucher = false.obs;
+  final voucherInputC = TextEditingController();
 
   /// Tujuan pemakaian (intended use): recreation | business | family | everyday. Empty = not selected.
   RxString selectedIntendedUse = ''.obs;
@@ -254,6 +261,11 @@ class DetailitemsController extends GetxController {
     focusNode1.dispose();
     focusNode2.dispose();
     focusNode3.dispose();
+
+    guestNameC.dispose();
+    guestEmailC.dispose();
+    guestPhoneC.dispose();
+    guestEmergencyPhoneC.dispose();
     
     // Clear large data structures to free memory
     dataAsuransi.clear();
@@ -353,6 +365,38 @@ class DetailitemsController extends GetxController {
           return false;
         }
       }
+    }
+    return true;
+  }
+
+  bool validateGuestInfo() {
+    if (guestNameC.text.trim().isEmpty) {
+      CustomSnackbar.show(
+        title: "Data Belum Lengkap",
+        message: "Nama Lengkap wajib diisi.",
+      );
+      return false;
+    }
+    if (guestEmailC.text.trim().isEmpty) {
+      CustomSnackbar.show(
+        title: "Data Belum Lengkap",
+        message: "Email wajib diisi.",
+      );
+      return false;
+    }
+    if (guestPhoneC.text.trim().isEmpty) {
+      CustomSnackbar.show(
+        title: "Data Belum Lengkap",
+        message: "Nomor HP wajib diisi.",
+      );
+      return false;
+    }
+    if (guestEmergencyPhoneC.text.trim().isEmpty) {
+      CustomSnackbar.show(
+        title: "Data Belum Lengkap",
+        message: "Nomor Darurat wajib diisi.",
+      );
+      return false;
     }
     return true;
   }
@@ -535,21 +579,34 @@ class DetailitemsController extends GetxController {
                       : addon['price'],
                   "quantity": (addon['quantity'] is RxInt)
                       ? (addon['quantity'] as RxInt).value
-                      : addon['quantity'],
+              : addon['quantity'],
                 })
             .toList(),
       "use_balance": useTgPayBalance.value,
       "created_with": "application",
     };
+
+    final isGuestWdo = GlobalVariables.token.value == '' && isKendaraan && isWithDriver.value;
+    if (isGuestWdo && isOrder == true) {
+      paramPost.addAll({
+        "guest_name": guestNameC.text.trim(),
+        "guest_email": guestEmailC.text.trim(),
+        "guest_phone": guestPhoneC.text.trim(),
+        "guest_emergency_phone": guestEmergencyPhoneC.text.trim(),
+      });
+    }
+
     Map<String, dynamic>? response;
 
     try {
-      response = await APIService().post(
-        isOrder == true
-            ? '/orders/customer'
-            : '/orders/calculate-price/customer',
-        paramPost,
-      );
+      String endpoint;
+      if (isOrder == true) {
+        endpoint = isGuestWdo ? '/orders/guest/driver-only' : '/orders/customer';
+      } else {
+        endpoint = '/orders/calculate-price/customer';
+      }
+
+      response = await APIService().post(endpoint, paramPost);
 
       if (response != null && isOrder != true) {
         final item = normalizeItem(response);
@@ -963,7 +1020,13 @@ class DetailitemsController extends GetxController {
     final durationStr = dataClient['duration']?.toString();
     final duration = int.tryParse(durationStr ?? '1') ?? 1;
 
-    if (rentalCrossesHighSeason.value) {
+    final isWithDriverOnly = (detailData['fleet']?['with_driver_only'] == true || 
+                             dataServer?['with_driver_only'] == true);
+
+    if (isWithDriverOnly) {
+      dataClient['endDate'] =
+          base.add(Duration(hours: duration * 12)).toIso8601String();
+    } else if (rentalCrossesHighSeason.value) {
       // Hybrid: end at 23:59 of last calendar day
       final lastDay = base.add(Duration(days: duration - 1));
       dataClient['endDate'] = DateTime(

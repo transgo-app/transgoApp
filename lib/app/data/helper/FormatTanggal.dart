@@ -17,7 +17,7 @@ String formatTanggalIndonesia(String isoDate) {
   }
 }
 
-String formatTanggalSewa(String? isoDate, int duration, {bool isHighSeason = false}) {
+String formatTanggalSewa(String? isoDate, int duration, {bool isHighSeason = false, bool isWithDriverOnly = false}) {
   if (isoDate == null || isoDate.isEmpty) return '-';
   final startUtc = DateTime.tryParse(isoDate);
   if (startUtc == null) return isoDate;
@@ -26,7 +26,10 @@ String formatTanggalSewa(String? isoDate, int duration, {bool isHighSeason = fal
 
   final formatter = DateFormat("dd/MM/yyyy HH:mm");
   
-  if (isHighSeason) {
+  if (isWithDriverOnly) {
+    final end = start.add(Duration(hours: duration * 12));
+    return "${formatter.format(start)} - ${formatter.format(end)}";
+  } else if (isHighSeason) {
     // Per-date calculation: end at 23:59 of the last calendar date
     // Duration includes the start date, so if duration = 3, it's start date + 2 more days
     // Example: Start Monday 00:00, duration 3 → ends Wednesday 23:59

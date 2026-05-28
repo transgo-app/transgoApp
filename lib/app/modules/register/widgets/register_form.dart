@@ -527,7 +527,7 @@ class RegisterForm extends StatelessWidget {
         ],
 
         RegisterInput(
-          title: "Referral",
+          title: "Referral (Optional)",
           hintText: "Masukkan referral..",
           controller: controller.referralCodeC,
           errText: controller.errorTextReferral,
@@ -537,7 +537,7 @@ class RegisterForm extends StatelessWidget {
           height: 10,
         ),
         Obx(() => newReusableTextField(
-              title: "Password",
+              title: "Password*",
               hintText: "Masukan password...",
               icon: IconButton(
                 icon: Icon(controller.isPasswordVisible.value
@@ -555,7 +555,7 @@ class RegisterForm extends StatelessWidget {
           height: 10,
         ),
         Obx(() => newReusableTextField(
-              title: "Konfirmasi Password",
+              title: "Konfirmasi Password*",
               hintText: "Masukan password...",
               icon: IconButton(
                 icon: Icon(controller.isConfirmPasswordVisible.value

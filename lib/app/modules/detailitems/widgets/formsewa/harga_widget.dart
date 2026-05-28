@@ -74,13 +74,8 @@ class HargaWidget extends StatelessWidget {
       String dateRangeText;
 
       if (isWithDriverOnly) {
-        // Driver Only: Exactly 12 hours per day duration
-        // 1 day = start + 12h
-        // 2 days = start + 24h + 12h (36h total)
-        final actualEndDate =
-            startDate.add(Duration(days: durasi - 1, hours: 12));
         dateRangeText =
-            "${DateFormat('dd MMM yyyy HH:mm').format(startDate)} - ${DateFormat('dd MMM yyyy HH:mm').format(actualEndDate)}";
+            "${DateFormat('dd MMM yyyy HH:mm').format(startDate)} - ${DateFormat('dd MMM yyyy HH:mm').format(endDate)}";
       } else if (isHighSeason) {
         // Per-date calculation: show full period with end time at 23:59
         final endDateForDisplay = startDate.add(Duration(days: durasi - 1));

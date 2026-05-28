@@ -17,6 +17,7 @@ import '../widgets/formsewa/section_supir.dart';
 import '../widgets/formsewa/transgovers.dart';
 import '../widgets/charge_widget.dart';
 import '../widgets/formsewa/section_driver_info.dart';
+import '../widgets/formsewa/section_guest_info.dart';
 
 class DetailFormSewa extends GetView<DetailitemsController> {
   const DetailFormSewa({super.key});
@@ -114,6 +115,7 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                                           durasi,
                                           isHighSeason: controller
                                               .rentalCrossesHighSeason.value,
+                                          isWithDriverOnly: item['with_driver_only'] == true,
                                         );
 
                                   return iconWithDetailSewa(
@@ -193,6 +195,8 @@ class DetailFormSewa extends GetView<DetailitemsController> {
                       SectionLokasi(controller: controller),
                       SectionVoucher(controller: controller),
                       SectionAsuransi(controller: controller),
+                      if (GlobalVariables.token.value == '' && controller.isKendaraan && controller.isWithDriver.value)
+                        SectionGuestInfo(controller: controller),
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 10),
                         child: Divider(),

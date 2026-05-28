@@ -64,16 +64,14 @@ class SectionVoucher extends StatelessWidget {
                     }
 
                     final v = controller.selectedVoucher;
-                    final isPercent = v['is_percentage'] == true;
-                    final amount = v['amount'];
+                    final voucherDiscount = controller.detailData['voucher_discount'] ?? 0;
+                    final discountText = (voucherDiscount is num && voucherDiscount != 0)
+                        ? " (-Rp ${formatRupiah(voucherDiscount.abs().toInt())})"
+                        : "";
 
                     return Expanded(
                       child: gabaritoText(
-                        text: amount == 0
-                            ? "Gratis"
-                            : isPercent
-                                ? "Diskon $amount%"
-                                : "Potongan Rp ${formatRupiah(amount)}",
+                        text: "${v['code']}$discountText",
                         textColor: solidPrimary,
                         Maxlines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -92,6 +90,7 @@ class SectionVoucher extends StatelessWidget {
   }
 
   void _showVoucherBottomSheet(BuildContext context) {
+    controller.voucherInputC.text = controller.selectedVoucher['code'] ?? '';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -217,6 +216,44 @@ class _VoucherBottomSheet extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
           const SizedBox(height: 12),
+          // Input Kode Voucher Manual
+          Row(
+            children: [
+              Expanded(
+                child: reusableTextField(
+                  title: 'Masukkan Kode Voucher',
+                  controller: controller.voucherInputC,
+                ),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: solidPrimary,
+                  minimumSize: const Size(80, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () async {
+                  final code = controller.voucherInputC.text.trim();
+                  if (code.isNotEmpty) {
+                    controller.selectedVoucher.value = {
+                      'code': code,
+                      'amount': 0,
+                    };
+                    Get.back();
+                    await controller.getDetailAPI(true);
+                  }
+                },
+                child: const gabaritoText(
+                  text: 'Terapkan',
+                  textColor: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
           Expanded(
             child: Obx(() {
               if (controller.isLoadingVoucher.value) {

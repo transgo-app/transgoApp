@@ -39,7 +39,8 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
   final FocusNode _focusNode = FocusNode();
   bool _suppressListener = false;
 
-  bool get _loggedIn => GlobalVariables.token.value.isNotEmpty;
+  // Allow guest/unauthenticated users to use autocomplete as well (calls API via Basic Auth)
+  bool get _loggedIn => true;
 
   @override
   void initState() {

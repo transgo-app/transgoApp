@@ -457,11 +457,15 @@ class _SearchCardState extends State<SearchCard> {
             ),
             child: InkWell(
               onTap: () {
-                controller.withDriverOnly.value = !controller.withDriverOnly.value;
-                controller.onWdoToggled();
-                // Refresh list if category is selected
-                if (controller.selectedKategori.value.isNotEmpty) {
-                  controller.getList();
+                if (!controller.withDriverOnly.value) {
+                  _showWdoInfoDialog(context, controller);
+                } else {
+                  controller.withDriverOnly.value = false;
+                  controller.onWdoToggled();
+                  // Refresh list if category is selected
+                  if (controller.selectedKategori.value.isNotEmpty) {
+                    controller.getList();
+                  }
                 }
               },
               child: Padding(
@@ -496,10 +500,14 @@ class _SearchCardState extends State<SearchCard> {
                     Switch(
                       value: controller.withDriverOnly.value,
                       onChanged: (value) {
-                        controller.withDriverOnly.value = value;
-                        controller.onWdoToggled();
-                        if (controller.selectedKategori.value.isNotEmpty) {
-                          controller.getList();
+                        if (value) {
+                          _showWdoInfoDialog(context, controller);
+                        } else {
+                          controller.withDriverOnly.value = false;
+                          controller.onWdoToggled();
+                          if (controller.selectedKategori.value.isNotEmpty) {
+                            controller.getList();
+                          }
                         }
                       },
                       activeColor: solidPrimary,
@@ -642,6 +650,140 @@ class _SearchCardState extends State<SearchCard> {
 
     return controller.kategori;
   }
+
+void _showWdoInfoDialog(BuildContext context, DashboardController controller) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Column(
+          children: [
+            const Icon(Icons.info_outline, color: Colors.amber, size: 48),
+            const SizedBox(height: 10),
+            gabaritoText(
+              text: "Informasi Sewa With Driver Only (WDO)",
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              gabaritoText(
+                text: "Harap baca informasi penting di bawah ini sebelum melanjutkan pemesanan dengan supir.",
+                fontSize: 13,
+                textAlign: TextAlign.center,
+                textColor: Colors.black54,
+              ),
+              const SizedBox(height: 20),
+              _buildInfoItem(
+                Icons.check_circle,
+                "Kemudahan Guest Checkout:",
+                "Anda tidak wajib login. Cukup isi kontak minimal (Nama, No Handphone, No Darurat, & Email).",
+              ),
+              const SizedBox(height: 12),
+              _buildInfoItem(
+                Icons.check_circle,
+                "Himbauan Pembayaran DP 50%:",
+                "Penyewaan WDO dihimbau membayar uang muka (Down Payment) sebesar 50% terlebih dahulu melalui invoice Paper.id.",
+              ),
+              const SizedBox(height: 12),
+              _buildInfoItem(
+                Icons.check_circle,
+                "Jam Operasional Driver:",
+                "Layanan driver tersedia pukul 07:00 hingga 21:00. Jam sewa akan disesuaikan otomatis jika di luar rentang ini.",
+              ),
+            ],
+          ),
+        ),
+        actionsPadding: const EdgeInsets.all(16),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Get.back();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: gabaritoText(
+                    text: "Batal",
+                    textColor: Colors.black,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    controller.withDriverOnly.value = true;
+                    controller.onWdoToggled();
+                    if (controller.selectedKategori.value.isNotEmpty) {
+                      controller.getList();
+                    }
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: solidPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: gabaritoText(
+                    text: "Saya Mengerti &\nLanjutkan",
+                    textColor: Colors.white,
+                    textAlign: TextAlign.center,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Widget _buildInfoItem(IconData icon, String title, String desc) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(icon, color: Colors.green, size: 18),
+      const SizedBox(width: 8),
+      Expanded(
+        child: RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              fontFamily: 'Gabarito',
+              fontSize: 12,
+              color: Colors.black87,
+            ),
+            children: [
+              TextSpan(text: "$title ", style: const TextStyle(fontWeight: FontWeight.bold)),
+              TextSpan(text: desc),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
 
 void _openDatePicker(
   BuildContext context,

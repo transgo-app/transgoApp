@@ -64,8 +64,23 @@ class RincianOrderModal extends StatelessWidget {
                           textColor: textSecondary),
                       detailRincianHarga(
                           "${controller.detailData['item']['name']}" +
-                              (controller.isKendaraan ? " / Hari" : ""),
-                          'Rp ${formatRupiah(controller.isKendaraan ? controller.detailData['item']['price'] : controller.detailData['item']['price_after_discount'] ?? controller.detailData['item']['price'])}'),
+                              (controller.isKendaraan 
+                                  ? ((controller.detailData['fleet']?['with_driver_only'] == true || controller.detailData['item']?['with_driver_only'] == true) 
+                                      ? " / 12 Jam" 
+                                      : " / Hari") 
+                                  : ""),
+                          'Rp ${formatRupiah(controller.isKendaraan
+                              ? ((controller.detailData['fleet']?['with_driver_only'] == true || controller.detailData['item']?['with_driver_only'] == true)
+                                  ? (controller.detailData['fleet']?['with_driver_only_price'] ?? controller.detailData['item']?['with_driver_only_price'] ?? controller.detailData['item']?['price'] ?? 0)
+                                  : (controller.detailData['fleet']?['price'] ?? controller.detailData['item']?['price'] ?? 0))
+                              : (controller.detailData['item']?['price_after_discount'] ?? controller.detailData['item']?['price'] ?? 0))}'),
+
+                      if (controller.detailData['driver_meal_allowance'] != null &&
+                          (controller.detailData['driver_meal_allowance'] ?? 0) > 0)
+                        detailRincianHarga(
+                          "Uang Makan Driver",
+                          "Rp ${formatRupiah(controller.detailData['driver_meal_allowance'])}",
+                        ),
 
                       _buildRentalPeriodDetail(controller),
 
@@ -120,22 +135,31 @@ class RincianOrderModal extends StatelessWidget {
                             gabaritoText(
                                 text: "Biaya Layanan",
                                 textColor: textSecondary),
-                            if (lines.hasStartDelivery)
-                              detailRincianHarga(
-                                lines.startSubtitle != null
-                                    ? "Antar\n${lines.startSubtitle}"
-                                    : "Antar",
+                            if (lines.startLegRupiah > 0)
+                              detailRincianHargaDenganSubtitle(
+                                "Antar",
+                                lines.startSubtitle,
                                 "Rp ${formatRupiah(lines.startLegRupiah)}",
                               ),
-                            if (lines.hasEndDelivery)
-                              detailRincianHarga(
-                                lines.endSubtitle != null
-                                    ? "Jemput\n${lines.endSubtitle}"
-                                    : "Jemput",
+                            if (lines.endLegRupiah > 0)
+                              detailRincianHargaDenganSubtitle(
+                                "Jemput",
+                                lines.endSubtitle,
                                 "Rp ${formatRupiah(lines.endLegRupiah)}",
                               ),
-                            if (!lines.hasStartDelivery &&
-                                !lines.hasEndDelivery)
+                            if (lines.startLegRupiah > 0 || lines.endLegRupiah > 0) ...[
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 4),
+                                child: Divider(),
+                              ),
+                              detailRincianHarga(
+                                "Total Layanan Antar Jemput",
+                                "Rp ${formatRupiah(lines.servicePriceTotal)}",
+                              ),
+                            ],
+                            if (lines.startLegRupiah == 0 &&
+                                lines.endLegRupiah == 0 && 
+                                lines.servicePriceTotal > 0)
                               detailRincianHarga(
                                 "Layanan antar/jemput",
                                 "Rp ${formatRupiah(lines.servicePriceTotal)}",
@@ -359,7 +383,9 @@ class RincianOrderModal extends StatelessWidget {
                                       message:
                                           "Silahkan setujui dahulu syarat & ketentuan transgo");
                                 }
-                                if (GlobalVariables.token.value == '') {
+                                final isGuestWdo = GlobalVariables.token.value == '' && controller.isKendaraan && controller.isWithDriver.value;
+                                
+                                if (GlobalVariables.token.value == '' && !isGuestWdo) {
                                   Get.back();
                                   showModalBottomSheet(
                                     context: context,
@@ -368,6 +394,10 @@ class RincianOrderModal extends StatelessWidget {
                                         Wrap(children: [ModalDaftarAkun()]),
                                   );
                                 } else {
+                                  if (isGuestWdo && !controller.validateGuestInfo()) {
+                                    return; // Stop if guest info is incomplete
+                                  }
+
                                   if (controller.menyetujuiSnK.value) {
                                     controller
                                         .getDetailAPI(true, true)
@@ -482,6 +512,42 @@ class RincianOrderModal extends StatelessWidget {
               text: subtile,
               textColor: textPrimary,
               fontWeight: FontWeight.w600)
+        ],
+      ),
+    );
+  }
+
+  Widget detailRincianHargaDenganSubtitle(String title, String? subtileText, String price) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                gabaritoText(text: title, fontWeight: FontWeight.w600, fontSize: 15),
+                if (subtileText != null && subtileText.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  gabaritoText(
+                    text: subtileText,
+                    textColor: Colors.black54,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 20),
+          gabaritoText(
+            text: price,
+            textColor: textPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
         ],
       ),
     );

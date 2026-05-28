@@ -154,3 +154,41 @@ Current app version: **2.2.2+47** (from `pubspec.yaml`).
 ---
 
 For Flutter basics, see the [Flutter documentation](https://docs.flutter.dev/).
+
+---
+
+## Build & Development Guides
+
+### 1. Android Build Commands
+To compile and build the Android application locally:
+
+* **Build APK** (for direct installation and manual testing on devices):
+  ```bash
+  flutter build apk --release
+  ```
+  *(Output path: `build/app/outputs/flutter-apk/app-release.apk`)*
+
+* **Build App Bundle (AAB)** (for uploading to the Google Play Store):
+  ```bash
+=  flutter build appbundle --release --flavor production
+  ```
+  *(Output path: `build/app/outputs/bundle/release/app-release.aab`)*
+
+* If you are using specific build options/properties (e.g., sandbox or production keys), ensure the respective key properties files are set up correctly under `android/` directory.
+
+### 2. iOS Development & Xcode Guide
+Since the project is running on macOS, you can easily open and build the iOS target using Xcode:
+
+* **Open Xcode Project from Terminal:**
+  Run this command in the `transgoApp` root directory to open the iOS workspace in Xcode:
+  ```bash
+  open ios/Runner.xcworkspace
+  ```
+
+* **Building from Xcode Interface:**
+  1. **Select Scheme:** Ensure the **Runner** scheme is selected at the top bar.
+  2. **Select Destination:** Choose **Any iOS Device (arm64)** (for archiving/App Store release) or a connected iPhone/Simulator (for active debugging).
+  3. **Clean Build Folder (Optional but recommended):** Press `Cmd + Shift + K` or navigate to **Product -> Clean Build Folder**.
+  4. **Run Debug Build:** Press `Cmd + R` or click the Play button to build and run on your selected device/simulator.
+  5. **Create Release Build (Archive):** Select **Product -> Archive** from the top menu to compile the app for App Store Connect distribution.
+

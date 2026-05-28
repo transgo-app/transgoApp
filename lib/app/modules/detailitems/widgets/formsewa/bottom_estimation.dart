@@ -40,45 +40,7 @@ class BottomEstimation extends StatelessWidget {
               }),
             ],
           ),
-          Obx(() {
-            final raw = controller.detailData;
-            if (raw.isEmpty) return const SizedBox.shrink();
-            final lines = buildDeliveryPricingLines(
-                Map<String, dynamic>.from(raw));
-            if (!lines.showSection) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  gabaritoText(
-                    text:
-                        'Termasuk biaya layanan antar/jemput Rp ${formatRupiah(lines.servicePriceTotal)}',
-                    fontSize: 11,
-                    textColor: textSecondary,
-                  ),
-                  if (lines.startSubtitle != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: gabaritoText(
-                        text: lines.startSubtitle!,
-                        fontSize: 10,
-                        textColor: textSecondary,
-                      ),
-                    ),
-                  if (lines.endSubtitle != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: gabaritoText(
-                        text: lines.endSubtitle!,
-                        fontSize: 10,
-                        textColor: textSecondary,
-                      ),
-                    ),
-                ],
-              ),
-            );
-          }),
+
           const SizedBox(height: 10),
           ReusableButton(
             height: 50,
@@ -182,21 +144,10 @@ class BottomEstimation extends StatelessWidget {
     
     // Use the pre-calculated endDate from dataClient if available (it handles high season 23:59 logic)
     final endDateStr = controller.dataClient['endDate'];
-    final isWithDriverOnly = controller.detailData['fleet']?['with_driver_only'] == true || 
-                             controller.dataServer?['with_driver_only'] == true;
-                             
-    DateTime endDate;
-    if (isWithDriverOnly) {
-      // For WDO, 1 unit = 12 hours
-      final calculatedEnd = rentDate.add(Duration(hours: duration * 12));
-      // CAP at 23:59 of the same day (WDO cannot cross into the next day)
-      final endOfSameDay = DateTime(rentDate.year, rentDate.month, rentDate.day, 23, 59, 59);
-      endDate = calculatedEnd.isAfter(endOfSameDay) ? endOfSameDay : calculatedEnd;
-    } else if (endDateStr != null && endDateStr.toString().isNotEmpty) {
-      endDate = DateTime.tryParse(endDateStr.toString())?.toLocal() ?? rentDate.add(Duration(days: duration));
-    } else {
-      endDate = rentDate.add(Duration(days: duration));
-    }
+    
+    DateTime endDate = endDateStr != null && endDateStr.toString().isNotEmpty
+        ? DateTime.tryParse(endDateStr.toString())!.toLocal()
+        : rentDate.add(Duration(days: duration));
     
     final String formattedEndDate = DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(endDate);
 
