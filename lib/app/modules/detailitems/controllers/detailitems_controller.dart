@@ -74,6 +74,8 @@ class DetailitemsController extends GetxController {
         detailLokasiPengembalian.value = detailLokasiPengambilan.value;
         lokasiPengembalianC.text = lokasiPengambilanC.text;
         pengembalianSendiri.value = pengambilanSendiri.value;
+        endRequestLat.value = startRequestLat.value;
+        endRequestLng.value = startRequestLng.value;
       }
     });
   }
@@ -178,6 +180,10 @@ class DetailitemsController extends GetxController {
   void clearStartDeliveryCoords() {
     startRequestLat.value = null;
     startRequestLng.value = null;
+    if (!isPengembalianManual.value) {
+      endRequestLat.value = null;
+      endRequestLng.value = null;
+    }
   }
 
   void clearEndDeliveryCoords() {
@@ -188,6 +194,10 @@ class DetailitemsController extends GetxController {
   void setStartDeliveryCoords(double lat, double lng) {
     startRequestLat.value = lat;
     startRequestLng.value = lng;
+    if (!isPengembalianManual.value) {
+      endRequestLat.value = lat;
+      endRequestLng.value = lng;
+    }
   }
 
   void setEndDeliveryCoords(double lat, double lng) {
@@ -201,10 +211,18 @@ class DetailitemsController extends GetxController {
       if (item is Map) {
         final id = item['location_id'];
         if (id != null) return int.tryParse(id.toString());
+        final fullLoc = item['full_location'];
+        if (fullLoc is Map && fullLoc['id'] != null) {
+          return int.tryParse(fullLoc['id'].toString());
+        }
       }
       if (dataServer is Map) {
         final id = (dataServer as Map)['location_id'];
         if (id != null) return int.tryParse(id.toString());
+        final loc = (dataServer as Map)['location'];
+        if (loc is Map && loc['id'] != null) {
+          return int.tryParse(loc['id'].toString());
+        }
       }
     } catch (_) {}
     return null;
@@ -584,6 +602,7 @@ class DetailitemsController extends GetxController {
             .toList(),
       "use_balance": useTgPayBalance.value,
       "created_with": "application",
+      "delivery_auto_calculate": true,
     };
 
     final isGuestWdo = GlobalVariables.token.value == '' && isKendaraan && isWithDriver.value;
@@ -607,6 +626,8 @@ class DetailitemsController extends GetxController {
       }
 
       response = await APIService().post(endpoint, paramPost);
+      print("📌 DEBUG [getDetailAPI] Payload: $paramPost");
+      print("📌 DEBUG [getDetailAPI] Response: $response");
 
       if (response != null && isOrder != true) {
         final item = normalizeItem(response);

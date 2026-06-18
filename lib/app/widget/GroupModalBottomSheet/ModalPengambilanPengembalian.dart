@@ -63,6 +63,10 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                               controller.lokasiPengambilanC.text;
                           controller.pengembalianSendiri.value =
                               controller.pengambilanSendiri.value;
+                          controller.endRequestLat.value =
+                              controller.startRequestLat.value;
+                          controller.endRequestLng.value =
+                              controller.startRequestLng.value;
                         } else {
                           controller.selectedPengembalian.value = value!;
                           controller.pengembalianSendiri.value = true;
@@ -112,6 +116,10 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                                   controller.lokasiPengambilanC.text;
                               controller.pengembalianSendiri.value =
                                   controller.pengambilanSendiri.value;
+                              controller.endRequestLat.value =
+                                  controller.startRequestLat.value;
+                              controller.endRequestLng.value =
+                                  controller.startRequestLng.value;
                             } else {
                               controller.selectedPengembalian.value = value!;
                               controller.pengembalianSendiri.value = false;
@@ -318,6 +326,10 @@ class ModalPengambilanPengembalianKendaraan extends StatelessWidget {
                     controller.lokasiPengambilanC.text;
                 controller.pengembalianSendiri.value =
                     controller.pengambilanSendiri.value;
+                controller.endRequestLat.value =
+                    controller.startRequestLat.value;
+                controller.endRequestLng.value =
+                    controller.startRequestLng.value;
               }
 
               controller.getDetailAPI(false);

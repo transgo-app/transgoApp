@@ -108,6 +108,10 @@ class SectionLokasi extends StatelessWidget {
                   controller.lokasiPengambilanC.text;
               controller.pengembalianSendiri.value =
                   controller.pengambilanSendiri.value;
+              controller.endRequestLat.value =
+                  controller.startRequestLat.value;
+              controller.endRequestLng.value =
+                  controller.startRequestLng.value;
             }
 
             return GestureDetector(
