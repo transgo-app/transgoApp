@@ -119,9 +119,17 @@ void main() async {
     FlutterForegroundTask.initCommunicationPort();
   }
 
+  String initialRoute = loggedIn ? AppPages.DEFAULT : AppPages.INITIAL;
+  if (loggedIn) {
+    final status = GlobalVariables.statusVerificationAccount.value.trim().toLowerCase();
+    if ((status == 'pending' || status == 'pending_verification') && !GlobalVariables.hasBypassedVerificationQueue.value) {
+      initialRoute = Routes.VERIFICATION_QUEUE;
+    }
+  }
+
   runApp(
     LocationTrackingAppWrapper(
-      initialRoute: loggedIn ? AppPages.DEFAULT : AppPages.INITIAL,
+      initialRoute: initialRoute,
     ),
   );
 }

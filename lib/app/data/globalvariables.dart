@@ -23,6 +23,7 @@ class GlobalVariables {
   static RxString additional_data_status = ''.obs;
   /// True if user has verified their email via OTP; false or null from API = not verified.
   static RxBool isEmailVerified = true.obs;
+  static RxBool hasBypassedVerificationQueue = false.obs;
 
   static Future<void> initializeData() async {
     final prefs = await getAppPrefs();
@@ -35,6 +36,15 @@ class GlobalVariables {
     jenisKelamin.value = prefs.getString('jenisKelamin') ?? '';
     tanggalLahir.value = prefs.getString('tanggalLahir') ?? '';
     idCards.value = prefs.getString('idCards') ?? '';
+    statusVerificationAccount.value = prefs.getString('statusVerificationAccount') ?? '';
+    additional_data_status.value = prefs.getString('additional_data_status') ?? '';
+    hasBypassedVerificationQueue.value = prefs.getString('hasBypassedVerificationQueue') == 'true';
+  }
+
+  static Future<void> setBypassVerificationQueue(bool value) async {
+    final prefs = await getAppPrefs();
+    await prefs.setString('hasBypassedVerificationQueue', value ? 'true' : 'false');
+    hasBypassedVerificationQueue.value = value;
   }
 
   Future<bool> isLoggedIn() async {
@@ -60,6 +70,9 @@ class GlobalVariables {
     await prefs.remove('jenisKelamin');
     await prefs.remove('tanggalLahir');
     await prefs.remove('idCards');
+    await prefs.remove('statusVerificationAccount');
+    await prefs.remove('additional_data_status');
+    await prefs.remove('hasBypassedVerificationQueue');
 
     namaUser.value = 'Selamat Datang';
     emailUser.value = 'Selalu ingat transgo solusi mobil & motor termurah';
@@ -75,5 +88,6 @@ class GlobalVariables {
     isShowStatusAccount = false.obs;
     additional_data_status = ''.obs;
     isEmailVerified.value = true;
+    hasBypassedVerificationQueue.value = false;
   }
 }

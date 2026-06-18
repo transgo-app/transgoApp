@@ -7,6 +7,8 @@ import 'package:transgomobileapp/app/data/service/NotificationService.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
 
+import '../../../routes/app_pages.dart';
+
 class ProfileController extends GetxController {
   final count = 0.obs;
   RxString namaUser = 'Selamat Datang di Transgo!'.obs;
@@ -63,6 +65,13 @@ class ProfileController extends GetxController {
 
       GlobalVariables.additional_data_status.value = dataUser['additional_data_status'];
       GlobalVariables.statusVerificationAccount.value = dataUser['status'];
+
+      final status = (dataUser['status'] as String? ?? '').trim().toLowerCase();
+      if ((status == 'pending' || status == 'pending_verification') && !GlobalVariables.hasBypassedVerificationQueue.value) {
+        Get.offAllNamed(Routes.VERIFICATION_QUEUE);
+        return;
+      }
+
       GlobalVariables.isEmailVerified.value = dataUser['email_verified'] == true;
       if (!GlobalVariables.isEmailVerified.value) {
         _maybeScheduleEmailVerificationReminder();

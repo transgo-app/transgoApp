@@ -21,6 +21,7 @@ abstract class Routes {
   static const FLEETRANKING = _Paths.FLEETRANKING;
   static const SAVED_ADDRESSES = _Paths.SAVED_ADDRESSES;
   static const SAVED_ADDRESS_FORM = _Paths.SAVED_ADDRESS_FORM;
+  static const VERIFICATION_QUEUE = _Paths.VERIFICATION_QUEUE;
 }
 
 abstract class _Paths {
@@ -43,4 +44,5 @@ abstract class _Paths {
   static const FLEETRANKING = '/fleet-ranking';
   static const SAVED_ADDRESSES = '/saved-addresses';
   static const SAVED_ADDRESS_FORM = '/saved-address-form';
+  static const VERIFICATION_QUEUE = '/verification-queue';
 }

@@ -34,7 +34,8 @@ import '../modules/saved_addresses/bindings/saved_address_form_binding.dart';
 import '../modules/saved_addresses/bindings/saved_addresses_binding.dart';
 import '../modules/saved_addresses/views/saved_address_form_view.dart';
 import '../modules/saved_addresses/views/saved_addresses_list_view.dart';
-
+import '../modules/verification_queue/bindings/verification_queue_binding.dart';
+import '../modules/verification_queue/views/verification_queue_view.dart';
 
 part 'app_routes.dart';
 
@@ -146,6 +147,11 @@ class AppPages {
       name: Routes.SAVED_ADDRESS_FORM,
       page: () => const SavedAddressFormView(),
       binding: SavedAddressFormBinding(),
+    ),
+    GetPage(
+      name: Routes.VERIFICATION_QUEUE,
+      page: () => const VerificationQueueView(),
+      binding: VerificationQueueBinding(),
     ),
   ];
 }
