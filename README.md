@@ -192,3 +192,16 @@ Since the project is running on macOS, you can easily open and build the iOS tar
   4. **Run Debug Build:** Press `Cmd + R` or click the Play button to build and run on your selected device/simulator.
   5. **Create Release Build (Archive):** Select **Product -> Archive** from the top menu to compile the app for App Store Connect distribution.
 
+### 3. Mengubah Versi Aplikasi (Android & iOS)
+Untuk memperbarui versi aplikasi Android dan iOS, Anda cukup mengubah baris `version` di dalam berkas [pubspec.yaml](file:///Users/zanfuu/Project/Coding/Transgo/transgoApp/pubspec.yaml):
+
+```yaml
+version: 2.4.1+56
+```
+
+Formatnya adalah `[version-name]+[build-number]`:
+* **Version Name (`2.4.1`)**: Ini adalah versi rilis yang dilihat oleh pengguna di Google Play Store / Apple App Store (Android: `versionName`, iOS: `CFBundleShortVersionString`).
+* **Build Number (`56`)**: Kode build unik berupa bilangan bulat (integer) yang wajib selalu meningkat di setiap unggahan rilis baru (Android: `versionCode`, iOS: `CFBundleVersion`).
+
+Setelah mengubah nilai ini di `pubspec.yaml`, jalankan perintah `flutter pub get` agar perubahan langsung disinkronkan ke konfigurasi build asli Android dan iOS.
+

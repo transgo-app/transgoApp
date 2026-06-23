@@ -20,6 +20,9 @@ class RegisterController extends GetxController {
   final TextEditingController confirmPasswordC = TextEditingController();
   final TextEditingController referralCodeC = TextEditingController();
 
+  RxString completeNomorTelp = ''.obs;
+  RxString completeNomorDarurat = ''.obs;
+
   RxString selectedJenisKelamin = ''.obs;
   RxString errorTextNama = ''.obs;
   RxString errorTextEmail = ''.obs;
@@ -554,8 +557,8 @@ class RegisterController extends GetxController {
               .map((e) => e.value)
               .toList(),
           "supporting_documents_url": uploadedSupportingDocument,
-          "phone_number": nomorTelpC.text,
-          "emergency_phone_number": nomorDaruratC.text,
+          "phone_number": completeNomorTelp.value.isNotEmpty ? completeNomorTelp.value : nomorTelpC.text,
+          "emergency_phone_number": completeNomorDarurat.value.isNotEmpty ? completeNomorDarurat.value : nomorDaruratC.text,
           "password": passwordC.text,
           "role": selectedRole.value,
           "referral_code":
@@ -591,8 +594,8 @@ class RegisterController extends GetxController {
                 .map((e) => e.value)
                 .toList(),
             "supporting_documents_url": uploadedSupportingDocument,
-            "phone_number": nomorTelpC.text,
-            "emergency_phone_number": nomorDaruratC.text,
+            "phone_number": completeNomorTelp.value.isNotEmpty ? completeNomorTelp.value : nomorTelpC.text,
+            "emergency_phone_number": completeNomorDarurat.value.isNotEmpty ? completeNomorDarurat.value : nomorDaruratC.text,
             "password": passwordC.text,
             "role": selectedRole.value,
             "referral_code":

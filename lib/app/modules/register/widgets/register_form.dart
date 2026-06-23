@@ -6,6 +6,7 @@ import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import '../../../widget/widgets.dart';
 import '../controllers/register_controller.dart';
 import 'register_input.dart';
@@ -394,18 +395,116 @@ class RegisterForm extends StatelessWidget {
             ],
           );
         }),
-        RegisterInput(
-            title: "Nomor Telepon*",
-            hintText: "Masukkan no telepon..",
-            controller: controller.nomorTelpC,
-            errText: controller.errorTextNomorTelp,
-            inputType: TextInputType.number),
-        RegisterInput(
-            title: "Nomor Telepon Darurat*",
-            hintText: "Masukkan no telepon darurat..",
-            controller: controller.nomorDaruratC,
-            errText: controller.errorTextNomorTelpDarurat,
-            inputType: TextInputType.number),
+        Obx(() => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: gabaritoText(
+                  text: "Nomor Telepon*",
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  textColor: textPrimary,
+                ),
+              ),
+              IntlPhoneField(
+                controller: controller.nomorTelpC,
+                initialCountryCode: 'ID',
+                disableLengthCheck: true,
+                style: gabaritoTextStyle.copyWith(fontSize: 16),
+                dropdownTextStyle: gabaritoTextStyle.copyWith(fontSize: 16),
+                showDropdownIcon: true,
+                dropdownIconPosition: IconPosition.trailing,
+                decoration: InputDecoration(
+                  errorText: controller.errorTextNomorTelp.value.isEmpty ? null : controller.errorTextNomorTelp.value,
+                  errorStyle: gabaritoTextStyle.copyWith(fontSize: 14),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                  hintText: "Masukkan no telepon..",
+                  hintStyle: gabaritoTextStyle.copyWith(fontSize: 14, color: textSecondary),
+                  fillColor: HexColor("#EBEBEB"),
+                  filled: true,
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onChanged: (phone) {
+                  controller.completeNomorTelp.value = phone.completeNumber;
+                  controller.validateInput();
+                },
+              ),
+            ],
+          ),
+        )),
+        Obx(() => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: gabaritoText(
+                  text: "Nomor Telepon Darurat*",
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  textColor: textPrimary,
+                ),
+              ),
+              IntlPhoneField(
+                controller: controller.nomorDaruratC,
+                initialCountryCode: 'ID',
+                disableLengthCheck: true,
+                style: gabaritoTextStyle.copyWith(fontSize: 16),
+                dropdownTextStyle: gabaritoTextStyle.copyWith(fontSize: 16),
+                showDropdownIcon: true,
+                dropdownIconPosition: IconPosition.trailing,
+                decoration: InputDecoration(
+                  errorText: controller.errorTextNomorTelpDarurat.value.isEmpty ? null : controller.errorTextNomorTelpDarurat.value,
+                  errorStyle: gabaritoTextStyle.copyWith(fontSize: 14),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                  hintText: "Masukkan no telepon darurat..",
+                  hintStyle: gabaritoTextStyle.copyWith(fontSize: 14, color: textSecondary),
+                  fillColor: HexColor("#EBEBEB"),
+                  filled: true,
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onChanged: (phone) {
+                  controller.completeNomorDarurat.value = phone.completeNumber;
+                  controller.validateInput();
+                },
+              ),
+            ],
+          ),
+        )),
         const SizedBox(
           height: 6,
         ),

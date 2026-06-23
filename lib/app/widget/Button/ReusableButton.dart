@@ -10,6 +10,7 @@ class ReusableButton extends StatelessWidget {
   final Color? bgColor;
   final Color? borderSideColor;
   final Color? textColor;
+  final double? fontSize;
   const ReusableButton(
       {super.key,
       this.widget,
@@ -19,7 +20,8 @@ class ReusableButton extends StatelessWidget {
       this.width,
       this.bgColor,
       this.borderSideColor,
-      this.textColor});
+      this.textColor,
+      this.fontSize});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +41,7 @@ class ReusableButton extends StatelessWidget {
           Text(
             title ?? '',
             style: gabaritoTextStyle.copyWith(
-              fontSize: 18,
+              fontSize: fontSize ?? 18,
               color: textColor ?? Colors.white,
             ),
             textAlign: TextAlign.center,

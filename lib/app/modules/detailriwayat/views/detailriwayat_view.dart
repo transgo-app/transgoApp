@@ -12,6 +12,7 @@ import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalPenganggu
 import 'package:transgomobileapp/app/widget/GroupModalBottomSheet/ModalReviewRating.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../controllers/detailriwayat_controller.dart';
+import '../../../routes/app_pages.dart';
 import '../../../data/data.dart';
 import '../../../widget/widgets.dart';
 import '../../../data/theme.dart';
@@ -586,6 +587,21 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                             ),
                           ),
                           const SizedBox(width: 10),
+                          if (detaiItemsID['order_status'] == 'pending' ||
+                              detaiItemsID['order_status'] == 'waiting') ...[
+                            Expanded(
+                              child: ReusableButton(
+                                height: 50,
+                                bgColor: HexColor("#164ABA"),
+                                title: "Lihat Antrean",
+                                fontSize: 13,
+                                ontap: () {
+                                  Get.toNamed(Routes.VERIFICATION_QUEUE);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
                           if (detaiItemsID['payment_status'] == 'pending' &&
                               controller.dataArguments['payment_pdf_url'] != null)
                             Expanded(
@@ -597,6 +613,7 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                                 },
                                 bgColor: primaryColor,
                                 title: "Bayar Sekarang",
+                                fontSize: 13,
                               ),
                             ),
                           if (detaiItemsID['payment_status'] != 'pending' ||
@@ -610,6 +627,7 @@ class _DetailriwayatViewState extends State<DetailriwayatView> with WidgetsBindi
                                 },
                                 bgColor: primaryColor,
                                 title: "Hubungi Admin Sekarang",
+                                fontSize: 13,
                               ),
                             ),
                         ],

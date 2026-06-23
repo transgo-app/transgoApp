@@ -41,6 +41,12 @@ class VerificationQueueView extends GetView<VerificationQueueController> {
         ),
         centerTitle: true,
         automaticallyImplyLeading: false,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(IconsaxPlusBold.arrow_left_1, size: 28),
+                onPressed: () => Get.back(),
+              )
+            : null,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -83,9 +89,11 @@ class VerificationQueueView extends GetView<VerificationQueueController> {
                       ),
                       const SizedBox(height: 24),
                       Obx(() => gabaritoText(
-                            text: controller.hasPendingOrder.value
-                                ? "Akun & Pesanan Anda Sedang Diverifikasi!"
-                                : "Akun Anda Sedang Diverifikasi!",
+                            text: controller.isAccountVerified.value
+                                ? "Kamu sedang dalam antrean!"
+                                : (controller.hasPendingOrder.value
+                                    ? "Akun & Pesanan Anda Sedang Diverifikasi!"
+                                    : "Akun Anda Sedang Diverifikasi!"),
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             textAlign: TextAlign.center,
@@ -93,9 +101,11 @@ class VerificationQueueView extends GetView<VerificationQueueController> {
                           )),
                       const SizedBox(height: 12),
                       Obx(() => gabaritoText(
-                            text: controller.hasPendingOrder.value
-                                ? "Mohon tunggu sebentar, tim kami sedang memproses verifikasi berkas akun serta pesanan unit sewa Anda demi keamanan transaksi."
-                                : "Mohon tunggu sebentar, tim kami sedang memproses verifikasi berkas dan akun Anda demi keamanan transaksi.",
+                            text: controller.isAccountVerified.value
+                                ? "Jika pesanan sudah diterima oleh admin, halaman ini akan otomatis diteruskan ke detail transaksi Anda."
+                                : (controller.hasPendingOrder.value
+                                    ? "Mohon tunggu sebentar, tim kami sedang memproses verifikasi berkas akun serta pesanan unit sewa Anda demi keamanan transaksi."
+                                    : "Mohon tunggu sebentar, tim kami sedang memproses verifikasi berkas dan akun Anda demi keamanan transaksi."),
                             fontSize: 13,
                             textColor: textSecondary,
                             textAlign: TextAlign.center,
@@ -124,9 +134,11 @@ class VerificationQueueView extends GetView<VerificationQueueController> {
                                     ),
                                     const SizedBox(width: 8),
                                     Obx(() => gabaritoText(
-                                          text: controller.hasPendingOrder.value
-                                              ? "Estimasi Verifikasi Akun & Order"
-                                              : "Estimasi Waktu Verifikasi",
+                                          text: controller.isAccountVerified.value
+                                              ? "Estimasi Verifikasi Order"
+                                              : (controller.hasPendingOrder.value
+                                                  ? "Estimasi Verifikasi Akun & Order"
+                                                  : "Estimasi Waktu Verifikasi"),
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
                                           textColor: textHeadline,
@@ -140,12 +152,14 @@ class VerificationQueueView extends GetView<VerificationQueueController> {
                                   ),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 4),
-                                  child: gabaritoText(
-                                    text: "Antrean Aktif",
+                                  child: Obx(() => gabaritoText(
+                                    text: controller.queuePosition.value > 0
+                                        ? "Antrean Ke-${controller.queuePosition.value}"
+                                        : "Antrean Aktif",
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                     textColor: HexColor("#0369A1"),
-                                  ),
+                                  )),
                                 ),
                               ],
                             ),
@@ -153,7 +167,7 @@ class VerificationQueueView extends GetView<VerificationQueueController> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Obx(() {
-                                final progress = controller.timeLeft.value / 900.0;
+                                final progress = controller.timeLeft.value / (controller.maxMinutes.value * 60.0);
                                 return SizedBox(
                                   height: 8,
                                   child: LinearProgressIndicator(
@@ -200,15 +214,15 @@ class VerificationQueueView extends GetView<VerificationQueueController> {
                                         )),
                                   ],
                                 ),
-                                gabaritoText(
-                                  text: "Maks. 15 Menit",
+                                Obx(() => gabaritoText(
+                                  text: "Maks. ${controller.maxMinutes.value} Menit",
                                   fontSize: 12,
                                   textColor: textSecondary,
-                                ),
+                                )),
                               ],
                             ),
                             Obx(() {
-                              if (controller.timeLeft.value == 0 &&
+                              if (controller.isOvertime.value &&
                                   !controller.isOutsideHours.value) {
                                 return Container(
                                   margin: const EdgeInsets.only(top: 16),
@@ -221,7 +235,7 @@ class VerificationQueueView extends GetView<VerificationQueueController> {
                                   padding: const EdgeInsets.all(12),
                                   child: gabaritoText(
                                     text:
-                                        "Proses verifikasi membutuhkan waktu lebih lama dari biasanya. Silakan hubungi admin WhatsApp kami untuk mempercepat proses verifikasi.",
+                                        "Proses verifikasi membutuhkan waktu lebih lama atau operasional sedang sibuk. Silakan hubungi admin WhatsApp kami secara langsung agar mempercepat proses verifikasi.",
                                     fontSize: 12,
                                     textColor: HexColor("#92400E"),
                                     fontWeight: FontWeight.w600,
@@ -261,29 +275,66 @@ class VerificationQueueView extends GetView<VerificationQueueController> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    await GlobalVariables.setBypassVerificationQueue(true);
-                    Get.offAllNamed(Routes.DEFAULT);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    minimumSize: const Size(double.infinity, 52),
-                    elevation: 0,
-                  ),
-                  icon: const Icon(IconsaxPlusBold.search_normal_1, size: 20),
-                  label: gabaritoText(
-                    text: "Cari Kendaraan",
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    textColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                Obx(() {
+                  if (controller.activeOrderData.isNotEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Get.toNamed('/detailriwayat', arguments: controller.activeOrderData);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: primaryColor,
+                          side: BorderSide(color: primaryColor, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          minimumSize: const Size(double.infinity, 52),
+                        ),
+                        icon: const Icon(IconsaxPlusBold.receipt_item, size: 20),
+                        label: gabaritoText(
+                          text: "Lihat Detail Pesanan",
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          textColor: primaryColor,
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+                Obx(() {
+                  if (controller.isAccountVerified.value) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          await GlobalVariables.setBypassVerificationQueue(true);
+                          Get.offAllNamed(Routes.DEFAULT);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          minimumSize: const Size(double.infinity, 52),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(IconsaxPlusBold.search_normal_1, size: 20),
+                        label: gabaritoText(
+                          text: "Cari Kendaraan",
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          textColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  );
+                }),
                 ElevatedButton.icon(
                   onPressed: _contactWhatsAppAdmin,
                   style: ElevatedButton.styleFrom(
