@@ -1,4 +1,5 @@
 
+import 'package:hexcolor/hexcolor.dart';
 import 'package:lottie/lottie.dart';
 import 'package:transgomobileapp/app/data/data.dart';
 import 'package:transgomobileapp/app/widget/widgets.dart';
@@ -41,18 +42,40 @@ class DialogBerhasilSewa extends StatelessWidget {
                   title: "Kontak Admin Sekarang",
                 ),
                 const SizedBox(height: 10,),
-                ReusableButton(
-                  height: 50,
-                  ontap: () {
-                    // Redirect to NavigationPage (root route) with index 1 (Riwayat) and status confirmed
-                    Get.offAllNamed(Routes.DEFAULT, arguments: {'index': 1, 'status': 'confirmed'});
-                  },
-                  bgColor: Colors.white,
-                  borderSideColor: Colors.grey,
-                  textColor: Colors.black,
-                  widget: Center(
-                    child: poppinsText(text: "Lihat Pesanan", textColor: Colors.black, fontWeight: FontWeight.w600,)
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ReusableButton(
+                        height: 50,
+                        ontap: () {
+                          // Redirect to NavigationPage (root route) with index 1 (Riwayat) and status confirmed
+                          Get.offAllNamed(Routes.DEFAULT, arguments: {'index': 1, 'status': 'confirmed'});
+                        },
+                        bgColor: Colors.white,
+                        borderSideColor: Colors.grey,
+                        textColor: Colors.black,
+                        fontSize: 12,
+                        widget: Center(
+                          child: poppinsText(text: "Lihat Pesanan", textColor: Colors.black, fontWeight: FontWeight.w600, fontSize: 12,)
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ReusableButton(
+                        height: 50,
+                        ontap: () {
+                          Get.toNamed(Routes.VERIFICATION_QUEUE);
+                        },
+                        bgColor: HexColor("#164ABA"),
+                        textColor: Colors.white,
+                        fontSize: 12,
+                        widget: Center(
+                          child: poppinsText(text: "Lihat Antrean", textColor: Colors.white, fontWeight: FontWeight.w600, fontSize: 12,)
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10,)
               ],
