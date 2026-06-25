@@ -193,15 +193,73 @@ Since the project is running on macOS, you can easily open and build the iOS tar
   5. **Create Release Build (Archive):** Select **Product -> Archive** from the top menu to compile the app for App Store Connect distribution.
 
 ### 3. Mengubah Versi Aplikasi (Android & iOS)
-Untuk memperbarui versi aplikasi Android dan iOS, Anda cukup mengubah baris `version` di dalam berkas [pubspec.yaml](file:///Users/zanfuu/Project/Coding/Transgo/transgoApp/pubspec.yaml):
 
+> [!IMPORTANT]
+> Proyek ini menggunakan konfigurasi versi yang di-hardcode secara manual pada beberapa file platform native. Ubah nilai versi di tempat-tempat berikut:
+
+#### A. Android (Wajib diubah manual)
+Buka file **[build.gradle.kts (android/app)](file:///Users/zanfuu/Project/Coding/Transgo/transgoApp/android/app/build.gradle.kts#L47-L48)**, lalu sesuaikan nilai `versionCode` dan `versionName` di dalam blok `defaultConfig`:
+```kotlin
+defaultConfig {
+    // ...
+    versionCode = 56       // Kode build unik (integer), harus selalu naik
+    versionName = "2.4.1"   // Nama versi rilis yang tampil ke pengguna
+}
+```
+
+#### B. iOS (Wajib diubah manual jika tidak memakai setting otomatis)
+1. **Menggunakan Xcode (Rekomendasi):**
+   * Buka folder `ios` di Xcode: `open ios/Runner.xcworkspace`.
+   * Pilih target **Runner** > tab **General** > bagian **Identity**.
+   * Ubah nilai **Version** dan **Build**.
+2. **Menggunakan File Konfigurasi (Langsung):**
+   * Buka file **[project.pbxproj](file:///Users/zanfuu/Project/Coding/Transgo/transgoApp/ios/Runner.xcodeproj/project.pbxproj#L706)** dan cari parameter `MARKETING_VERSION` (untuk versi rilis) dan sesuaikan nilainya.
+
+#### C. Flutter Configuration (`pubspec.yaml`)
+Sesuaikan juga baris `version` di dalam berkas [pubspec.yaml](file:///Users/zanfuu/Project/Coding/Transgo/transgoApp/pubspec.yaml#L19) agar tetap sinkron:
 ```yaml
 version: 2.4.1+56
 ```
+* Format: `[version-name]+[build-number]`
+* Jalankan `flutter pub get` setelah mengubah `pubspec.yaml`.
 
-Formatnya adalah `[version-name]+[build-number]`:
-* **Version Name (`2.4.1`)**: Ini adalah versi rilis yang dilihat oleh pengguna di Google Play Store / Apple App Store (Android: `versionName`, iOS: `CFBundleShortVersionString`).
-* **Build Number (`56`)**: Kode build unik berupa bilangan bulat (integer) yang wajib selalu meningkat di setiap unggahan rilis baru (Android: `versionCode`, iOS: `CFBundleVersion`).
+### 4. Panduan Build Aplikasi (Production)
 
-Setelah mengubah nilai ini di `pubspec.yaml`, jalankan perintah `flutter pub get` agar perubahan langsung disinkronkan ke konfigurasi build asli Android dan iOS.
+Karena proyek ini menggunakan konfigurasi multi-flavor (`production` dan `sandbox`), Anda wajib menyertakan flag `--flavor production` saat memproses build rilis agar sistem dapat menemukan output file build dengan benar.
+
+#### A. Android (APK & AAB)
+Jalankan perintah ini di direktori root `transgoApp`:
+
+* **Build APK (untuk pengujian manual):**
+  ```bash
+  flutter build apk --release --flavor production
+  ```
+  *Output file:* `build/app/outputs/flutter-apk/app-production-release.apk`
+
+* **Build AAB (untuk upload ke Google Play Store):**
+  ```bash
+  flutter build appbundle --release --flavor production
+  ```
+  *Output file:* `build/app/outputs/bundle/productionRelease/app-production-release.aab`
+
+#### B. iOS (App Store)
+Untuk build iOS, Anda bisa melakukannya secara langsung melalui Xcode (direkomendasikan) atau via CLI:
+
+1. **Melalui Xcode (Rekomendasi):**
+   * Buka project workspace iOS di Xcode melalui terminal:
+     ```bash
+     open ios/Runner.xcworkspace
+     ```
+   * Di dalam Xcode:
+     1. Di bagian bar atas, pastikan skema yang dipilih adalah **Runner** dan tujuannya adalah **Any iOS Device (arm64)**.
+     2. Bersihkan sisa build lama dengan menekan `Cmd + Shift + K` (atau pilih menu **Product > Clean Build Folder**).
+     3. Untuk mem-build dan membungkus aplikasi, pilih menu **Product > Archive**.
+     4. Setelah proses Archive selesai, jendela Xcode Organizer akan terbuka secara otomatis untuk proses upload ke App Store Connect.
+
+2. **Melalui Flutter CLI:**
+   * Alternatifnya, Anda dapat men-generate file build iOS (IPA) dari terminal:
+     ```bash
+     flutter build ipa --release --flavor production
+     ```
+     *Output build ini siap diunggah melalui Xcode Organizer atau Transporter app.*
 
