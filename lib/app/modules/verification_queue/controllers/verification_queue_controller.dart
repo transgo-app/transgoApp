@@ -124,7 +124,19 @@ class VerificationQueueController extends GetxController {
       hasPendingOrder.value = pendingCount > 0 || waitingCount > 0;
       
       if (hasPendingOrder.value) {
-        final activeOrder = pendingCount > 0 ? pendingItems!.first : waitingItems!.first;
+        final firstOrder = pendingCount > 0 ? pendingItems!.first : waitingItems!.first;
+        
+        // Fetch detailed order to get computed queue_position & queue_waiting_time
+        var activeOrder = firstOrder;
+        try {
+          final detailRes = await APIService().get('/orders/${firstOrder['id']}', useCache: false);
+          if (detailRes != null) {
+            activeOrder = detailRes;
+          }
+        } catch (detailError) {
+          debugPrint('Error fetching detailed order: $detailError');
+        }
+
         activeOrderData.value = Map<String, dynamic>.from(activeOrder);
         
         // Populate real-time queue details from the active order
@@ -192,8 +204,10 @@ class VerificationQueueController extends GetxController {
           }
         }
 
-        // Fetch queue details only if there is no pending order
-        if (!hasPendingOrder.value) {
+        // Fetch queue details
+        if (hasPendingOrder.value) {
+          await checkPendingOrders();
+        } else {
           final userId = dataUser['id'];
           if (userId != null) {
             fetchQueueData(userId);
