@@ -212,7 +212,7 @@ class _DialogPenanggungJawabState extends State<DialogPenanggungJawab> {
               },
             ),
           ],
-          const SizedBox(height: 10,),,
+          const SizedBox(height: 10,),
           CustomTextButton(title: "Tutup", ontap: () {
             Get.back();
           },)
