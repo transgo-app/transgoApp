@@ -9,30 +9,53 @@ class WhatsAppLinksService {
   static String? _serahTerimaLink;
   static String? _pusatBantuanLink;
 
-  /// Fetch WhatsApp links from API
-  /// Returns a map with 'serahTerima' and 'pusatBantuan' keys
-  static Future<Map<String, String>> fetchLinks() async {
+  static Future<Map<String, String>> fetchLinks({int? locationId, String? category}) async {
     try {
-      final response = await APIService().get('/whatsapp-links');
+      String url = '/whatsapp-links?is_active=true&limit=10';
+      if (locationId != null) {
+        url += '&location_id=$locationId';
+      }
+      if (category != null && category.isNotEmpty) {
+        url += '&category=${category.toLowerCase()}';
+      }
+
+      final response = await APIService().get(url);
 
       if (response != null && response['items'] != null) {
         final List<dynamic> items = response['items'];
         
-        // Find links by ID
-        // ID 1 = Grup Serah Terima
-        // ID 2 = Pusat Bantuan Rental
         String? serahTerimaLink;
         String? pusatBantuanLink;
 
+        // Try to match by type first
         for (var item in items) {
           if (item['is_active'] == true) {
-            final id = item['id'];
+            final type = item['type'] as String?;
             final link = item['link'] as String?;
 
-            if (id == 1 && link != null && link.isNotEmpty) {
+            if (type == 'serah_terima' && link != null && link.isNotEmpty) {
               serahTerimaLink = link;
-            } else if (id == 2 && link != null && link.isNotEmpty) {
+            } else if (type == 'pusat_bantuan' && link != null && link.isNotEmpty) {
               pusatBantuanLink = link;
+            }
+          }
+        }
+
+        // Fallback to name or id if type didn't match
+        if (serahTerimaLink == null || pusatBantuanLink == null) {
+          for (var item in items) {
+            if (item['is_active'] == true) {
+              final id = item['id'];
+              final name = (item['name'] as String?)?.toLowerCase() ?? '';
+              final link = item['link'] as String?;
+
+              if (link != null && link.isNotEmpty) {
+                if (id == 1 || name.contains('serah terima')) {
+                  serahTerimaLink ??= link;
+                } else if (id == 2 || name.contains('pusat bantuan') || name.contains('bantuan')) {
+                  pusatBantuanLink ??= link;
+                }
+              }
             }
           }
         }

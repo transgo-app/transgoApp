@@ -28,7 +28,18 @@ class _ModalPenanggungJawabState extends State<ModalPenanggungJawab> {
 
   Future<void> _fetchLinks() async {
     try {
-      final links = await WhatsAppLinksService.fetchLinks();
+      final controller = Get.find<DetailriwayatController>();
+      final fleet = controller.detaiItemsID['fleet'];
+      final product = controller.detaiItemsID['product'];
+      final location = controller.detaiItemsID['location'];
+      
+      final locationId = fleet?['location']?['id'] ?? product?['location']?['id'] ?? location?['id'];
+      final category = fleet?['type'] ?? product?['category'];
+
+      final links = await WhatsAppLinksService.fetchLinks(
+        locationId: locationId != null ? int.tryParse(locationId.toString()) : null,
+        category: category?.toString(),
+      );
       setState(() {
         _serahTerimaLink = links['serahTerima'] ?? WhatsAppLinksService.fallbackSerahTerimaLink;
         _pusatBantuanLink = links['pusatBantuan'] ?? WhatsAppLinksService.fallbackPusatBantuanLink;
@@ -55,6 +66,14 @@ class _ModalPenanggungJawabState extends State<ModalPenanggungJawab> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<DetailriwayatController>();
+    
+    // Check if order is accepted (not pending, waiting, or rejected)
+    final orderStatus = controller.detaiItemsID['order_status'];
+    final isOrderAccepted = orderStatus != null &&
+        orderStatus != 'pending' &&
+        orderStatus != 'waiting' &&
+        orderStatus != 'rejected';
+
     return BottomSheetComponent(
       widget: Obx(() => Column(
         mainAxisSize: MainAxisSize.min,
@@ -127,43 +146,45 @@ class _ModalPenanggungJawabState extends State<ModalPenanggungJawab> {
                     text:  'Penganggung jawab kendaraan belum ditambahkan, harap menunggu pesanan dikonfirmasi oleh pihak transgo')),
               ],
             )),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: Divider()),
-            ReusableButton(
-            bgColor: Colors.white,
-            borderSideColor: Colors.grey,
-            height: 45,
-            widget: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/wa_green.png', scale: 20,),
-                const SizedBox(width: 10,),
-                Expanded(child: Center(child: poppinsText(text: "Masuk Ke Group Serah Terima", textColor: Colors.black)))
-              ],
-            ),
-            ontap: () {
-              launchUrl(Uri.parse(_serahTerimaLink));
-            },
-          ),
-          const SizedBox(height: 10,),
-           ReusableButton(
-            bgColor: Colors.white,
-            height: 45,
-            borderSideColor: Colors.grey,
-            widget: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/wa_green.png', scale: 20,),
-                const SizedBox(width: 10,),
-                Expanded(child: Center(child: poppinsText(text: "Masuk Ke Group Pusat Bantuan", textColor: Colors.black,)))
-              ],
-            ),
-            ontap: () {
-              launchUrl(Uri.parse(_pusatBantuanLink));
-            },
-          ),
-          const SizedBox(height: 20,),
+            if (isOrderAccepted) ...[
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Divider()),
+              ReusableButton(
+                bgColor: Colors.white,
+                borderSideColor: Colors.grey,
+                height: 45,
+                widget: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset('assets/wa_green.png', scale: 20,),
+                    const SizedBox(width: 10,),
+                    Expanded(child: Center(child: poppinsText(text: "Masuk Ke Group Serah Terima", textColor: Colors.black)))
+                  ],
+                ),
+                ontap: () {
+                  launchUrl(Uri.parse(_serahTerimaLink));
+                },
+              ),
+              const SizedBox(height: 10,),
+              ReusableButton(
+                bgColor: Colors.white,
+                height: 45,
+                borderSideColor: Colors.grey,
+                widget: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset('assets/wa_green.png', scale: 20,),
+                    const SizedBox(width: 10,),
+                    Expanded(child: Center(child: poppinsText(text: "Masuk Ke Group Pusat Bantuan", textColor: Colors.black,)))
+                  ],
+                ),
+                ontap: () {
+                  launchUrl(Uri.parse(_pusatBantuanLink));
+                },
+              ),
+            ],
+            const SizedBox(height: 20,),,
       ],
     ),));
   }
